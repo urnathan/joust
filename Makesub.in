@@ -1,0 +1,40 @@
+# Joust Test Suite		-*- mode:Makefile -*-
+# Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
+# Not For Distribution
+
+CXXFLAGS-joust/ := $(CXXFLAGS-utils/) -I $(srcdir)/joust
+
+JOUSTPROGS := $(addprefix joust/,ezio kratos aloy)
+
+utils.all:: $(JOUSTPROGS)
+
+$(JOUSTPROGS): %: %.o libutils.a libjoust.a
+	$(CXX) $(LDFLAGS) $< -lutils -ljoust $(LIBS) -o $@
+
+clean::
+	rm -f $(JOUSTPROGS)
+	rm -f $(JOUSTPROGS:=.o) $(JOUSTPROGS:=.d)
+
+LIBJOUST.O := $(addprefix joust/,\
+	error.o lexer.o regex.o scanner.o symbols.o tester.o token.o)
+libjoust.a: $(LIBJOUST.O)
+	$(AR) -cr $@ $^
+
+clean::
+	rm -f $(LIBJOUST.O) $(LIBJOUST.O:.o=.d)
+	rm -f libjoust.a
+
+CXXFLAGS-joust/regex.cc = -fexceptions
+
+joust.doc: joust/dox.cfg
+	cd $(<D); doxygen $(<F) >&dox.log
+
+clean::
+	rm -rf joust/dox joust/dox.log
+
+.PHONY: joust.all joust.test joust.doc
+
+ifeq ($(filter %clean,$(MAKECMDGOALS)),)
+-include $(JOUSTPROGS:=.d)
+-include $(LIBJOUST.O:.o=.d)
+endif
