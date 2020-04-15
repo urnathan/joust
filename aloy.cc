@@ -44,7 +44,7 @@ namespace {
 
 static void Title (FILE *stream)
 {
-  fprintf (stream, "Apply List, Observe Yield\n");
+  fprintf (stream, "ALOY: Apply List, Observe Yield\n");
   fprintf (stream, "Copyright 2020 Nathan Sidwell, nathan@acm.org\n");
 }
 

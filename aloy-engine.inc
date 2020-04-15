@@ -47,6 +47,7 @@ public:
   void Fini (std::ostream * = nullptr);
   bool Process (int timeout);
   void Retire ();
+  void Fini (Job const &);
   void Spawn ();
   std::string Progress ();
 
@@ -192,7 +193,6 @@ void Engine::ReadInput ()
     hwm += 1024;
   input_buffer.resize (hwm);
   ssize_t count = read (in_fd, &input_buffer[size], hwm - size);
-  printf ("read %d bytes\n", int (count));
   input_buffer.resize (size + (count >= 0 ? count : 0));
   if (count < 0 && errno != EINTR)
     {
@@ -202,7 +202,6 @@ void Engine::ReadInput ()
 
   if (!count)
     {
-      printf ("closing fd_in\n");
       epoll_ctl (poll_fd, EPOLL_CTL_DEL, in_fd, nullptr);
       close (in_fd);
       in_fd = -1;
@@ -252,7 +251,6 @@ void Engine::ReadSignal ()
   ssize_t bytes = read (sig_fd, &sig, sizeof (sig));
   Assert (bytes == sizeof (sig));
 
-  printf ("Signal %d\n", sig.ssi_signo);
   switch (sig.ssi_signo)
     {
     case SIGCHLD:
@@ -356,7 +354,6 @@ bool Engine::Process (int timeout)
 
   do
     {
-      printf ("polling \n");
       epoll_event events[max_events];
       count = epoll_wait (poll_fd, events, max_events, timeout);
       if (count < 0)
@@ -369,27 +366,22 @@ bool Engine::Process (int timeout)
 	switch (uint64_t cookie = events[ix].data.u64)
 	  {
 	  case unsigned (FD::INPUT):
-	    printf ("input\n");
 	    ReadInput ();
 	    break;
 
 	  case unsigned (FD::SIGNAL):
-	    printf ("signal\n");
 	    ReadSignal ();
 	    break;
 
 	  case unsigned (FD::MAKE_IN):
-	    printf ("readmake\n");
 	    ReadMake ();
 	    break;
 
 	  case unsigned (FD::MAKE_OUT):
-	    printf ("writemake\n");
 	    WriteMake ();
 	    break;
 
 	  default:
-	    printf ("jobread\n");
 	    reinterpret_cast<Job *> (cookie ^ (cookie & 7))
 	      ->Read (cookie & 7, poll_fd);
 	    break;
@@ -400,13 +392,59 @@ bool Engine::Process (int timeout)
   return !count;
 }
 
+void Engine::Fini (Job const &job)
+{
+  log << "Test:" << retired << " " << job << '\n';
+  auto &logger = job.Text (1);
+  log << std::string_view (logger.data (), logger.size ());
+
+  bool error = false;
+  std::string_view bad_line;
+  auto &summer = job.Text (0);
+  for (auto sol = summer.data (), end = sol + summer.size (); sol != end;)
+    {
+      auto eol = std::find (sol, end, '\n');
+      auto line = std::string_view (sol, eol);
+
+      if (!tester.AddStatus (line) && !error)
+	{
+	  bad_line = line;
+	  error = true;
+	}
+      sum << line << '\n';
+      sol = eol + (eol != end);
+    }
+  if (error)
+    ;
+
+  int exit = job.Exit ();
+  if (WIFSIGNALED (exit))
+    {
+      int sig = WTERMSIG (exit);
+      // FIXME:
+    }
+  else if (WIFEXITED (exit))
+    {
+      if (int code = WEXITSTATUS (exit))
+	{
+	  // FIXME:
+	}
+    }
+  else
+    Unreachable ();
+
+  log << '\n';
+}
+
 void Engine::Retire ()
 {
-  while (completed && jobs.front ().MaybeFini ())
+  while (completed && jobs.front ().Ready ())
     {
+      Fini (jobs.front ());
+      jobs.pop_front ();
+
       completed--;
       retired++;
-      jobs.pop_front ();
     }
 }
 

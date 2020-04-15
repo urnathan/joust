@@ -32,11 +32,22 @@ public:
   {
     return state ? fds : nullptr;
   }
-  bool IsPid (pid_t p)
+  bool IsPid (pid_t p) const
   {
     return pid == p;
   }
-  bool MaybeFini ();
+  bool Ready () const
+  {
+    return !state;
+  }
+  int Exit () const
+  {
+    return exit_status;
+  }
+  std::vector<char> const &Text (unsigned ix) const
+  {
+    return text[ix];
+  }
 
   friend std::ostream &operator<< (std::ostream &, Job const &);
 };
@@ -143,24 +154,9 @@ int Job::Reap (int status)
   return r;
 }
 
-bool Job::MaybeFini ()
-{
-  if (state)
-    return false;
-
-  // Write out text
-
-  return true;
-}
-
 std::ostream &operator<< (std::ostream &s, Job const &job)
 {
-  for (auto iter = job.command.begin (); iter != job.command.end (); ++iter)
-    {
-      if (iter != job.command.begin ())
-	s << ' ';
-      s << *iter;
-    }
+  s << job.command;
 
   return s;
 }

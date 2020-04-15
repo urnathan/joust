@@ -44,7 +44,7 @@ namespace {
 
 static void Title (FILE *stream)
 {
-  fprintf (stream, "Kapture Run And Test Output Safely\n");
+  fprintf (stream, "KRATOS: Kapture Run And Test Output Safely\n");
   fprintf (stream, "Copyright 2020 Nathan Sidwell, nathan@acm.org\n");
 }
 
