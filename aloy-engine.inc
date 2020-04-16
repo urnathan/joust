@@ -18,9 +18,7 @@ private:
   std::vector<std::string> command;
   std::string used_tokens;
   std::vector<char> input_buffer;
-  std::ostream &sum = std::cout;
-  std::ostream &log = std::cerr;
-  Tester tester;
+  Logger logger;
   int in_fd = -1;
   unsigned job_limit = 1;
   int make_in = -1, make_out = -1;
@@ -64,7 +62,7 @@ private:
 
 Engine::Engine (unsigned argc, char const *const argv[], unsigned limit,
 		int in, std::ostream &s, std::ostream &l)
-  : sum (s), log (l), in_fd (in), job_limit (limit)
+  : logger (s, l), in_fd (in), job_limit (limit)
 {
   command.reserve (argc);
   for (unsigned ix = 0; ix != argc; ix++)
@@ -165,16 +163,18 @@ void Engine::Init ()
   if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, in_fd, &ev) < 0)
     Unreachable ();
 
-  sum << "\n";
+  auto now = time (nullptr);
+  logger << "Test run: " << ctime (&now);
+  logger << "\n";
 }
 
 void Engine::Fini (std::ostream *summary)
 {
   if (summary)
-    *summary << '\n' << tester;
-  sum << '\n' << tester;
-  sum.flush ();
-  log.flush ();
+    *summary << '\n' << logger;
+  logger << '\n' << logger;
+  logger.Sum ().flush ();
+  logger.Log ().flush ();
 
   close (poll_fd);
   poll_fd = -1;
@@ -394,27 +394,28 @@ bool Engine::Process (int timeout)
 
 void Engine::Fini (Job const &job)
 {
-  log << "Test:" << retired << " " << job << '\n';
-  auto &logger = job.Text (1);
-  log << std::string_view (logger.data (), logger.size ());
+  logger.Log () << "Test:" << retired << " " << job << '\n';
+  auto &log = job.Text (1);
+  logger.Log () << std::string_view (log.data (), log.size ());
 
   bool error = false;
   std::string_view bad_line;
-  auto &summer = job.Text (0);
-  for (auto sol = summer.data (), end = sol + summer.size (); sol != end;)
+  auto &sum = job.Text (0);
+  for (auto sol = sum.data (), end = sol + sum.size (); sol != end;)
     {
       auto eol = std::find (sol, end, '\n');
       auto line = std::string_view (sol, eol);
 
-      if (!tester.AddStatus (line) && !error)
+      if (!logger.AddStatus (line) && !error)
 	{
 	  bad_line = line;
 	  error = true;
 	}
-      sum << line << '\n';
+      logger.Sum () << line << '\n';
       sol = eol + (eol != end);
     }
   if (error)
+    // FIXME: Log error in summary
     ;
 
   int exit = job.Exit ();
@@ -433,7 +434,7 @@ void Engine::Fini (Job const &job)
   else
     Unreachable ();
 
-  log << '\n';
+  logger.Log () << '\n';
 }
 
 void Engine::Retire ()

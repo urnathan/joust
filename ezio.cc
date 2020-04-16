@@ -9,10 +9,10 @@
 // Joust
 #include "error.hh"
 #include "lexer.hh"
+#include "logger.hh"
 #include "regex.hh"
 #include "scanner.hh"
 #include "symbols.hh"
-#include "tester.hh"
 #include "token.hh"
 // Utils
 #include "fatal.hh"

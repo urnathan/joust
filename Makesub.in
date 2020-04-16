@@ -16,7 +16,7 @@ clean::
 	rm -f $(JOUSTPROGS:=.o) $(JOUSTPROGS:=.d)
 
 LIBJOUST.O := $(addprefix joust/,\
-	error.o lexer.o regex.o scanner.o symbols.o tester.o token.o)
+	error.o lexer.o logger.o regex.o scanner.o symbols.o token.o)
 libjoust.a: $(LIBJOUST.O)
 	$(AR) -cr $@ $^
 

@@ -9,7 +9,7 @@
 // Joust
 #include "error.hh"
 #include "lexer.hh"
-#include "tester.hh"
+#include "logger.hh"
 // Utils
 #include "fatal.hh"
 #include "option.hh"
@@ -24,6 +24,7 @@
 // C
 #include <cstring>
 // OS
+#include <time.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>

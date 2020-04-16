@@ -80,10 +80,10 @@ public:
   }
 
 public:
-  bool Execute ();
+  bool Execute (Logger &);
 
 public:
-  void Result (Tester::Status);
+  void Result (Logger &, Logger::Status);
 
 private:
   friend std::ostream &operator<< (std::ostream &s, Pipeline const &pipe);
@@ -252,7 +252,7 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
   return s;
 }
 
-bool Pipeline::Execute ()
+bool Pipeline::Execute (Logger &logger)
 {
   Assert (commands.size () >= 1 && commands.size () <= 3);
 
@@ -350,7 +350,7 @@ bool Pipeline::Execute ()
 		iter->Error ()
 		  << '\'' << iter->words[0] << "' exited with "
 		  << (sig ? "signal " : "code ") << ex;
-		Result (Tester::ERROR);
+		Result (logger, Logger::ERROR);
 	      }
 	  }
     }
@@ -359,16 +359,17 @@ bool Pipeline::Execute ()
 	       && signalled == (kind == SIGNAL)
 	       && (exit_code == expected_exit) == !expect_inverted);
   if (exit_code >= 0 && kind != REQUIRE)
-    Result (Tester::PassFail (pass, xfailed));
+    Result (logger, Logger::PassFail (pass, xfailed));
 
   return pass;
 }
 
-void Pipeline::Result (Tester::Status status)
+void Pipeline::Result (Logger &logger, Logger::Status status)
 {
   auto const &cmd = commands.front ();
 
-  Tester::Result (status, cmd.file, cmd.line, kinds[kind], cmd.words.front ());
+  logger.Result (status, cmd.file, cmd.line)
+    << kinds[kind] << ' ' << cmd.words.front () << '\n';
 }
 
 #if 0

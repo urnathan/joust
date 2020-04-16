@@ -31,6 +31,7 @@ private:
   };
 
 private:
+  Logger logger;
   Symtab &syms;
   std::vector<Pattern *> nevers;
   std::vector<Frame> frames;
@@ -39,7 +40,7 @@ private:
 
 public:
   Engine (Symtab &s)
-    :syms (s)
+    :logger (), syms (s)
   {
   }
   ~Engine ();
@@ -196,11 +197,11 @@ void Engine::BodyAdvance (unsigned bIndex)
       auto *p = frame.body[ix];
 
       if (p->Errored ())
-	p->Result (Tester::ERROR);
+	p->Result (logger, Logger::ERROR);
       else if (p->GetKind () != Pattern::NOT)
-	p->Result (false);
+	p->Result (logger, false);
       else if (!p->Matched ())
-	p->Result (true);
+	p->Result (logger, true);
     }
   bodyIndex = bIndex;
 }
@@ -215,9 +216,9 @@ void Engine::FrameAdvance (unsigned fIndex)
       if (head && frame.head)
 	{
 	  if (frame.head->Errored ())
-	    frame.head->Result (Tester::ERROR);
+	    frame.head->Result (logger, Logger::ERROR);
 	  else
-	    frame.head->Result (false);
+	    frame.head->Result (logger, false);
 	}
 
       BodyAdvance (frame.body.size ());
@@ -225,9 +226,9 @@ void Engine::FrameAdvance (unsigned fIndex)
 	{
 	  auto *p = *none;
 	  if (p->Errored ())
-	    p->Result (Tester::ERROR);
+	    p->Result (logger, Logger::ERROR);
 	  else if (!p->Matched ())
-	    p->Result (true);
+	    p->Result (logger, true);
 	}
     }
 
@@ -238,9 +239,9 @@ void Engine::FrameAdvance (unsigned fIndex)
       {
 	auto *p = *never;
 	if (p->Errored ())
-	  p->Result (Tester::ERROR);
+	  p->Result (logger, Logger::ERROR);
 	else if (!p->Matched ())
-	  p->Result (true);
+	  p->Result (logger, true);
       }
 }
 
@@ -289,14 +290,14 @@ void Engine::Process (std::string_view const &text, bool eof)
 	    if (cmp == Regex::FOUND)
 	      {
 		BodyAdvance (ix);
-		p->Result (true);
+		p->Result (logger, true);
 		bodyIndex = ix + 1;
 		return;
 	      }
 
 	    if (p->GetKind () == Pattern::NEXT)
 	      {
-		p->Result (false);
+		p->Result (logger, false);
 		bodyIndex = ix + 1;
 	      }
 	    else
@@ -306,7 +307,7 @@ void Engine::Process (std::string_view const &text, bool eof)
 
 	case Pattern::NOT:
 	  if (p->Compare (syms, text, eof) == Regex::FOUND)
-	    p->Result (false);
+	    p->Result (logger, false);
 	  continue;
 
 	default:
@@ -335,7 +336,7 @@ void Engine::Process (std::string_view const &text, bool eof)
 	continue;
 
       FrameAdvance (ix);
-      p->Result (true);
+      p->Result (logger, true);
       return;
     }
 
@@ -345,7 +346,7 @@ void Engine::Process (std::string_view const &text, bool eof)
       auto *p = *none;
       if (p->Expand (syms) == Regex::FOUND
 	  && p->Compare (syms, text, eof) == Regex::FOUND)
-	p->Result (false);
+	p->Result (logger, false);
     }
 
   // Look for NEVERs
@@ -354,7 +355,7 @@ void Engine::Process (std::string_view const &text, bool eof)
       auto *p = *never;
       if (p->Expand (syms) == Regex::FOUND
 	  && p->Compare (syms, text, eof) == Regex::FOUND)
-	p->Result (false);
+	p->Result (logger, false);
     }
 }
 

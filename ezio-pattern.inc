@@ -129,10 +129,10 @@ private:
   bool ParseEscape (Parser *, Lexer &);
 
 public:
-  void Result (Tester::Status) const;
-  void Result (bool pass) const
+  void Result (Logger &, Logger::Status) const;
+  void Result (Logger &l, bool pass) const
   {
-    Result (Tester::PassFail (pass, is_xfail));
+    Result (l, Logger::PassFail (pass, is_xfail));
   }
 
   friend std::ostream &operator<< (std::ostream &s, Pattern const &p);
@@ -918,7 +918,7 @@ Regex::Result Pattern::Compare
 }
 
 // Write to stdout
-void Pattern::Result (Tester::Status s) const
+void Pattern::Result (Logger &logger, Logger::Status s) const
 {
-  Tester::Result (s, file, line, kinds[GetKind ()], original);
+  logger.Result (s, file, line) << kinds[GetKind ()] << ' ' << original << '\n';
 }

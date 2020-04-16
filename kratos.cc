@@ -8,9 +8,9 @@
 // Joust
 #include "error.hh"
 #include "lexer.hh"
+#include "logger.hh"
 #include "scanner.hh"
 #include "symbols.hh"
-#include "tester.hh"
 #include "token.hh"
 // Utils
 #include "fatal.hh"
@@ -134,11 +134,12 @@ int main (int argc, char *argv[])
     }
 
   bool skipping = false;
+  Logger logger;
   for (auto &pipe : pipes)
     {
       if (!skipping)
 	{
-	  if (!pipe.Execute ()
+	  if (!pipe.Execute (logger)
 	      && pipe.GetKind () == Pipeline::REQUIRE)
 	    {
 	      skipping = true;
@@ -148,7 +149,7 @@ int main (int argc, char *argv[])
       else
 	{
 	unsupported:
-	  pipe.Result (Tester::UNSUPPORTED);
+	  pipe.Result (logger, Logger::UNSUPPORTED);
 	}
     }
 
