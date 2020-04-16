@@ -32,12 +32,24 @@ bool Logger::AddStatus (std::string_view const &line)
   return false;
 }
 
-Logger const &Logger::Result (Status status, char const *file, unsigned line)
+Logger::Streamer Logger::Result (Status status)
 {
   counts[status]++;
-  *this << statuses[status] << ": " << file << ':' << line << ':';
 
-  return *this;
+  Streamer result (this);
+
+  result << statuses[status] << ": ";
+
+  return result;
+}
+
+Logger::Streamer Logger::Result (Status status, char const *file, unsigned line)
+{
+  auto result = Result (status);
+
+  result << file << ':' << line << ':';
+
+  return result;
 }
 
 std::ostream &operator<< (std::ostream &s, Logger const &self)

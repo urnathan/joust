@@ -16,7 +16,6 @@ public:
   Job (std::string_view const &cmd)
     : command (cmd)
   {
-    printf ("Creating job '%s'\n", command.c_str ());
   }
 
 private:
@@ -83,8 +82,6 @@ void Job::Read (unsigned subcode, int poll_fd)
 bool Job::Spawn (std::vector<std::string> const &cmd, int token)
 {
   Assert (!state && text[0].empty () && text[1].empty ());
-
-  printf ("spawning\n");
 
   if (!cmd.size ())
     // No execute mode, we're done

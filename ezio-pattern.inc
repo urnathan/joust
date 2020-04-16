@@ -920,5 +920,5 @@ Regex::Result Pattern::Compare
 // Write to stdout
 void Pattern::Result (Logger &logger, Logger::Status s) const
 {
-  logger.Result (s, file, line) << kinds[GetKind ()] << ' ' << original << '\n';
+  logger.Result (s, file, line) << kinds[GetKind ()] << ' ' << original;
 }

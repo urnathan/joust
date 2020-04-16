@@ -147,7 +147,6 @@ int main (int argc, char *argv[])
 	  text.append (text.size (), '\b');
 	  write (1, text.data (), text.size ());
 	  progress_size = text_size;
-	  write (1, "\n", 1);
 	}
     }
 

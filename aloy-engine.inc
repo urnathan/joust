@@ -58,6 +58,8 @@ private:
 
   void Init (Job *);
   void Fini (Job *);
+
+  friend std::ostream &operator<< (std::ostream &, Engine const &);
 };
 
 Engine::Engine (unsigned argc, char const *const argv[], unsigned limit,
@@ -136,6 +138,17 @@ Engine::~Engine ()
   close (in_fd);
 }
 
+std::ostream &operator<< (std::ostream &s, Engine const &self)
+{
+  for (auto iter = self.command.begin (); iter != self.command.end (); ++iter)
+    {
+      if (iter != self.command.begin ())
+	s << ' ';
+      s << *iter;
+    }
+  return s;
+}
+
 void Engine::Init ()
 {
   // Signal fd and block sigchild 
@@ -171,8 +184,10 @@ void Engine::Init ()
 void Engine::Fini (std::ostream *summary)
 {
   if (summary)
-    *summary << '\n' << logger;
-  logger << '\n' << logger;
+    *summary << "# Summary of " << retired << " tests \n" << logger;
+  Sum () << '\n';
+  logger << "# Summary of " << retired << " tests \n" << logger;
+
   logger.Sum ().flush ();
   logger.Log ().flush ();
 
@@ -394,11 +409,12 @@ bool Engine::Process (int timeout)
 
 void Engine::Fini (Job const &job)
 {
-  logger.Log () << "Test:" << retired << " " << job << '\n';
+  logger.Log () << "# Test:" << retired << " " << job << '\n';
+  logger.Log () << *this << ' ' << job << '\n';
   auto &log = job.Text (1);
   logger.Log () << std::string_view (log.data (), log.size ());
 
-  bool error = false;
+  unsigned bad_count = 0;
   std::string_view bad_line;
   auto &sum = job.Text (0);
   for (auto sol = sum.data (), end = sol + sum.size (); sol != end;)
@@ -406,30 +422,29 @@ void Engine::Fini (Job const &job)
       auto eol = std::find (sol, end, '\n');
       auto line = std::string_view (sol, eol);
 
-      if (!logger.AddStatus (line) && !error)
+      if (!logger.AddStatus (line))
 	{
-	  bad_line = line;
-	  error = true;
+	  bad_count++;
+	  if (!bad_line.size ())
+	    bad_line = line;
 	}
       logger.Sum () << line << '\n';
       sol = eol + (eol != end);
     }
-  if (error)
-    // FIXME: Log error in summary
-    ;
+  if (bad_count)
+    logger.Result (Logger::ERROR) << job << ": unexpected summary line '"
+				  << bad_line << '\'';
 
   int exit = job.Exit ();
   if (WIFSIGNALED (exit))
     {
       int sig = WTERMSIG (exit);
-      // FIXME:
+      logger.Result (Logger::ERROR) << job << " terminated with signal " << sig;
     }
   else if (WIFEXITED (exit))
     {
       if (int code = WEXITSTATUS (exit))
-	{
-	  // FIXME:
-	}
+	logger.Result (Logger::ERROR) << job << " exited with status " << code;
     }
   else
     Unreachable ();

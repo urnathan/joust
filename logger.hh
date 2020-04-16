@@ -12,6 +12,38 @@ namespace Joust {
 
 class Logger
 {
+private:
+  class Streamer
+  {
+    Logger *logger;
+
+  public:
+    Streamer (Logger *l)
+      : logger (l)
+    {
+    }
+    Streamer (Streamer &&s)
+      : logger (s.logger)
+    {
+    }
+    ~Streamer ()
+    {
+      if (logger)
+	*logger << '\n';
+    }
+
+  private:
+    Streamer &operator= (Streamer const &) = delete;
+
+  public:
+    template<typename T> Streamer &operator << (T &&obj)
+    {
+      *logger << std::forward<T> (obj);
+
+      return *this;
+    }
+  };
+
 public:  
 #define LOGGER_STATUSES				\
   LOGGER_STATUS_FROB(PASS),			\
@@ -67,7 +99,8 @@ public:
   bool AddStatus (std::string_view const &);
 
 public:
-  Logger const &Result (Status status, char const *file, unsigned line);
+  Streamer Result (Status status);
+  Streamer Result (Status status, char const *file, unsigned line);
 
 public:
   template<typename T> Logger const &operator << (T const &obj) const

@@ -35,9 +35,11 @@ private:
   Error &operator= (Error &&) = delete;
 
 public:
-  template<typename T> std::ostream &operator << (T &&obj) const
+  template<typename T> Error &operator << (T &&obj)
   {
-    return *stream << std::forward<T> (obj);
+    *stream << std::forward<T> (obj);
+
+    return *this;
   }
 
 public:

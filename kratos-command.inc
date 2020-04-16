@@ -369,7 +369,7 @@ void Pipeline::Result (Logger &logger, Logger::Status status)
   auto const &cmd = commands.front ();
 
   logger.Result (status, cmd.file, cmd.line)
-    << kinds[kind] << ' ' << cmd.words.front () << '\n';
+    << kinds[kind] << ' ' << cmd.words.front ();
 }
 
 #if 0
