@@ -2,7 +2,7 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // Not For Distribution
 
-// Utils
+// NMS
 #include "fatal.hh"
 // Joust
 #include "scanner.hh"
@@ -16,7 +16,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-using namespace Utils;
+using namespace NMS;
 
 namespace Joust {
 

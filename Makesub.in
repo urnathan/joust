@@ -2,14 +2,14 @@
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 # Not For Distribution
 
-CXXFLAGS-joust/ := $(CXXFLAGS-utils/) -I $(srcdir)/joust
+CXXFLAGS-joust/ := $(CXXFLAGS-nms/) -I $(srcdir)/joust
 
 JOUSTPROGS := $(addprefix joust/,ezio kratos aloy)
 
-utils.all:: $(JOUSTPROGS)
+nms.all:: $(JOUSTPROGS)
 
-$(JOUSTPROGS): %: %.o libutils.a libjoust.a
-	$(CXX) $(LDFLAGS) $< -lutils -ljoust $(LIBS) -o $@
+$(JOUSTPROGS): %: %.o libnms.a libjoust.a
+	$(CXX) $(LDFLAGS) $< -lnms -ljoust $(LIBS) -o $@
 
 clean::
 	rm -f $(JOUSTPROGS)

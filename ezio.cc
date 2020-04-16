@@ -14,7 +14,7 @@
 #include "scanner.hh"
 #include "symbols.hh"
 #include "token.hh"
-// Utils
+// NMS
 #include "fatal.hh"
 #include "option.hh"
 // C++
@@ -30,7 +30,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-using namespace Utils;
+using namespace NMS;
 using namespace Joust;
 
 namespace {

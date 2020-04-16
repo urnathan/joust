@@ -4,7 +4,7 @@
 
 // Joust
 #include "symbols.hh"
-// Utils
+// NMS
 #include "fatal.hh"
 // OS
 #include <fcntl.h>
@@ -12,7 +12,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-using namespace Utils;
+using namespace NMS;
 
 namespace Joust {
 

@@ -12,7 +12,7 @@
 #include "scanner.hh"
 #include "symbols.hh"
 #include "token.hh"
-// Utils
+// NMS
 #include "fatal.hh"
 #include "option.hh"
 // C++
@@ -28,7 +28,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-using namespace Utils;
+using namespace NMS;
 using namespace Joust;
 
 // FIXME: add RUN-ITERATE: var {val1} {val2} ...

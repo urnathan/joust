@@ -10,7 +10,7 @@
 #include "error.hh"
 #include "lexer.hh"
 #include "logger.hh"
-// Utils
+// NMS
 #include "fatal.hh"
 #include "option.hh"
 // C++
@@ -35,7 +35,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-using namespace Utils;
+using namespace NMS;
 using namespace Joust;
 
 namespace {

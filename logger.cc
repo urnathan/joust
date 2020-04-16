@@ -4,7 +4,7 @@
 
 // Joust
 #include "logger.hh"
-// Utils
+// NMS
 #include "fatal.hh"
 // C++
 #include <iostream>

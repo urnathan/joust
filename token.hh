@@ -4,7 +4,7 @@
 
 #pragma once
 
-// Utils
+// NMS
 #include "fatal.hh"
 // C++
 #include <ostream>
@@ -79,14 +79,14 @@ public:
   Token (Kind kind_, unsigned long integer)
     : Token (kind_)
   {
-    using namespace Utils;
+    using namespace NMS;
     Assert (kind >= INTEGER_LWM && kind < INTEGER_HWM);
     new (&value.integer) decltype (value.integer) (std::move (integer));
   }
   Token (Kind kind_, std::string &&string)
     : Token (kind_)
   {
-    using namespace Utils;
+    using namespace NMS;
     Assert (kind_ >= STRING_LWM && kind_ < STRING_HWM);
     new (&value.string) decltype (value.string) (std::move (string));
   }
@@ -97,7 +97,7 @@ public:
   Token (Kind kind_, std::vector<Token> &&capture)
     : Token (kind_)
   {
-    using namespace Utils;
+    using namespace NMS;
     Assert (kind_ >= CAPTURE_LWM && kind_ < CAPTURE_HWM);
     new (&value.capture) decltype (value.capture) (std::move (capture));
   }
@@ -125,31 +125,31 @@ public:
 public:
   unsigned long GetInteger () const
   {
-    using namespace Utils;
+    using namespace NMS;
     Assert (kind >= INTEGER_LWM && kind < INTEGER_HWM);
     return value.integer;
   }
   std::string const &GetString () const
   {
-    using namespace Utils;
+    using namespace NMS;
     Assert (kind >= STRING_LWM && kind < STRING_HWM);
     return value.string;
   }
   std::string &GetString ()
   {
-    using namespace Utils;
+    using namespace NMS;
     Assert (kind >= STRING_LWM && kind < STRING_HWM);
     return value.string;
   }
   std::vector<Token> const &GetCapture () const
   {
-    using namespace Utils;
+    using namespace NMS;
     Assert (kind >= CAPTURE_LWM && kind < CAPTURE_HWM);
     return value.capture;
   }
   std::vector<Token> &GetCapture ()
   {
-    using namespace Utils;
+    using namespace NMS;
     Assert (kind >= CAPTURE_LWM && kind < CAPTURE_HWM);
     return value.capture;
   }

@@ -185,7 +185,7 @@ void Engine::Fini (std::ostream *summary)
 {
   if (summary)
     *summary << "# Summary of " << retired << " tests \n" << logger;
-  Sum () << '\n';
+  logger.Sum () << '\n';
   logger << "# Summary of " << retired << " tests \n" << logger;
 
   logger.Sum ().flush ();

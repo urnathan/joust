@@ -2,12 +2,12 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // Not For Distribution
 
-// Utils
+// NMS
 #include "fatal.hh"
 // Joust
 #include "regex.hh"
 
-using namespace Utils;
+using namespace NMS;
 
 namespace Joust::Regex {
 

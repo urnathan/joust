@@ -6,7 +6,7 @@
 
 // Joust
 #include "token.hh"
-// Utils
+// NMS
 #include "fatal.hh"
 // C++
 #include <string>
@@ -66,7 +66,7 @@ public:
   }
   void Advance (unsigned a = 1)
   {
-    using namespace Utils;
+    using namespace NMS;
     Assert (c_ix + a <= string.size ());
     c_ix += a;
   }

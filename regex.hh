@@ -1,4 +1,4 @@
-// Utils		-*- mode:c++ -*-
+// NMS		-*- mode:c++ -*-
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // Not For Distribution
 
