@@ -1,5 +1,5 @@
-# Joust Test Suite		-*- mode:autoconf -*-
-# Copyright (C) 2019-2020 Nathan Sidwell, nathan@acm.org
+# Joust: Journal Of User-Scripted Tests	-*- mode:autoconf -*-
+# Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
 AC_INIT([joust],[0.0],[nathan@acm.org])

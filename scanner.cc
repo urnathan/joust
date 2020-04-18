@@ -104,7 +104,7 @@ void Scanner::ScanFile (char const *fname,
       // Potential start must be preceded by non-alpha
       if (pattern == base || !(isalnum (pattern[-1]) || pattern[-1] == '_'))
 	{
-	  // Joust each prefix, yes even the ones that can't possibly match
+	  // Test each prefix, yes even the ones that can't possibly match
 	  for (unsigned ix = prefixes.size (); ix--;)
 	    if (size_t (end - pattern) > lengths[ix]
 		&& std::equal (prefixes[ix], prefixes[ix] + lengths[ix],
