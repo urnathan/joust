@@ -2,11 +2,11 @@
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 # Not For Distribution
 
-CXXFLAGS-joust/ := $(CXXFLAGS-nms/) -I $(srcdir)/joust
+CXXFLAGS/ := $(CXXFLAGS/nms/) -I $(srcdir)
 
-JOUSTPROGS := $(addprefix joust/,ezio kratos aloy)
+JOUSTPROGS := ezio kratos aloy
 
-nms.all:: $(JOUSTPROGS)
+all:: $(JOUSTPROGS)
 
 $(JOUSTPROGS): %: %.o libnms.a libjoust.a
 	$(CXX) $(LDFLAGS) $< -lnms -ljoust $(LIBS) -o $@
@@ -15,8 +15,7 @@ clean::
 	rm -f $(JOUSTPROGS)
 	rm -f $(JOUSTPROGS:=.o) $(JOUSTPROGS:=.d)
 
-LIBJOUST.O := $(addprefix joust/,\
-	error.o lexer.o logger.o regex.o scanner.o symbols.o token.o)
+LIBJOUST.O := error.o lexer.o logger.o regex.o scanner.o symbols.o token.o
 libjoust.a: $(LIBJOUST.O)
 	$(AR) -cr $@ $^
 
@@ -24,13 +23,13 @@ clean::
 	rm -f $(LIBJOUST.O) $(LIBJOUST.O:.o=.d)
 	rm -f libjoust.a
 
-CXXFLAGS-joust/regex.cc = -fexceptions
+CXXFLAGS/regex.cc = -fexceptions
 
-joust.doc: joust/dox.cfg
+joust.doc: dox.cfg
 	cd $(<D); doxygen $(<F) >&dox.log
 
 clean::
-	rm -rf joust/dox joust/dox.log
+	rm -rf dox dox.log
 
 .PHONY: joust.all joust.test joust.doc
 
