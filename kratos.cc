@@ -38,6 +38,8 @@ using namespace Joust;
 namespace {
 
 #include "kratos-command.inc"
+#include "kratos-pipeline.inc"
+#include "kratos-command.inc"
 #include "kratos-parser.inc"
 
 }

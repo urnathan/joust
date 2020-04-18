@@ -1,4 +1,4 @@
-// EZIO: Expect Zero Irregulities Observed	-*- mode:c++ -*-
+// EZIO: Expect Zero Irregularities Observed	-*- mode:c++ -*-
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // Not For Distribution
 
