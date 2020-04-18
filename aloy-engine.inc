@@ -2,8 +2,11 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // Not For Distribution
 
-class Engine
+class Engine : public Logger
 {
+public:
+  using Parent = Logger;
+private:
   enum class FD
   {
     SIGNAL,	// sig_fd
@@ -18,7 +21,6 @@ private:
   std::vector<std::string> command;
   std::string used_tokens;
   std::vector<char> input_buffer;
-  Logger logger;
   int in_fd = -1;
   unsigned job_limit = 1;
   int make_in = -1, make_out = -1;
@@ -30,6 +32,9 @@ private:
   unsigned completed = 0;// Jobs completed, but waiting to write
   unsigned running = 0;	// Jobs running
   unsigned pending = 0;	// Jobs waiting to run
+
+private:
+  unsigned counts[STATUS_HWM];
 
 public:
   Engine (unsigned argc, char const *const argv[], unsigned limit,
@@ -49,6 +54,13 @@ public:
   void Spawn ();
   std::string Progress ();
 
+public:
+  auto Result (Status status)
+  {
+    counts[status]++;
+    return Parent::Result (status);
+  }
+
 private:
   void ReadInput ();
   void ReadSignal ();
@@ -64,8 +76,10 @@ private:
 
 Engine::Engine (unsigned argc, char const *const argv[], unsigned limit,
 		int in, std::ostream &s, std::ostream &l)
-  : logger (s, l), in_fd (in), job_limit (limit)
+  : Parent (s, l), in_fd (in), job_limit (limit)
 {
+  for (unsigned ix = STATUS_HWM; ix--;)
+    counts[ix] = 0;
   command.reserve (argc);
   for (unsigned ix = 0; ix != argc; ix++)
     command.emplace_back (argv[ix]);
@@ -140,12 +154,10 @@ Engine::~Engine ()
 
 std::ostream &operator<< (std::ostream &s, Engine const &self)
 {
-  for (auto iter = self.command.begin (); iter != self.command.end (); ++iter)
-    {
-      if (iter != self.command.begin ())
-	s << ' ';
-      s << *iter;
-    }
+  for (unsigned ix = 0; ix != Logger::STATUS_HWM; ix++)
+    if (ix == Logger::PASS || self.counts[ix])
+      s << self.statuses[ix] << ' ' << self.counts[ix] << '\n';
+
   return s;
 }
 
@@ -177,19 +189,18 @@ void Engine::Init ()
     Unreachable ();
 
   auto now = time (nullptr);
-  logger << "Test run: " << ctime (&now);
-  logger << "\n";
+  *this << "Test run: " << ctime (&now);
+  *this << "\n";
 }
 
 void Engine::Fini (std::ostream *summary)
 {
   if (summary)
-    *summary << "# Summary of " << retired << " tests \n" << logger;
-  logger.Sum () << '\n';
-  logger << "# Summary of " << retired << " tests \n" << logger;
+    *summary << "# Summary of " << retired << " tests \n" << *this;
+  Sum () << '\n';
+  *this << "# Summary of " << retired << " tests \n" << *this;
 
-  logger.Sum ().flush ();
-  logger.Log ().flush ();
+  Flush ();
 
   close (poll_fd);
   poll_fd = -1;
@@ -409,47 +420,53 @@ bool Engine::Process (int timeout)
 
 void Engine::Fini (Job const &job)
 {
-  logger.Log () << "# Test:" << retired << " " << job << '\n';
-  logger.Log () << *this << ' ' << job << '\n';
-  auto &log = job.Text (1);
-  logger.Log () << std::string_view (log.data (), log.size ());
+  Log () << "# Test:" << retired << " " << job << '\n';
+  for (auto iter = command.begin (); iter != command.end (); ++iter)
+    Log () << *iter << ' ';
+  Log () << job << '\n';
+
+  auto &log_text = job.Text (1);
+  Log () << std::string_view (log_text.data (), log_text.size ());
 
   unsigned bad_count = 0;
   std::string_view bad_line;
-  auto &sum = job.Text (0);
-  for (auto sol = sum.data (), end = sol + sum.size (); sol != end;)
+  auto &sum_text = job.Text (0);
+  for (auto sol = sum_text.data (), end = sol + sum_text.size (); sol != end;)
     {
       auto eol = std::find (sol, end, '\n');
       auto line = std::string_view (sol, eol);
 
-      if (!logger.AddStatus (line))
+      Status st = DecodeStatus (line);
+      if (st == STATUS_HWM)
 	{
 	  bad_count++;
 	  if (!bad_line.size ())
 	    bad_line = line;
 	}
-      logger.Sum () << line << '\n';
+      else
+	counts[st]++;
+      Sum () << line << '\n';
       sol = eol + (eol != end);
     }
   if (bad_count)
-    logger.Result (Logger::ERROR) << job << ": unexpected summary line '"
-				  << bad_line << '\'';
+    Result (Logger::ERROR) << job << ": unexpected summary line '"
+			   << bad_line << '\'';
 
   int exit = job.Exit ();
   if (WIFSIGNALED (exit))
     {
       int sig = WTERMSIG (exit);
-      logger.Result (Logger::ERROR) << job << " terminated with signal " << sig;
+      Result (Logger::ERROR) << job << " terminated with signal " << sig;
     }
   else if (WIFEXITED (exit))
     {
       if (int code = WEXITSTATUS (exit))
-	logger.Result (Logger::ERROR) << job << " exited with status " << code;
+	Result (Logger::ERROR) << job << " exited with status " << code;
     }
   else
     Unreachable ();
 
-  logger.Log () << '\n';
+  Log () << '\n';
 }
 
 void Engine::Retire ()

@@ -65,11 +65,13 @@ public:
 private:
   std::ostream &sum;
   std::ostream &log;
-  // FIXME: Move to derived class, or putit in aloy-engine?
-  unsigned counts[STATUS_HWM];
 
 public:
-  Logger (std::ostream &s, std::ostream &l);
+  Logger (std::ostream &s, std::ostream &l)
+    : sum (s), log (l)
+  {
+  }
+
   Logger ()
     : Logger (std::cout, std::cerr)
   {
@@ -88,6 +90,13 @@ public:
   {
     return log;
   }
+
+public:
+  void Flush ()
+  {
+    sum.flush ();
+    log.flush ();
+  }
   
 public:
   static Status PassFail (bool pass, bool xfail = false)
@@ -97,6 +106,9 @@ public:
 
 public:
   bool AddStatus (std::string_view const &);
+
+protected:
+  Status DecodeStatus (std::string_view const &);
 
 public:
   Streamer Result (Status status);
@@ -109,10 +121,7 @@ public:
     log << obj;
 
     return *this;
-  }
-  
-
-  friend std::ostream &operator<< (std::ostream &, Logger const &);
+  }  
 };
 
 }
