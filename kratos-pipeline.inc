@@ -59,31 +59,25 @@ private:
 
 std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
 {
-  for (unsigned ix = 0; ix != pipe.commands.size (); ix++)
-    {
-      Command const &cmd = pipe.commands[ix];
+  auto iter = pipe.commands.begin ();
 
-      if (ix)
-	s << " |\n ";
-      s << '.' << ix << ' ';
+  if (!pipe.srcsink[0].empty ())
+    s << iter->File () << ':' << iter->Line ()
+      << " <" << pipe.srcsink[0] << '\n';
+  
+  s << iter->File () << ':' << iter->Line () << " "
+    << Pipeline::kinds[pipe.kind] << ':';
+  if (pipe.expected_exit)
+    s << pipe.expected_exit;
+  s << ("! " + !pipe.expect_inverted);
+  s << *iter << '\n';
 
-      s << Pipeline::kinds[ix ? Pipeline::RUN : pipe.kind] << ':';
-      if (!ix)
-	{
-	  if (pipe.expected_exit)
-	    s << pipe.expected_exit;
-	  s << ("! " + !pipe.expect_inverted);
+  if (!pipe.srcsink[1].empty ())
+    s << iter->File () << ':' << iter->Line ()
+      << " >" << pipe.srcsink[1] << '\n';
 
-	  for (unsigned jx = 0; jx != 2; jx++)
-	    if (!pipe.srcsink[jx].empty ())
-	      s << (jx ? '>' : '<') << pipe.srcsink[jx] << ' ';
-	}
-      else
-	s << " ";
-
-      s << cmd;
-    }
-  s << "\n";
+  for (; iter != pipe.commands.end (); ++iter)
+    s << iter->File () << ':' << iter->Line () << " | " << *iter << '\n';
 
   return s;
 }
@@ -91,6 +85,8 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
 bool Pipeline::Execute (Logger &logger)
 {
   Assert (commands.size () >= 1 && commands.size () <= 3);
+
+  std::cerr << *this;
 
   auto &cmd = commands.front ();
 

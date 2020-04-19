@@ -429,6 +429,7 @@ bool Engine::Process (int timeout)
 void Engine::Fini (Job const &job)
 {
   Log () << "# Test:" << retired << " " << job << '\n';
+  Log () << "ALOY:";
   for (auto iter = command.begin (); iter != command.end (); ++iter)
     Log () << *iter << ' ';
   Log () << job << '\n';

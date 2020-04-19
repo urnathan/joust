@@ -24,6 +24,15 @@ public:
   {
     return Joust::Error (file, line);
   }
+public:
+  auto File () const
+  {
+    return file;
+  }
+  auto Line () const
+  {
+    return line;
+  }
 
 public:
   bool Execute (int *fds);
