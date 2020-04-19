@@ -381,6 +381,7 @@ void Engine::WriteMake ()
 
 bool Engine::Process (int timeout)
 {
+  //  fprintf (stderr, "ret=%u, comp=%u, run=%u, pend=%u\n", retired, completed, running, pending);
   Assert (in_fd >= 0 || running);
   
   constexpr int max_events = 20;

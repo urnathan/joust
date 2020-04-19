@@ -63,7 +63,7 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
 
   if (!pipe.srcsink[0].empty ())
     s << iter->File () << ':' << iter->Line ()
-      << " <" << pipe.srcsink[0] << '\n';
+      << " in< " << pipe.srcsink[0] << '\n';
   
   s << iter->File () << ':' << iter->Line () << " "
     << Pipeline::kinds[pipe.kind] << ':';
@@ -74,10 +74,13 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
 
   if (!pipe.srcsink[1].empty ())
     s << iter->File () << ':' << iter->Line ()
-      << " >" << pipe.srcsink[1] << '\n';
+      << " out> " << pipe.srcsink[1] << '\n';
 
-  for (; iter != pipe.commands.end (); ++iter)
-    s << iter->File () << ':' << iter->Line () << " | " << *iter << '\n';
+  static char const *const outs[] = {" out| ", " err| "};
+  unsigned fd = 2;
+  while (++iter != pipe.commands.end ())
+    s << iter->File () << ':' << iter->Line ()
+      << outs[--fd] << *iter << '\n';
 
   return s;
 }

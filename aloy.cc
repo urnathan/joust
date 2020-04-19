@@ -58,7 +58,7 @@ int main (int argc, char *argv[])
     bool verbose = false;
     unsigned jobs = 0;
     char const *in = nullptr;
-    char const *out = "joust";
+    char const *out = "-";
   } flags;
   constexpr auto uint_fn
     = [] (Option const *option, char const *opt, char const *arg, void *f)
@@ -107,21 +107,24 @@ int main (int argc, char *argv[])
 
   // Get the log streams
   std::ofstream sum, log;
-  {
-    std::string out (flags.out);
-    size_t len = out.size ();
-    out.append (".sum");
-    sum.open (out);
-    if (!sum.is_open ())
-      Fatal ("cannot write '%s': %m", out.c_str ());
-    out.erase (len).append (".log");
-    log.open (out);
-    if (!log.is_open ())
-      Fatal ("cannot write '%s': %m", out.c_str ());
-  }
+  if (!flags.out[flags.out[0] == '-'])
+    flags.out = nullptr;
+  else
+    {
+      std::string out (flags.out);
+      size_t len = out.size ();
+      out.append (".sum");
+      sum.open (out);
+      if (!sum.is_open ())
+	Fatal ("cannot write '%s': %m", out.c_str ());
+      out.erase (len).append (".log");
+      log.open (out);
+      if (!log.is_open ())
+	Fatal ("cannot write '%s': %m", out.c_str ());
+    }
 
-  Engine engine (argc - argno, argv + argno, std::min (flags.jobs, 256u),
-		 in_fd, sum, log);
+  Engine engine (argc - argno, argv + argno, std::min (flags.jobs, 256u), in_fd,
+		 flags.out ? sum : std::cout, flags.out ? log : std::cerr);
 
   engine.Init ();
   bool show_progress = flags.out && isatty (1);;

@@ -42,22 +42,20 @@ bool Symbols::Define (std::string_view const &define)
 // srcstem=$(basename -s .* $srcFile)
 // subdir=$(dir $srcFile)
 // tmp=${src:/=-}.TMPNAM
-std::string Symbols::Origin (char const *srcFile)
+std::string Symbols::Origin (char const *s)
 {
-  std::string tmp (srcFile);
-  std::string path;
-  if (auto *sdir = Get ("srcdir"))
-    path.append (*sdir);
-  path.append (tmp);
-  Set ("src", path);
+  std::string_view srcFile (s);
 
-  auto slash = tmp.find_last_of ('/');
-  if (slash == tmp.npos)
+  Set ("src", srcFile);
+
+  auto slash = srcFile.find_last_of ('/');
+  if (slash == srcFile.npos)
     slash = 0;
   else
     slash++;
-  Set ("subdir", tmp.substr (0, slash));
+  Set ("subdir", srcFile.substr (0, slash));
 
+  std::string tmp (srcFile);
   auto dot = tmp.find_last_of ('.');
   if (dot == tmp.npos || dot < slash)
     dot = tmp.size ();
@@ -73,6 +71,14 @@ std::string Symbols::Origin (char const *srcFile)
   tmp.push_back ('.');
   tmp.append (std::to_string (getpid ()));
   Set ("tmp", tmp);
+
+  std::string path;
+  std::string srcdir ("srcdir");
+  if (auto *sdir = Get (srcdir))
+    path.append (*sdir);
+  else
+    Set (srcdir, "");
+  path.append (srcFile);
 
   return path;
 }
