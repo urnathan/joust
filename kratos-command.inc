@@ -86,6 +86,7 @@ bool Command::Execute (int *fds)
 {
   pid = fork ();
 
+  // FIXME: Can we abstract this?
   if (!pid)
     {
       // Child

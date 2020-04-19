@@ -108,21 +108,19 @@ int main (int argc, char *argv[])
   Symbols syms;
 
   // Register defines
-  std::string src (testFile);
-  syms.Set ("src", src);
   for (auto d : flags.defines)
     syms.Define (std::string_view (d));
   if (flags.include)
     syms.Read (flags.include);
-  std::string pathname = syms.SetPaths (testFile);
 
-  std::vector<char const *> prefixes {"RUN"};
   std::vector<Pipeline> pipes;
   {
+    std::vector<char const *> prefixes {"RUN"};
+    std::string pathname = syms.Origin (testFile);
     Parser parser (testFile, pipes, syms);
 
     // Scan the pattern file
-    parser.ScanFile (pathname.c_str (), prefixes);
+    parser.ScanFile (pathname, prefixes);
   }
 
   if (pipes.empty () || Error::Errors ())

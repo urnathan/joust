@@ -3633,7 +3633,7 @@ fi
 
 
 SUBDIRS="nms"
-CONFIG_FILES="Makefile nms/Maketop"
+CONFIG_FILES="Makefile nms/Maketop nms/gdbinit"
 
 configure_args=$ac_configure_args
 
@@ -3642,17 +3642,17 @@ configure_args=$ac_configure_args
 
 
 
+CONFIG_FILES+=" gdbinit"
 for dir in $SUBDIRS
 do
   CONFIG_FILES+=" $dir/Makesub $dir/tests/Makesub"
 done
-set -x
 for cfg in Makesub tests/Makesub
 do
   test -f ${srcdir}/$cfg.in && CONFIG_FILES+=" $cfg"
 done
 ac_config_files="$ac_config_files $CONFIG_FILES"
-set +x
+
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure

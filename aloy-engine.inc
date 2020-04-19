@@ -163,6 +163,10 @@ std::ostream &operator<< (std::ostream &s, Engine const &self)
 
 void Engine::Init ()
 {
+  auto now = time (nullptr);
+  *this << "Test run: " << ctime (&now);
+  *this << "\n";
+
   // Signal fd and block sigchild 
   sigset_t sigmask;
   sigemptyset (&sigmask);
@@ -184,13 +188,15 @@ void Engine::Init ()
   ev.data.u64 = unsigned (FD::SIGNAL);
   if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
     Unreachable ();
+
   ev.data.u64 = unsigned (FD::INPUT);
   if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, in_fd, &ev) < 0)
-    Unreachable ();
-
-  auto now = time (nullptr);
-  *this << "Test run: " << ctime (&now);
-  *this << "\n";
+    {
+      Assert (errno == EPERM);
+      // Input cannot be polled (it's a regular file)
+      while (in_fd >= 0)
+	ReadInput ();
+    }
 }
 
 void Engine::Fini (std::ostream *summary)
@@ -375,6 +381,8 @@ void Engine::WriteMake ()
 
 bool Engine::Process (int timeout)
 {
+  Assert (in_fd >= 0 || running);
+  
   constexpr int max_events = 20;
   int count;
 

@@ -38,22 +38,41 @@ bool Symbols::Define (std::string_view const &define)
 	      std::string_view (val, define.end ()));
 }
 
-// src, basename, tmppath
-std::string Symbols::SetPaths (char const *srcFile)
+// src=$srcdir$srcFile
+// srcstem=$(basename -s .* $srcFile)
+// subdir=$(dir $srcFile)
+// tmp=${src:/=-}.TMPNAM
+std::string Symbols::Origin (char const *srcFile)
 {
+  std::string tmp (srcFile);
   std::string path;
   if (auto *sdir = Get ("srcdir"))
-    {
-      path.append (*sdir);
-      path.push_back ('/');
-    }
-  path.append (srcFile);
+    path.append (*sdir);
+  path.append (tmp);
+  Set ("src", path);
 
-  auto slash = path.find_last_of ('/');
-  if (slash == path.npos)
+  auto slash = tmp.find_last_of ('/');
+  if (slash == tmp.npos)
     slash = 0;
-  Set ("srcbase", path.substr (0, slash));
-  slash += path[slash] == '/';
+  else
+    slash++;
+  Set ("subdir", tmp.substr (0, slash));
+
+  auto dot = tmp.find_last_of ('.');
+  if (dot == tmp.npos || dot < slash)
+    dot = tmp.size ();
+  Set ("srcstem", tmp.substr (slash, dot));
+
+  for (size_t pos = 0;;)
+    {
+      pos = tmp.find_first_of ('/', pos);
+      if (pos == tmp.npos)
+	break;
+      tmp[pos] = '-';
+    }
+  tmp.push_back ('.');
+  tmp.append (std::to_string (getpid ()));
+  Set ("tmp", tmp);
 
   return path;
 }
@@ -97,7 +116,7 @@ void Symbols::Read (char const *file)
     {
       auto eol = std::find (begin, end, '\n');
 
-      auto space = std::find (begin, eol, ' ');
+      auto space = std::find (begin, eol, '=');
       auto val = space + (space != eol);
 
       Set (std::string_view (begin, space), std::string_view (val, eol));

@@ -16,7 +16,7 @@ class Scanner
 {
 private:
   char const *file;
-  unsigned line = 1;
+  unsigned line = 0;
   
 public:
   Scanner (char const *file_)
@@ -41,7 +41,7 @@ public:
   }
 
 public:
-  void ScanFile (char const *, std::vector<char const *> const &prefixes);
+  void ScanFile (std::string const &, std::vector<char const *> const &prefixes);
 
 protected:
   virtual bool ProcessLine (std::string_view const &variant,

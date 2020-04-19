@@ -176,7 +176,7 @@ bool Pipeline::Execute (Logger &logger)
 
 	    subtasks--;
 	    if (iter == commands.begin ()
-		&& (kind != REQUIRE || !signalled))
+		&& (kind != REQUIRE || !sig))
 	      {
 		signalled = sig;
 		exit_code = ex;
@@ -195,7 +195,12 @@ bool Pipeline::Execute (Logger &logger)
 	       && signalled == (kind == SIGNAL)
 	       && (exit_code == expected_exit) == !expect_inverted);
   if (exit_code >= 0 && kind != REQUIRE)
-    Result (logger, Logger::PassFail (pass, xfailed));
+    {
+      if (!pass)
+	logger.Log () << commands.front ().words[0] << " exited with "
+		      << (signalled ? "signal " : "code ") << exit_code << '\n';
+      Result (logger, Logger::PassFail (pass, xfailed));
+    }
 
   return pass;
 }

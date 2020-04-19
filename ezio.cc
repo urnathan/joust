@@ -123,13 +123,13 @@ int main (int argc, char *argv[])
     syms.text.Define (std::string_view (d));
   if (flags.include)
     syms.text.Read (flags.include);
-  std::string pathname = syms.text.SetPaths (patternFile);
   Engine engine (syms);
   {
+    std::string pathname = syms.text.Origin (patternFile);
     Parser parser (patternFile, engine);
 
     // Scan the pattern file
-    parser.ScanFile (pathname.c_str (), flags.prefixes);
+    parser.ScanFile (pathname, flags.prefixes);
     engine.Initialize (parser);
   }
 

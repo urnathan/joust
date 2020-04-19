@@ -130,9 +130,9 @@ int main (int argc, char *argv[])
   // MainLoop
   while (engine.IsLive ())
     {
+      engine.Spawn ();
       engine.Process (-1);
       engine.Retire ();
-      engine.Spawn ();
       if (show_progress)
 	{
 	  std::string text = engine.Progress ();

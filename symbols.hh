@@ -29,10 +29,10 @@ public:
   std::string const *Get (std::string const &var) const;
 
 public:
+  std::string Origin (char const *src);
   bool Set (std::string_view const &var, std::string_view const &val);
   bool Define (std::string_view const &define);
   void Read (char const *file);
-  std::string SetPaths (char const *srcFile);
 };
 
 }

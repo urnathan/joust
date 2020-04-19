@@ -24,15 +24,15 @@ namespace Joust {
 // everything after the prefix, up to \n is the pattern.
 // Lines must match the regexp [^:alnum:]prefix(-opt)?: to be recognized
 
-void Scanner::ScanFile (char const *fname,
+void Scanner::ScanFile (std::string const &fname,
 			std::vector<char const *> const &prefixes)
 {
-  int fd = open (fname, O_RDONLY | O_CLOEXEC);
+  int fd = open (fname.c_str (), O_RDONLY | O_CLOEXEC);
   if (fd < 0)
     {
     fatal:
       int err = errno;
-      Error () << "cannot read file: " << strerror (err);
+      Error () << "cannot read file '" << fname << "': " << strerror (err);
       return;
     }
   size_t len = [] (int fd_)
@@ -82,6 +82,7 @@ void Scanner::ScanFile (char const *fname,
 	}
     }
 
+  line = 1;  
   for (char const *base = begin; ;)
     {
       // Advance any initial points that are before BEGIN, and
