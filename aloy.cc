@@ -10,6 +10,7 @@
 #include "error.hh"
 #include "lexer.hh"
 #include "logger.hh"
+#include "readBuffer.hh"
 // NMS
 #include "fatal.hh"
 #include "option.hh"

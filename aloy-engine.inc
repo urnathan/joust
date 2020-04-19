@@ -164,8 +164,7 @@ std::ostream &operator<< (std::ostream &s, Engine const &self)
 void Engine::Init ()
 {
   auto now = time (nullptr);
-  *this << "Test run: " << ctime (&now);
-  *this << "\n";
+  *this << "Test run: " << ctime (&now) << "\n";
 
   // Signal fd and block sigchild 
   sigset_t sigmask;
@@ -417,8 +416,11 @@ bool Engine::Process (int timeout)
 	    break;
 
 	  default:
-	    reinterpret_cast<Job *> (cookie ^ (cookie & 7))
-	      ->Read (cookie & 7, poll_fd);
+	    {
+	      Job *job = reinterpret_cast<Job *> (cookie ^ (cookie & 7));
+
+	      job->Read (cookie & 7, poll_fd, *this);
+	    }
 	    break;
 	  }
     }
@@ -435,12 +437,12 @@ void Engine::Fini (Job const &job)
     Log () << *iter << ' ';
   Log () << job << '\n';
 
-  auto &log_text = job.Text (1);
+  auto &log_text = job.Buffer (1);
   Log () << std::string_view (log_text.data (), log_text.size ());
 
   unsigned bad_count = 0;
   std::string_view bad_line;
-  auto &sum_text = job.Text (0);
+  auto &sum_text = job.Buffer (0);
   for (auto sol = sum_text.data (), end = sol + sum_text.size (); sol != end;)
     {
       auto eol = std::find (sol, end, '\n');
@@ -498,24 +500,10 @@ void Engine::Spawn ()
       {
 	if (job_limit > running)
 	  {
-	    if (iter->Spawn (command))
+	    if (iter->Spawn (command, poll_fd))
 	      running++;
 	    else
 	      completed++;
-	    if (auto *fds = iter->Fds ())
-	      {
-		uint64_t data = reinterpret_cast<uint64_t> (&*iter);
-
-		Assert (!(data & 7));
-		for (unsigned ix = 2; ix--;)
-		  {
-		    epoll_event ev;
-		    ev.events = EPOLLIN;
-		    ev.data.u64 = data | ix;
-		    if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, fds[ix], &ev) < 0)
-		      Unreachable ();
-		  }
-	      }
 	    pending--;
 	  }
 	else

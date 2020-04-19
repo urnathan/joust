@@ -5,8 +5,7 @@
 class Job
 {
   std::string command;
-  std::vector<char> text[2];	// text from job
-  int fds[2] = {-1, -1};	// FDs from job
+  ReadBuffer buffers[2];	// Job's stdout, stderr
   pid_t pid = pid_t (-1);	// Job's PID
   int exit_status = 0;		// Exit status of job
   short make_token = -1;	// Make job-server token
@@ -24,13 +23,10 @@ private:
   Job &operator= (Job const &) = delete;
 
 public:
-  void Read (unsigned subcode, int poll_fd);
-  bool Spawn (std::vector<std::string> const &cmd, int token = -1);
+  void Read (unsigned subcode, int poll_fd, Logger &);
+
+  bool Spawn (std::vector<std::string> const &cmd, int poll_fd, int token = -1);
   int Reap (int status);
-  auto *Fds () const
-  {
-    return state ? fds : nullptr;
-  }
   bool IsPid (pid_t p) const
   {
     return pid == p;
@@ -43,45 +39,39 @@ public:
   {
     return exit_status;
   }
-  std::vector<char> const &Text (unsigned ix) const
+  auto const &Buffer (unsigned ix) const
   {
-    return text[ix];
+    return buffers[ix];
   }
 
   friend std::ostream &operator<< (std::ostream &, Job const &);
 };
 
-void Job::Read (unsigned subcode, int poll_fd)
+void Job::Read (unsigned subcode, int poll_fd, Logger &log)
 {
-  Assert (subcode < 2 && fds[subcode] >= 0 && state > 0);
+  Assert (subcode < 2 && state > 0);
 
-  // Read
-  size_t size = text[subcode].size ();
-  size_t hwm = text[subcode].capacity ();
-  if (hwm - size < 10)
-    hwm += 1024;
-  text[subcode].resize (hwm);
-  ssize_t count = read (fds[subcode], &text[subcode][size], hwm - size);
-  text[subcode].resize (size + (count >= 0 ? count : 0));
-
-  if (count < 0 && errno != EINTR)
+  if (int done = buffers[subcode].Read ())
     {
-      // FIXME: Log ERROR
-      count = 0;
-    }
+      if (done >= 0)
+	{
+	  static char const *const io[] = {" stdout:", " stderr:"};
+	  log.Result (Logger::ERROR)
+	    << "failed reading "
+	    << *this << io[subcode] << strerror (done);
+	}
 
-  if (!count)
-    {
-      epoll_ctl (poll_fd, EPOLL_CTL_DEL, fds[subcode], nullptr);
-      close (fds[subcode]);
-      fds[subcode] = -1;
+      int fd = buffers[subcode].Close ();
+
+      epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
+      close (fd);
       state--;
     }
 }
 
-bool Job::Spawn (std::vector<std::string> const &cmd, int token)
+bool Job::Spawn (std::vector<std::string> const &cmd, int poll_fd, int token)
 {
-  Assert (!state && text[0].empty () && text[1].empty ());
+  Assert (!state && buffers[0].empty () && buffers[0].empty ());
 
   if (!cmd.size ())
     // No execute mode, we're done
@@ -94,8 +84,15 @@ bool Job::Spawn (std::vector<std::string> const &cmd, int token)
       int pipe[2];
       if (pipe2 (pipe, O_CLOEXEC) < 0)
 	; // FIXME: Log error
-      fds[ix] = pipe[0];
+
       job_fds[ix] = pipe[1];
+      buffers[ix].Open (pipe[0]);
+
+      epoll_event ev;
+      ev.events = EPOLLIN;
+      ev.data.u64 = reinterpret_cast<uint64_t> (this) | ix;
+      if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe[0], &ev) < 0)
+	Unreachable ();
     }
 
   pid = fork ();
