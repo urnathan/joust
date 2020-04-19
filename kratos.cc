@@ -10,6 +10,7 @@
 #include "lexer.hh"
 #include "logger.hh"
 #include "scanner.hh"
+#include "spawn.hh"
 #include "symbols.hh"
 #include "token.hh"
 // NMS

@@ -35,7 +35,7 @@ public:
   }
 
 public:
-  bool Execute (int *fds);
+  bool Execute (int, int);
 
 private:
   void Shellify ();
@@ -91,52 +91,28 @@ void Command::Shellify ()
     }
 }
 
-bool Command::Execute (int *fds)
+bool Command::Execute (int fd_out, int fd_err)
 {
-  pid = fork ();
+  pid_t p = Spawn (stdin, fd_out, fd_err, &words, nullptr);
 
-  // FIXME: Can we abstract this?
-  if (!pid)
-    {
-      // Child
-      unsigned nargs = words.size ();
-      auto args = reinterpret_cast<char const **> (alloca (sizeof (char const *)
-							   * (nargs + 1)));
-      for (unsigned ix = 0; ix != nargs; ix++)
-	args[ix] = words[ix].c_str ();
-      args[nargs] = nullptr;
-
-      if ((stdin > 2 && dup2 (stdin, 0) < 0)
-	  || (fds && ((fds[0] > 2 && dup2 (fds[0], 1) < 0)
-		      || (fds[1] > 2 && dup2 (fds[1], 2) < 0)))
-	  || execvp (args[0], const_cast<char **> (args)))
-	{
-	  int err = errno;
-	  // FIXME: Use a pipe to tell our parent explicitly
-	  Error () << "cannot execute '" << words[0]
-		   << "': " << strerror (err);
-	}
-      exit (2);
-      return false;
-    }
-
-  // Parent
-
-  // Close stdin
   if (stdin > 2)
     {
       close (stdin);
       stdin = -1;
     }
+  if (fd_out > 2)
+    close (fd_out);
+  if (fd_err > 2)
+    close (fd_err);
 
-  if (pid == pid_t (-1))
+  if (p < 0)
     {
-      int err = errno;
       Error () << "failed to spawn process '" << words[0]
-		   << "': " << strerror (err);
+	       << "': " << strerror (int (-p));
       return false;
     }
 
+  pid = p;
   return true;
 }
 

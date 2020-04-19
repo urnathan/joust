@@ -16,7 +16,7 @@ clean::
 	rm -f $(JOUSTPROGS:=.o) $(JOUSTPROGS:=.d)
 
 LIBJOUST.O := error.o lexer.o logger.o readBuffer.o regex.o \
-	scanner.o symbols.o token.o
+	scanner.o spawn.o symbols.o token.o
 
 libjoust.a: $(LIBJOUST.O)
 	$(AR) -cr $@ $^

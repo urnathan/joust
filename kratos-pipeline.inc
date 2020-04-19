@@ -28,7 +28,6 @@ public:
 private:
   std::vector<Command> commands;
   std::string srcsink[2];
-  int fds[2] {-1, -1}; // sinks of cmd[0]
   Kind kind = RUN;
   unsigned expected_exit : 8 = 0;
   bool expect_inverted : 1 = false;
@@ -103,8 +102,11 @@ bool Pipeline::Execute (Logger &logger)
       cmd.Error () << "cannot read '" << in << "': " << strerror (err);
     }
 
+  int fds[2] {-1, -1}; // sinks of cmd[0]
+
   if (!srcsink[1].empty ())
     {
+      // stdout is to a file
       fds[0] = open (srcsink[1].c_str (),
 		     O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
 		     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
@@ -120,8 +122,7 @@ bool Pipeline::Execute (Logger &logger)
   // the one before that (if any) gets stdout
   for (unsigned ix = 1; commands.size () - ix; ix++)
     {
-      // [0] - read from
-      // [1] - write to
+      // pipe ends: 0-read from, 1-write to
       int pipe[2];
       if (pipe2 (pipe, O_CLOEXEC) < 0)
 	{
@@ -136,19 +137,14 @@ bool Pipeline::Execute (Logger &logger)
     }
 
   unsigned subtasks = 0;
-  for (auto iter = commands.begin (); iter != commands.end (); ++iter)
-    {
-      bool first = iter == commands.begin ();
-      if (iter->Execute (first ? fds : nullptr))
+  {
+    auto iter = commands.begin ();
+    if (iter->Execute (fds[0], fds[1]))
+      subtasks++;
+    while (++iter != commands.end ())
+      if (iter->Execute (-1, -1))
 	subtasks++;
-    }
-
-  for (unsigned ix = 2; ix--;)
-    if (fds[ix] > 2)
-      {
-	close (fds[ix]);
-	fds[ix] = -1;
-      }
+  }
 
   // Wait for completion
   bool signalled = false;
