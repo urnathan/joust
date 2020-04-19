@@ -11,6 +11,7 @@
 #include "lexer.hh"
 #include "logger.hh"
 #include "readBuffer.hh"
+#include "spawn.hh"
 // NMS
 #include "fatal.hh"
 #include "option.hh"

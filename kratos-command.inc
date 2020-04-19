@@ -93,7 +93,7 @@ void Command::Shellify ()
 
 bool Command::Execute (int fd_out, int fd_err)
 {
-  pid_t p = Spawn (stdin, fd_out, fd_err, &words, nullptr);
+  pid_t p = Spawn (stdin, fd_out, fd_err, words);
 
   if (stdin > 2)
     {

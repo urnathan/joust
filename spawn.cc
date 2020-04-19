@@ -17,7 +17,7 @@ using namespace NMS;
 namespace Joust {
 
 int Spawn (int fd_in, int fd_out, int fd_err,
-	   std::vector<std::string> const *words, ...)
+	   std::vector<std::string> const &words)
 {
   int pipe_fds[2];
 
@@ -34,24 +34,14 @@ int Spawn (int fd_in, int fd_out, int fd_err,
       close (pipe_fds[0]);
 
       // Count the arguments
-      unsigned nargs = words->size ();
-      va_list parms;
-      va_start (parms, words);
-      while (auto *suffix = va_arg (parms, std::vector<std::string> const *))
-	nargs += suffix->size ();
-      va_end (parms);
+      unsigned nargs = words.size ();
 
       // Assemble them
       auto args = reinterpret_cast<char const **>
 	(alloca (sizeof (char const *) * (nargs + 1)));
       unsigned ix = 0;
-      for (auto &word : *words)
-	args[ix++] = word.c_str ();
-      va_start (parms, words);
-      while (auto *suffix = va_arg (parms, std::vector<std::string> const *))
-	for (auto &word : *suffix)
-	  args[ix++] = word.c_str ();
-      va_end (parms);
+      for (auto iter = words.begin (); iter != words.end (); ++iter)
+	args[ix++] = iter->c_str ();
       args[ix] = nullptr;
 
       if ((fd_in <= 2 || dup2 (fd_in, 0) >= 0)

@@ -25,7 +25,7 @@ private:
 public:
   void Read (unsigned subcode, int poll_fd, Logger &);
 
-  bool Spawn (std::vector<std::string> const &cmd, int poll_fd, int token = -1);
+  bool Spawn (std::vector<std::string> &cmd, int poll_fd, int token = -1);
   int Reap (int status);
   bool IsPid (pid_t p) const
   {
@@ -69,7 +69,7 @@ void Job::Read (unsigned subcode, int poll_fd, Logger &log)
     }
 }
 
-bool Job::Spawn (std::vector<std::string> const &cmd, int poll_fd, int token)
+bool Job::Spawn (std::vector<std::string> &cmd, int poll_fd, int token)
 {
   Assert (!state && buffers[0].empty () && buffers[0].empty ());
 
@@ -95,44 +95,25 @@ bool Job::Spawn (std::vector<std::string> const &cmd, int poll_fd, int token)
 	Unreachable ();
     }
 
-  pid = fork ();
-  if (!pid)
-    {
-      // Child
-      unsigned nargs = cmd.size () + 1;
-      auto args = reinterpret_cast<char const **> (alloca (sizeof (char const *)
-							   * (nargs + 1)));
-      unsigned ix = 0;
-      for (auto iter = cmd.begin (); iter != cmd.end (); ++iter)
-	args[ix++] = iter->c_str ();
-      args[ix++] = command.c_str ();
-      args[ix] = nullptr;
-
-      if (dup2 (job_fds[0], 1) < 0
-	  || dup2 (job_fds[1], 2) < 0
-	  || execvp (args[0], const_cast<char **> (args)))
-	{
-	  int err = errno;
-	  // FIXME: Use a pipe to tell our parent explicitly
-	}
-      exit (2);
-    }
+  cmd.push_back (command);
+  pid = Joust::Spawn (-1, job_fds[0], job_fds[1], cmd);
+  cmd.pop_back ();
 
   close (job_fds[0]);
   close (job_fds[1]);
 
   state = 3;
 
-  if (pid != pid_t (-1))
+  if (pid < 0)
     {
-      // Keep the make token
-      make_token = token;
-      return true;
+      // FIXME: Log error
+      state--;
+      return false;
     }
 
-  // FIXME: Failed
-  state--;
-  return false;
+  // Keep the make token
+  make_token = token;
+  return true;
 }
 
 int Job::Reap (int status)

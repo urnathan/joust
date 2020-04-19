@@ -11,7 +11,6 @@
 namespace Joust
 {
 // Return pid_t or negated errno
-pid_t Spawn [[gnu::sentinel]]
-  (int fd_in, int fd_out, int fd_err,
-   std::vector<std::string> const *words, ...);
+pid_t Spawn (int fd_in, int fd_out, int fd_err,
+	     std::vector<std::string> const &words);
 }
