@@ -55,7 +55,7 @@ int main (int argc, char *argv[])
   {
     std::vector<char const *> prefixes; // Pattern prefixes
     std::vector<char const *> defines;  // Var defines
-    char const *include = nullptr;  // file of var defines
+    char const *include = nullptr;  // File of var defines
     bool help = false;
     bool version = false;
     bool verbose = false;
@@ -83,7 +83,7 @@ int main (int argc, char *argv[])
       {"version", 0, offsetof (Flags, version), nullptr, nullptr, "Version"},
       {"verbose", 'v', offsetof (Flags, verbose), nullptr, nullptr, "Verbose"},
       {nullptr, 'D', offsetof (Flags, defines), append, "+var=val", "Define"},
-      {"include", 'i', offsetof (Flags, include), nullptr,
+      {"defines", 'd', offsetof (Flags, include), nullptr,
        "file", "File of defines"},
       {"prefix", 'p', offsetof (Flags, prefixes), append,
        "prefix", "Pattern prefix (repeatable)"},
@@ -106,11 +106,11 @@ int main (int argc, char *argv[])
   if (argno == argc)
     Fatal ("pattern filename missing");
   char const *patternFile = argv[argno++];
-  char const *outputFile = "-";
+  char const *testFile = "";
   if (argno != argc)
-    outputFile = argv[argno++];
+    testFile = argv[argno++];
   if (argno != argc)
-    Fatal ("unexpected argument after '%s'", outputFile);
+    Fatal ("unexpected argument after '%s'", testFile);
 
   if (!flags.prefixes.size ())
     flags.prefixes.push_back ("CHECK");
@@ -141,7 +141,7 @@ int main (int argc, char *argv[])
       // FIXME: dump the patterns
     }
 
-  engine.Process (outputFile);
+  engine.Process (testFile);
 
   engine.Finalize ();
 

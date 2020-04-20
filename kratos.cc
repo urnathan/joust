@@ -84,7 +84,7 @@ int main (int argc, char *argv[])
       {"version", 0, offsetof (Flags, version), nullptr, nullptr, "Version"},
       {"verbose", 'v', offsetof (Flags, verbose), nullptr, nullptr, "Verbose"},
       {nullptr, 'D', offsetof (Flags, defines), append, "+var=val", "Define"},
-      {"include", 'i', offsetof (Flags, include), nullptr,
+      {"defines", 'd', offsetof (Flags, include), nullptr,
        "file", "File of defines"},
       {nullptr, 0, 0, nullptr, nullptr, nullptr}
     };

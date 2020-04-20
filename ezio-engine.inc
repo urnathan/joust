@@ -264,6 +264,7 @@ void Engine::Process (std::string_view const &text, bool eof)
   bool maybe_captures = false;
 
   // Look in the current frame
+  bool seen_error = false;
   Frame &frame = frames[frameIndex];
   for (unsigned ix = bodyIndex; ix != frame.body.size (); ix++)
     {
@@ -271,15 +272,17 @@ void Engine::Process (std::string_view const &text, bool eof)
       auto expn = p->Expand (syms);
       if (expn != Regex::FOUND)
 	{
+	  // We couldn't compile the pattern
 	  if (expn == Regex::NOTFOUND)
 	    p->Error () << "match contains unexpandable escape";
+	  seen_error = true;
 	  continue;
 	}
 
       switch (p->GetKind ())
 	{
 	case Pattern::NEXT:
-	  Assert (ix == bodyIndex);
+	  Assert (ix == bodyIndex || p->Errored () || seen_error);
 	  [[fallthrough]];
 	case Pattern::MATCH:
 	  {
@@ -362,7 +365,7 @@ void Engine::Process (std::string_view const &text, bool eof)
 void Engine::Process (char const *file)
 {
   int fd = 0;
-  if (file[0] != '-' || file[1])
+  if (file[file[0] == '-'])
     {
       fd = open (file, O_RDONLY | O_CLOEXEC);
       if (fd < 0)

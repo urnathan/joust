@@ -76,10 +76,10 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
       << " out> " << pipe.srcsink[1] << '\n';
 
   static char const *const outs[] = {" out| ", " err| "};
-  unsigned fd = 2;
+  unsigned fd = 0;
   while (++iter != pipe.commands.end ())
     s << iter->File () << ':' << iter->Line ()
-      << outs[--fd] << *iter << '\n';
+      << outs[fd++] << *iter << '\n';
 
   return s;
 }
@@ -120,6 +120,8 @@ bool Pipeline::Execute (Logger &logger)
 
   // Pipes between commands.  The final command (if any) gets stderr,
   // the one before that (if any) gets stdout
+  // FIXME: We need to buffer at least one, so that the ultimate eater
+  // of our stdout/stderr doesn't see randomly interleaved text
   for (unsigned ix = 1; commands.size () - ix; ix++)
     {
       // pipe ends: 0-read from, 1-write to

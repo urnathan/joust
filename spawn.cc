@@ -6,8 +6,6 @@
 #include "spawn.hh"
 // NMS
 #include "fatal.hh"
-// C
-# include <stdarg.h>
 // OS
 #include <fcntl.h>
 #include <unistd.h>

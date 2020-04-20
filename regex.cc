@@ -16,7 +16,7 @@ namespace Joust::Regex {
 
 void Protect (std::string &dst, std::string_view const &src)
 {
-  constexpr std::string_view meta (R"([]{}()*+?.\^$|)");
+  constexpr std::string_view meta (R"([{()*+?.\^$|)");
 
   dst.reserve (dst.size () + src.size ());
 

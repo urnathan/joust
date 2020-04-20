@@ -59,8 +59,8 @@ int main (int argc, char *argv[])
     bool version = false;
     bool verbose = false;
     unsigned jobs = 0;
-    char const *in = nullptr;
-    char const *out = "-";
+    char const *in = "";
+    char const *out = "";
   } flags;
   constexpr auto uint_fn
     = [] (Option const *option, char const *opt, char const *arg, void *f)
@@ -100,7 +100,7 @@ int main (int argc, char *argv[])
 
   // Get the listing FD
   int in_fd = 0;
-  if (flags.in && (flags.in[0] != '-' || flags.in[1]))
+  if (flags.in[flags.in[0] == '-'])
     {
       in_fd = open (flags.in, O_RDONLY | O_CLOEXEC);
       if (in_fd < 0)
