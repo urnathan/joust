@@ -211,6 +211,8 @@ void Engine::Fini (std::ostream *summary)
   poll_fd = -1;
   close (sig_fd);
   sig_fd = -1;
+
+  // FIXME: Restore sigmask
 }
 
 void Engine::ReadInput ()

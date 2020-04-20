@@ -27,6 +27,9 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/epoll.h>
+#include <sys/fcntl.h>
+#include <sys/signalfd.h>
 #include <sys/wait.h>
 
 using namespace NMS;
@@ -34,7 +37,7 @@ using namespace Joust;
 
 // FIXME: add RUN-ITERATE: var {val1} {val2} ...
 // FIXME: expand variables upon execution
-// FIXME: add RUN-FORWARD
+// FIXME: add RUN-COPY: way of copying files to remote
 
 namespace {
 

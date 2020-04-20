@@ -148,45 +148,126 @@ bool Pipeline::Execute (Logger &logger)
 	subtasks++;
   }
 
+  // Signal fd and block sigchild 
+  sigset_t sigmask, sigold;
+  sigemptyset (&sigmask);
+  static constexpr unsigned char sigs[] =
+    {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, 0 };
+  for (unsigned ix = 0; sigs[ix]; ix++)
+    sigaddset (&sigmask, sigs[ix]);
+  int sig_fd = signalfd (-1, &sigmask, SFD_NONBLOCK | SFD_CLOEXEC);
+  Assert (sig_fd >= 0);
+  if (sigprocmask (SIG_BLOCK, &sigmask, &sigold) < 0)
+    Unreachable ();
+
+  int poll_fd = epoll_create1 (EPOLL_CLOEXEC);
+  Assert (poll_fd >= 0);
+  epoll_event ev;
+  ev.events = EPOLLIN;
+  ev.data.u64 = 0;
+  if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
+    Unreachable ();
+
   // Wait for completion
   bool signalled = false;
   int exit_code = -1;
   while (subtasks)
     {
-      int status;
-      pid_t pid = wait (&status);
-      Assert (pid > 0);
-      for (auto iter = commands.begin (); iter != commands.end (); ++iter)
-	if (pid == iter->pid)
-	  {
-	    bool sig = false;
-	    int ex = 0;
-	    if (WIFEXITED (status))
-	      ex = WEXITSTATUS (status);
-	    else if (WIFSIGNALED (status))
-	      {
-		ex = WTERMSIG (status);
-		sig = true;
-	      }
-	    else
-	      break;
+      constexpr int max_events = 20;
+      epoll_event events[max_events];
 
-	    subtasks--;
-	    if (iter == commands.begin ()
-		&& (kind != REQUIRE || !sig))
+      int count = epoll_wait (poll_fd, events, max_events, -1);
+      if (count < 0)
+	{
+	  count = 0;
+	  Assert (errno == EINTR);
+	}
+
+      for (int ix = 0; ix != count; ix++)
+	if (uint32_t cookie = events[ix].data.u32)
+	  // FIXME: for future expansion
+	  Unreachable ();
+	else
+	  {
+	    // Signal
+	    signalfd_siginfo sig;
+	    ssize_t bytes = read (sig_fd, &sig, sizeof (sig));
+	    Assert (bytes == sizeof (sig));
+
+	    switch (sig.ssi_signo)
 	      {
-		signalled = sig;
-		exit_code = ex;
+	      case SIGCHLD:
+		// Get child status.  There could be multiple children
+		// to deal with.
+		{
+		  int status;
+		  while (pid_t child = waitpid (-1, &status, WNOHANG))
+		    {
+		      if (child == pid_t (-1))
+			{
+			  Assert (!subtasks);
+			  break;
+			}
+
+		      for (auto iter = commands.begin ();
+			   iter != commands.end (); ++iter)
+			if (child == iter->pid)
+			  {
+			    bool is_sig = false;
+			    int ex = 0;
+			    if (WIFEXITED (status))
+			      ex = WEXITSTATUS (status);
+			    else if (WIFSIGNALED (status))
+			      {
+				ex = WTERMSIG (status);
+				is_sig = true;
+			      }
+			    else
+			      goto found;
+
+			    iter->pid = -1;
+			    subtasks--;
+			    if (iter == commands.begin ()
+				&& (kind != REQUIRE || !is_sig))
+			      {
+				signalled = is_sig;
+				exit_code = ex;
+			      }
+			    else
+			      {
+				iter->Error ()
+				  << '\'' << iter->words[0] << "' exited with "
+				  << (is_sig ? "signal " : "code ") << ex;
+				Result (logger, Logger::ERROR);
+			      }
+			    goto found;
+			  }
+		      Unreachable ();
+		    found:;
+		    }
+		}
+		break;
+		
+	      case SIGHUP:
+	      case SIGINT:
+	      case SIGQUIT:
+		{
+		  // FIXME: Terminate application, release tokens to make
+		  Unreachable ();
+		}
+		break;
+		
+	      case SIGPIPE:
+	      default:
+		Unreachable ();
 	      }
-	    else
-	      {
-		iter->Error ()
-		  << '\'' << iter->words[0] << "' exited with "
-		  << (sig ? "signal " : "code ") << ex;
-		Result (logger, Logger::ERROR);
-	      }
+	    
 	  }
     }
+      
+  close (poll_fd);
+  close (sig_fd);
+  sigprocmask (SIG_SETMASK, &sigold, nullptr);
 
   bool pass = (exit_code >= 0
 	       && signalled == (kind == SIGNAL)
@@ -209,30 +290,3 @@ void Pipeline::Result (Logger &logger, Logger::Status status)
   logger.Result (status, cmd.file, cmd.line)
     << kinds[kind] << ' ' << cmd.words.front ();
 }
-
-#if 0
-// RUN: cmd args \?
-// RUN: file> cmd args >file 2>file |
-// RUN: next
-// RUN: {...} $var ${var}
-// RUN:N ....
-// RUN-SIGNAL:N/name ...
-// RUN-REQUIRE: program args ...
-// RUN-END:
-// $tmp $test $basesrc $srcpath
-#endif
-/*
-
-// DRAKE: Dynamic Response And Keyboard Emulation	-*- mode:c++ -*-
-// ALOY: Apply List, Observe Yield		-*- mode:c++ -*-
-// KRATOS: Kapture Run And Test Output Safely	-*- mode:c++ -*-
-// EZIO: Expect Zero Irregularities Observed	-*- mode:c++ -*-
-
-// cat | aloy ... -jN subcmd options
-// MAKEFLAGS --jobserver-auth=R,W
-
-JOUST Journal Of User Scripted Tests
-JOUST Journal Of Utterly Stupid Tests
-
-
-*/

@@ -16,6 +16,7 @@ namespace Joust::Regex {
 
 void Protect (std::string &dst, std::string_view const &src)
 {
+  // ) needs escaping, } must not be escaped, ] seems either way
   constexpr std::string_view meta (R"([{()*+?.\^$|)");
 
   dst.reserve (dst.size () + src.size ());
