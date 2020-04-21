@@ -90,62 +90,91 @@ bool Pipeline::Execute (Logger &logger)
 
   std::cerr << *this;
 
-  auto &cmd = commands.front ();
-
-  char const *in = srcsink[0].c_str ();
-  if (!*in)
-    in = "/dev/null";
-  cmd.stdin = open (in, O_RDONLY | O_CLOEXEC);
-  if (cmd.stdin < 0)
-    {
-      int err = errno;
-      cmd.Error () << "cannot read '" << in << "': " << strerror (err);
-    }
-
   int fds[2] {-1, -1}; // sinks of cmd[0]
+  {
+    auto &cmd = commands.front ();
 
-  if (!srcsink[1].empty ())
-    {
-      // stdout is to a file
-      fds[0] = open (srcsink[1].c_str (),
-		     O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
-		     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-      if (fds[0] < 0)
-	{
-	  int err = errno;
-	  cmd.Error () << "cannot write '" << srcsink[1] << "': "
-		       << strerror (err);
-	}
-    }
+    char const *in = srcsink[0].c_str ();
+    if (!*in)
+      in = "/dev/null";
+    cmd.stdin = open (in, O_RDONLY | O_CLOEXEC);
+    if (cmd.stdin < 0)
+      {
+	int err = errno;
+	cmd.Error () << "cannot read '" << in << "': " << strerror (err);
+      }
 
-  // Pipes between commands.  The final command (if any) gets stderr,
-  // the one before that (if any) gets stdout
-  // FIXME: We need to buffer at least one, so that the ultimate eater
-  // of our stdout/stderr doesn't see randomly interleaved text
-  for (unsigned ix = 1; commands.size () - ix; ix++)
-    {
-      // pipe ends: 0-read from, 1-write to
-      int pipe[2];
-      if (pipe2 (pipe, O_CLOEXEC) < 0)
-	{
-	  int err = errno;
-	  cmd.Error () << "cannot create pipe: " << strerror (err);
-	}
-      else
-	{
-	  fds[2 - ix] = pipe[1];
-	  commands[commands.size () - ix].stdin = pipe[0];
-	}
-    }
+    if (!srcsink[1].empty ())
+      {
+	// stdout is to a file
+	fds[0] = open (srcsink[1].c_str (),
+		       O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
+		       S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP
+		       | S_IROTH | S_IWOTH);
+	if (fds[0] < 0)
+	  {
+	    int err = errno;
+	    cmd.Error () << "cannot write '" << srcsink[1] << "': "
+			 << strerror (err);
+	  }
+      }
+    // Pipes between commands.  The final command (if any) gets stderr,
+    // the one before that (if any) gets stdout
+    // FIXME: We need to buffer at least one, so that the ultimate eater
+    // of our stdout/stderr doesn't see randomly interleaved text
+    for (unsigned ix = 1; commands.size () - ix; ix++)
+      {
+	// pipe ends: 0-read from, 1-write to
+	int pipe[2];
+	if (pipe2 (pipe, O_CLOEXEC) < 0)
+	  {
+	    int err = errno;
+	    cmd.Error () << "cannot create pipe: " << strerror (err);
+	  }
+	else
+	  {
+	    fds[2 - ix] = pipe[1];
+	    commands[commands.size () - ix].stdin = pipe[0];
+	  }
+      }
+  }
 
+  int poll_fd = epoll_create1 (EPOLL_CLOEXEC);
+  Assert (poll_fd >= 0);
+  epoll_event ev;
+
+  // We must buffer the 4 streams from the 2 filters, otherwise the
+  // output can be randomly intermixed, and that'll be terribly
+  // confusing at best.
+  ReadBuffer streams[4];
+  unsigned num_streams = 0;
   unsigned subtasks = 0;
   {
     auto iter = commands.begin ();
     if (iter->Execute (fds[0], fds[1]))
       subtasks++;
     while (++iter != commands.end ())
-      if (iter->Execute (-1, -1))
-	subtasks++;
+      {
+	// pipe ends: 0-read from, 1-write to
+	int pipe[2][2] = {{-1,-1}, {-1,-1}};
+	if (pipe2 (pipe[0], O_CLOEXEC) < 0
+	    || pipe2 (pipe[1], O_CLOEXEC) < 0)
+	  {
+	    int err = errno;
+	    iter->Error () << "cannot create pipe: " << strerror (err);
+	  }
+	if (iter->Execute (pipe[0][1], pipe[1][1]))
+	  subtasks++;
+	for (unsigned ix = 0; ix != 2; ix++)
+	  {
+	    close (pipe[ix][1]);
+	    streams[num_streams++].Open (pipe[ix][0]);
+	    ev.events = EPOLLIN;
+	    ev.data.u64 = num_streams;
+	    if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe[ix][0], &ev) < 0)
+	      Unreachable ();
+	  }
+      }
   }
 
   // Signal fd and block sigchild 
@@ -159,10 +188,6 @@ bool Pipeline::Execute (Logger &logger)
   Assert (sig_fd >= 0);
   if (sigprocmask (SIG_BLOCK, &sigmask, &sigold) < 0)
     Unreachable ();
-
-  int poll_fd = epoll_create1 (EPOLL_CLOEXEC);
-  Assert (poll_fd >= 0);
-  epoll_event ev;
   ev.events = EPOLLIN;
   ev.data.u64 = 0;
   if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
@@ -171,7 +196,7 @@ bool Pipeline::Execute (Logger &logger)
   // Wait for completion
   bool signalled = false;
   int exit_code = -1;
-  while (subtasks)
+  while (subtasks || num_streams)
     {
       constexpr int max_events = 20;
       epoll_event events[max_events];
@@ -185,8 +210,28 @@ bool Pipeline::Execute (Logger &logger)
 
       for (int ix = 0; ix != count; ix++)
 	if (uint32_t cookie = events[ix].data.u32)
-	  // FIXME: for future expansion
-	  Unreachable ();
+	  {
+	    unsigned stream = cookie - 1;
+	    Assert (stream < 4 && num_streams);
+	    if (int done = streams[stream].Read ())
+	      {
+		if (done >= 0)
+		  {
+		    static char const *const io[] = {" stdout:", " stderr:"};
+		    auto &cmd = commands[1 + stream / 2];
+		    cmd.Error ()
+		      << "failed reading "
+		      << cmd.words.front () << io[stream & 1]
+		      << strerror (done);
+		    Result (logger, Logger::ERROR);
+		  }
+		int fd = streams[stream].Close ();
+
+		epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
+		close (fd);
+		num_streams--;
+	      }
+	  }
 	else
 	  {
 	    // Signal
@@ -233,10 +278,11 @@ bool Pipeline::Execute (Logger &logger)
 				signalled = is_sig;
 				exit_code = ex;
 			      }
-			    else
+			    else if (is_sig || ex)
 			      {
 				iter->Error ()
-				  << '\'' << iter->words[0] << "' exited with "
+				  << '\'' << iter->words.front ()
+				  << "' exited with "
 				  << (is_sig ? "signal " : "code ") << ex;
 				Result (logger, Logger::ERROR);
 			      }
@@ -261,13 +307,17 @@ bool Pipeline::Execute (Logger &logger)
 	      default:
 		Unreachable ();
 	      }
-	    
 	  }
     }
-      
+
   close (poll_fd);
   close (sig_fd);
   sigprocmask (SIG_SETMASK, &sigold, nullptr);
+
+  for (unsigned ix = 0; ix != 4; ix++)
+    if (size_t size = streams[ix].size ())
+      (ix & 1 ? std::cerr : std::cout)
+	<< std::string_view (streams[ix].data (), size);
 
   bool pass = (exit_code >= 0
 	       && signalled == (kind == SIGNAL)

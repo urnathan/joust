@@ -9,6 +9,7 @@
 #include "error.hh"
 #include "lexer.hh"
 #include "logger.hh"
+#include "readBuffer.hh"
 #include "scanner.hh"
 #include "spawn.hh"
 #include "symbols.hh"
