@@ -75,7 +75,7 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
     s << iter->File () << ':' << iter->Line ()
       << " out> " << pipe.srcsink[1] << '\n';
 
-  static char const *const outs[] = {" out| ", " err| "};
+  static char const *const outs[] = {" out|", " err|"};
   unsigned fd = 0;
   while (++iter != pipe.commands.end ())
     s << iter->File () << ':' << iter->Line ()
@@ -314,10 +314,23 @@ bool Pipeline::Execute (Logger &logger)
   close (sig_fd);
   sigprocmask (SIG_SETMASK, &sigold, nullptr);
 
+  auto iter = commands.begin ();
   for (unsigned ix = 0; ix != 4; ix++)
-    if (size_t size = streams[ix].size ())
-      (ix & 1 ? std::cerr : std::cout)
-	<< std::string_view (streams[ix].data (), size);
+    {
+      if (!(ix & 1))
+	++iter;
+      if (size_t size = streams[ix].size ())
+	{
+	  std::ostream *s = &std::cout;
+	  if (ix & 1)
+	    {
+	      s = &std::cerr;
+	      *s << "#ERR " << iter->File () << ':' << iter->Line ()
+		 << *iter << '\n';
+	    }
+	  *s << std::string_view (streams[ix].data (), size);
+	}
+    }
 
   bool pass = (exit_code >= 0
 	       && signalled == (kind == SIGNAL)

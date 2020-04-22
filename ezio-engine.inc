@@ -61,9 +61,8 @@ public:
   void Finalize ();
 
   friend std::ostream &operator<< (std::ostream &, Engine const &);
-  friend std::ostream &operator<< (std::ostream &s, Engine::Frame const &e);
-  friend std::ostream &operator<< (std::ostream &s,
-				   std::vector<Engine::Frame> const &vec);
+  friend std::ostream &operator<< (std::ostream &s, Frame const &e);
+  friend std::ostream &operator<< (std::ostream &s, std::vector<Frame> const &);
 };
 
 Engine::Frame::~Frame ()
@@ -83,68 +82,33 @@ Engine::~Engine ()
 
 std::ostream &operator<< (std::ostream &s, std::vector<Pattern *> const &vec)
 {
-  s << '{';
-  for (unsigned ix = 0, len = vec.size (); ix != len; ix++)
-    {
-      if (ix)
-	s << ",\n";
-      s << '[' << ix << ']' << *vec[ix];
-    }
-  s << '}';
+  for (auto iter = vec.begin (); iter != vec.end (); ++iter)
+    s << **iter;
+
   return s;
 }
 
 std::ostream &operator<< (std::ostream &s, std::vector<Engine::Frame> const &vec)
 {
-  s << "{\n";
-  for (unsigned ix = 0, len = vec.size (); ix != len; ix++)
-    {
-      if (ix)
-	s << ",\n";
-      s << '[' << ix << ']' << vec[ix];
-    }
-  s << '}';
+  for (auto iter = vec.begin (); iter != vec.end (); ++iter)
+    s << *iter;
+
   return s;
 }
 
 std::ostream &operator<< (std::ostream &s, Engine::Frame const &f)
 {
-  s << '{';
-  char const *eol = "";
-  if (!f.nones.empty ())
-    {
-      s << "nones=" << f.nones;
-      eol = "\n";
-    }
+  if (auto *h = f.head)
+    s << *h;
 
-  if (auto h = f.head)
-    {
-      s << eol << "head=" << *h;
-      eol = "\n";
-    }
-
-  if (!f.body.empty ())
-    s << eol << "body=" << f.body;
-
-  s << '}';
-
+  s << f.body << f.nones;
+ 
   return s;
 }
 
 std::ostream &operator<< (std::ostream &s, Engine const &e)
 {
-  s << '{';
-  char const *eol = "";
-  if (!e.nevers.empty ())
-    {
-      s << "nevers=" << e.nevers;
-      eol = "\n";
-    }
-  
-  if (!e.frames.empty ())
-    s << eol << "frames=" << e.frames;
-
-  s << '}';
+  s << e.frames << e.nevers;
 
   return s;
 }

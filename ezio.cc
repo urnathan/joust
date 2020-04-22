@@ -123,6 +123,9 @@ int main (int argc, char *argv[])
     syms.text.Define (std::string_view (d));
   if (flags.include)
     syms.text.Read (flags.include);
+  if (auto *vars = getenv ("JOUST"))
+    syms.text.Read (vars);
+
   Engine engine (syms);
   {
     std::string pathname = syms.text.Origin (patternFile);
@@ -138,7 +141,7 @@ int main (int argc, char *argv[])
 
   if (flags.verbose)
     {
-      // FIXME: dump the patterns
+      std::cerr << engine << '\n';
     }
 
   engine.Process (testFile);

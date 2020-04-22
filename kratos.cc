@@ -105,7 +105,6 @@ int main (int argc, char *argv[])
       BuildNote (stdout);
       return 0;
     }
-  // Scan the pattern file
   if (argno == argc)
     Fatal ("expected test filename");
   char const *testFile = argv[argno++];
@@ -117,6 +116,8 @@ int main (int argc, char *argv[])
     syms.Define (std::string_view (d));
   if (flags.include)
     syms.Read (flags.include);
+  if (auto *vars = getenv ("JOUST"))
+    syms.Read (vars);
 
   std::vector<Pipeline> pipes;
   {

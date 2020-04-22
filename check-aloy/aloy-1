@@ -1,0 +1,29 @@
+# Test Aloy runs as expected
+
+# RUN: <$srcdir$src aloy $SHELL $srcdir$src |
+# RUN: ezio -p STD $src |
+# RUN: ezio -p ERR $src
+
+# we'll invoke the shell on each word here
+echo "$@" >&2
+exit 0
+
+and we're done
+
+# STD: Test run:
+# STD: # Summary of
+# STD: PASS 0
+
+# ERR: Test run:
+# ERR-BLOCK: Test:0 echo
+# ERR-NEXT: ALOY:{:.*}zsh {:.*}/aloy-1 echo
+# ERR-NEXT: echo
+# ERR-BLOCK: Test:1 "$@"
+# ERR-BLOCK: Test:2 >&2
+# ERR-BLOCK: Test:3 exit
+# ERR-BLOCK: Test:4 0
+# ERR-BLOCK: Test:5 and
+# ERR-BLOCK: Test:6 we're
+# ERR-BLOCK: Test:7 done
+# ERR-BLOCK: Summary of 8 tests
+# ERR: PASS 0

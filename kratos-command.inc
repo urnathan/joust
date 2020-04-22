@@ -120,8 +120,7 @@ std::ostream &operator<< (std::ostream &s, Command const &cmd)
 {
   for (auto witer = cmd.words.begin (); witer != cmd.words.end (); ++witer)
     {
-      if (witer != cmd.words.begin ())
-	s << ' ';
+      s << ' ';
 
       std::string_view const word = *witer;
       bool quoted = false;

@@ -390,7 +390,7 @@ Error Pattern::Error ()
 std::ostream &operator<< (std::ostream &s, Pattern const &p)
 {
   return s << p.file << ':' << p.line << ":"
-	   << p.kinds[p.GetKind ()] << ", " << p.atoms;
+	   << p.kinds[p.GetKind ()] << ", " << p.atoms << '\n';
 }
 
 // match-escape: IDENTIFIER-opt COLON regexp-expand CLOSE
