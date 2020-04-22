@@ -694,9 +694,9 @@ bool Pattern::Canonicalize ()
   if (acc.size ())
     canon.push_back (Token (Token::STRING, std::move (acc)));
 
-  if (!canon.size ())
+  if (!canon.size () && kind < CAPTURE_HWM)
     {
-      Error () << "pattern is empty";
+      Error () << kinds[kind] << " pattern is empty";
       return false;
     }
 

@@ -1,0 +1,15 @@
+# test kratos recognizes run lines with exit codes etc
+
+# RUN: echo bob | ezio -p BOBOUT $src | ezio -p BOBERR $src
+# RUN:1 $SHELL -c false
+# RUN:! $SHELL -c false
+
+# RUN-END:
+
+# not executed
+# RUN: false
+
+BOBOUT: bob
+BOBOUT-NEXT: $EOF
+
+BOBERR-NEVER:
