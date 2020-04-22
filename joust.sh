@@ -7,8 +7,8 @@ PATH=$paths:$PATH
 
 base=$1
 shift
-srcdir=$1
-shift
+
+. $JOUST
 
 setopt nullglob
 for subdir in $@ ; do
