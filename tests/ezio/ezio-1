@@ -1,0 +1,47 @@
+Yeah, let's use ezio to check itself!
+RUN: <$srcdir$src ezio $src |
+RUN: ezio -p OUT $src |
+RUN: ezio -p OUT -p ERR $src
+RUN-END:
+
+# this is what the ezio we're checking checks
+CHECK: Yeah,
+CHECK-NEXT: RUN: {:.*} {ezio:e.io} {inp:[^ ]+} |
+CHECK: $ezio -p OUT $inp |
+CHECK-NEXT: $ezio -p OUT -p ERR $inp
+CHECK-NONE: RUN
+CHECK-BLOCK: RUN-END:
+CHECK-BLOCK: CHECK: Yeah
+
+# these are what the ezios checking the earlier invokcation checks
+# we must be careful to not hide CHECK lines the first ezio triggers on
+OUT-OPTION: matchSol
+OUT-NEVER: ERROR:
+OUT-NEVER: FAIL:
+OUT-OPTION: !matchSol
+ERR-OPTION: matchSol
+ERR: 1:
+ERR-OPTION: !matchEol
+OUT: PASS: {:.*}:BLOCK Yeah
+ERR-OPTION: matchSol
+ERR-NEXT: 2:
+ERR-OPTION: !matchEol
+OUT-NEXT: PASS: {:.*}:NEXT RUN:
+ERR-OPTION: matchSol
+ERR-NEXT: 3:
+ERR-OPTION: !matchEol
+OUT-NEXT: PASS: {:.*}:BLOCK {:.}ezio -p
+ERR-OPTION: matchSol
+ERR-NEXT: 4:
+ERR-OPTION: !matchEol
+OUT-NEXT: PASS: {:.*}:NEXT {:.}ezio -p
+ERR-OPTION: matchSol
+ERR-NEXT: 5:
+ERR-OPTION: !matchEol
+OUT-NEXT: PASS: {:.*}:NONE RUN
+OUT-NEXT: PASS: {:.*}:BLOCK RUN-END:
+ERR-OPTION: matchSol
+ERR-NEXT: 6:
+ERR-BLOCK: 8:C{:.}ECK: Yeah,
+ERR-OPTION: !matchEol
+OUT-NEXT: PASS: {:.*}:BLOCK C{:.}ECK: Yeah

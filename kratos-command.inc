@@ -95,16 +95,6 @@ bool Command::Execute (int fd_out, int fd_err)
 {
   pid_t p = Spawn (stdin, fd_out, fd_err, words);
 
-  if (stdin > 2)
-    {
-      close (stdin);
-      stdin = -1;
-    }
-  if (fd_out > 2)
-    close (fd_out);
-  if (fd_err > 2)
-    close (fd_err);
-
   if (p < 0)
     {
       Error () << "failed to spawn process '" << words[0]

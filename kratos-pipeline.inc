@@ -90,7 +90,7 @@ bool Pipeline::Execute (Logger &logger)
 
   std::cerr << *this;
 
-  int fds[2] {-1, -1}; // sinks of cmd[0]
+  int fds[2] {1, 2}; // sinks of cmd[0]
   {
     auto &cmd = commands.front ();
 
@@ -116,8 +116,10 @@ bool Pipeline::Execute (Logger &logger)
 	    int err = errno;
 	    cmd.Error () << "cannot write '" << srcsink[1] << "': "
 			 << strerror (err);
+	    fds[0] = 1;
 	  }
       }
+
     // Pipes between commands.  The final command (if any) gets stderr,
     // the one before that (if any) gets stdout
     // FIXME: We need to buffer at least one, so that the ultimate eater

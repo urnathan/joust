@@ -1,0 +1,10 @@
+#! zsh
+
+. $JOUST
+
+setopt nullglob
+for subdir in $@ ; do
+    pushd $srcdir
+    echo $subdir/*(.^*)
+    popd
+done

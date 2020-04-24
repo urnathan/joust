@@ -96,11 +96,14 @@ bool Job::Spawn (std::vector<std::string> &cmd, int poll_fd, int token)
     }
 
   cmd.push_back (command);
-  pid = Joust::Spawn (-1, job_fds[0], job_fds[1], cmd);
+  int null_fd = open ("/dev/null", O_RDONLY | O_CLOEXEC);
+  if (null_fd < 0)
+    {
+      ; // FIXME: log error
+      null_fd = 0;
+    }
+  pid = Joust::Spawn (null_fd, job_fds[0], job_fds[1], cmd);
   cmd.pop_back ();
-
-  close (job_fds[0]);
-  close (job_fds[1]);
 
   state = 3;
 

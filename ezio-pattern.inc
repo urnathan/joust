@@ -71,8 +71,10 @@ protected:
     : file (parser->GetFile ()), line (parser->GetLine ()),
       kind (kind_), original (text)
   {
-    if (parser->GetMatchLine ())
-      matchSol = matchEol = true;
+    if (parser->GetMatchSol ())
+      matchSol = true;
+    if (parser->GetMatchEol ())
+      matchEol = true;
     if (parser->GetMatchSpace ())
       matchSpace = true;
     if (parser->GetXfail ())

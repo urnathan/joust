@@ -2,8 +2,11 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // Not For Distribution
 
-class Engine 
+class Engine : public Logger
 {
+public:
+  using Parent = Logger;
+
 private:
   struct Frame 
   {
@@ -31,7 +34,6 @@ private:
   };
 
 private:
-  Logger logger;
   Symtab &syms;
   std::vector<Pattern *> nevers;
   std::vector<Frame> frames;
@@ -39,8 +41,8 @@ private:
   unsigned bodyIndex = 0;
 
 public:
-  Engine (Symtab &s)
-    :logger (), syms (s)
+  Engine (Symtab &syms_, std::ostream &sum_, std::ostream &log_)
+    : Parent (sum_, log_), syms (syms_)
   {
   }
   ~Engine ();
@@ -57,7 +59,7 @@ public:
 
 public:
   void Add (Pattern *);
-  void Initialize (Scanner &);
+  void Initialize ();
   void Finalize ();
 
   friend std::ostream &operator<< (std::ostream &, Engine const &);
@@ -161,11 +163,11 @@ void Engine::BodyAdvance (unsigned bIndex)
       auto *p = frame.body[ix];
 
       if (p->Errored ())
-	p->Result (logger, Logger::ERROR);
+	p->Result (*this, Logger::ERROR);
       else if (p->GetKind () != Pattern::NOT)
-	p->Result (logger, false);
+	p->Result (*this, false);
       else if (!p->Matched ())
-	p->Result (logger, true);
+	p->Result (*this, true);
     }
   bodyIndex = bIndex;
 }
@@ -180,9 +182,9 @@ void Engine::FrameAdvance (unsigned fIndex)
       if (head && frame.head)
 	{
 	  if (frame.head->Errored ())
-	    frame.head->Result (logger, Logger::ERROR);
+	    frame.head->Result (*this, Logger::ERROR);
 	  else
-	    frame.head->Result (logger, false);
+	    frame.head->Result (*this, false);
 	}
 
       BodyAdvance (frame.body.size ());
@@ -190,9 +192,9 @@ void Engine::FrameAdvance (unsigned fIndex)
 	{
 	  auto *p = *none;
 	  if (p->Errored ())
-	    p->Result (logger, Logger::ERROR);
+	    p->Result (*this, Logger::ERROR);
 	  else if (!p->Matched ())
-	    p->Result (logger, true);
+	    p->Result (*this, true);
 	}
     }
 
@@ -203,16 +205,16 @@ void Engine::FrameAdvance (unsigned fIndex)
       {
 	auto *p = *never;
 	if (p->Errored ())
-	  p->Result (logger, Logger::ERROR);
+	  p->Result (*this, Logger::ERROR);
 	else if (!p->Matched ())
-	  p->Result (logger, true);
+	  p->Result (*this, true);
       }
 }
 
-void Engine::Initialize (Scanner &scanner)
+void Engine::Initialize ()
 {
   if (frames.empty () && nevers.empty ())
-    scanner.Error () << "nothing to check";
+    Fatal ("nothing to check");
 }
 
 void Engine::Process (std::string_view const &text, bool eof)
@@ -257,14 +259,14 @@ void Engine::Process (std::string_view const &text, bool eof)
 	    if (cmp == Regex::FOUND)
 	      {
 		BodyAdvance (ix);
-		p->Result (logger, true);
+		p->Result (*this, true);
 		bodyIndex = ix + 1;
 		return;
 	      }
 
 	    if (p->GetKind () == Pattern::NEXT)
 	      {
-		p->Result (logger, false);
+		p->Result (*this, false);
 		bodyIndex = ix + 1;
 	      }
 	    else
@@ -274,7 +276,7 @@ void Engine::Process (std::string_view const &text, bool eof)
 
 	case Pattern::NOT:
 	  if (p->Compare (syms, text, eof) == Regex::FOUND)
-	    p->Result (logger, false);
+	    p->Result (*this, false);
 	  continue;
 
 	default:
@@ -303,7 +305,7 @@ void Engine::Process (std::string_view const &text, bool eof)
 	continue;
 
       FrameAdvance (ix);
-      p->Result (logger, true);
+      p->Result (*this, true);
       return;
     }
 
@@ -313,7 +315,7 @@ void Engine::Process (std::string_view const &text, bool eof)
       auto *p = *none;
       if (p->Expand (syms) == Regex::FOUND
 	  && p->Compare (syms, text, eof) == Regex::FOUND)
-	p->Result (logger, false);
+	p->Result (*this, false);
     }
 
   // Look for NEVERs
@@ -322,7 +324,7 @@ void Engine::Process (std::string_view const &text, bool eof)
       auto *p = *never;
       if (p->Expand (syms) == Regex::FOUND
 	  && p->Compare (syms, text, eof) == Regex::FOUND)
-	p->Result (logger, false);
+	p->Result (*this, false);
     }
 }
 
@@ -343,7 +345,8 @@ void Engine::Process (char const *file)
 	       {
 		 struct stat stat;
 		 return fstat (fd_, &stat) ? ~size_t (0) :
-		   (stat.st_mode & S_IFMT) == S_IFREG ? stat.st_size : 0;} (fd);
+		   (stat.st_mode & S_IFMT) == S_IFREG ? stat.st_size : 0;
+	       } (fd);
   if (len == ~size_t (0))
     goto fatal;
 
@@ -397,15 +400,16 @@ void Engine::Process (char const *file)
   auto *begin = reinterpret_cast <char const *> (buffer);
   auto *end = begin + len;
 
-  // Ensure the template ends in a newline
+  // Ensure the file ends in a newline
   if (len && end[-1] != '\n')
     *const_cast <char *> (end++) = '\n';
 
   for (unsigned line = 1; begin != end; line++)
     {
       auto *eol = std::find (begin, end, '\n');
-
-      Process (std::string_view (begin, eol), false);
+      auto text = std::string_view (begin, eol);
+      Log () << line << ':' << text << '\n';
+      Process (text, false);
 
       begin = eol + 1;
     }

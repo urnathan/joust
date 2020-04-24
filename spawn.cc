@@ -42,9 +42,9 @@ int Spawn (int fd_in, int fd_out, int fd_err,
 	args[ix++] = iter->c_str ();
       args[ix] = nullptr;
 
-      if ((fd_in <= 2 || dup2 (fd_in, 0) >= 0)
-	  && (fd_out <= 2 || dup2 (fd_out, 1) >= 0)
-	  && (fd_err <= 2 || dup2 (fd_err, 2) >= 0))
+      if ((fd_in == 0 || dup2 (fd_in, 0) >= 0)
+	  && (fd_out == 1 || dup2 (fd_out, 1) >= 0)
+	  && (fd_err == 2 || dup2 (fd_err, 2) >= 0))
 	execvp (args[0], const_cast<char **> (args));
 
       // Something failed.  write errno to pipe;
@@ -57,13 +57,20 @@ int Spawn (int fd_in, int fd_out, int fd_err,
   // Parent
   close (pipe_fds[1]);
 
-  decltype(errno) err = errno;
+  int err = errno;
   bool failed = false;
   if (pid < 0)
     failed = true;
   else if (read (pipe_fds[0], &err, sizeof (errno)) == sizeof (errno))
     failed = true;
   close (pipe_fds[0]);
+
+  if (fd_in != 0)
+    close (fd_in);
+  if (fd_out != 1)
+    close (fd_out);
+  if (fd_err != 2)
+    close (fd_err);
 
   return failed ? pid_t (-err) : pid;
 }

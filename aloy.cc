@@ -76,7 +76,7 @@ int main (int argc, char *argv[])
       {"version", 0, offsetof (Flags, version), nullptr, nullptr, "Version"},
       {"verbose", 'v', offsetof (Flags, verbose), nullptr, nullptr, "Verbose"},
       {"jobs", 'j', offsetof (Flags, jobs), uint_fn, "+val", "Define"},
-      {"list", 'l', offsetof (Flags, in), nullptr, "file", "List"},
+      {"in", 'i', offsetof (Flags, in), nullptr, "file", "List"},
       {"out", 'o', offsetof (Flags, out), nullptr, "file", "Output"},
       {nullptr, 0, 0, nullptr, nullptr, nullptr}
     };

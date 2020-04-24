@@ -6,6 +6,7 @@ class Engine : public Logger
 {
 public:
   using Parent = Logger;
+
 private:
   enum class FD
   {
@@ -75,8 +76,8 @@ private:
 };
 
 Engine::Engine (unsigned argc, char const *const argv[], unsigned limit,
-		int in, std::ostream &s, std::ostream &l)
-  : Parent (s, l), in_fd (in), job_limit (limit)
+		int in, std::ostream &sum_, std::ostream &log_)
+  : Parent (sum_, log_), in_fd (in), job_limit (limit)
 {
   for (unsigned ix = STATUS_HWM; ix--;)
     counts[ix] = 0;
@@ -323,11 +324,9 @@ void Engine::ReadSignal ()
 			}
 		      completed++;
 		      running--;
-		      goto found;
+		      break;
 		    }
 	      }
-	    Unreachable ();
-	  found:
 	    if (!running)
 	      break;
 	  }
@@ -382,7 +381,6 @@ void Engine::WriteMake ()
 
 bool Engine::Process (int timeout)
 {
-  //  fprintf (stderr, "ret=%u, comp=%u, run=%u, pend=%u\n", retired, completed, running, pending);
   Assert (in_fd >= 0 || running);
   
   constexpr int max_events = 20;

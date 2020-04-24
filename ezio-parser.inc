@@ -11,7 +11,8 @@ class Parser : public Scanner
 
 private:
   bool matchSpace = false;
-  bool matchLine = false;
+  bool matchSol = false;
+  bool matchEol = false;
   bool xfail = false;
   Engine &e;
 
@@ -26,9 +27,13 @@ public:
   {
     return matchSpace;
   }
-  bool GetMatchLine () const
+  bool GetMatchSol () const
   {
-    return matchLine;
+    return matchSol;
+  }
+  bool GetMatchEol () const
+  {
+    return matchEol;
   }
   bool GetXfail () const
   {
@@ -38,7 +43,6 @@ public:
 public:
   void Unparsed (char const *ctx, Token const *);
   void Unlexed (Lexer const &lexer, char const *ctx);
-  void completed ();
 
 protected:
   virtual bool ProcessLine (std::string_view const &variant,
@@ -106,7 +110,11 @@ void Parser::Options (std::string_view const &text)
 	if (token->GetString () == "matchspace")
 	  matchSpace = on;
 	else if (token->GetString () == "matchline")
-	  matchLine = on;
+	  matchSol = matchEol = on;
+	else if (token->GetString () == "matchSol")
+	  matchSol = on;
+	else if (token->GetString () == "matchEol")
+	  matchEol = on;
 	else if (token->GetString () == "xfail")
 	  xfail = on;
 	else

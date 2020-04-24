@@ -19,6 +19,7 @@
 #include "option.hh"
 // C++
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <regex>
 #include <string>
@@ -56,6 +57,8 @@ int main (int argc, char *argv[])
     std::vector<char const *> prefixes; // Pattern prefixes
     std::vector<char const *> defines;  // Var defines
     char const *include = nullptr;  // File of var defines
+    char const *in = "";
+    char const *out = "";
     bool help = false;
     bool version = false;
     bool verbose = false;
@@ -85,6 +88,8 @@ int main (int argc, char *argv[])
       {nullptr, 'D', offsetof (Flags, defines), append, "+var=val", "Define"},
       {"defines", 'd', offsetof (Flags, include), nullptr,
        "file", "File of defines"},
+      {"in", 'i', offsetof (Flags, in), nullptr, "file", "Input"},
+      {"out", 'o', offsetof (Flags, out), nullptr, "file", "Output"},
       {"prefix", 'p', offsetof (Flags, prefixes), append,
        "prefix", "Pattern prefix (repeatable)"},
       {nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -103,15 +108,6 @@ int main (int argc, char *argv[])
       return 0;
     }
 
-  if (argno == argc)
-    Fatal ("pattern filename missing");
-  char const *patternFile = argv[argno++];
-  char const *testFile = "";
-  if (argno != argc)
-    testFile = argv[argno++];
-  if (argno != argc)
-    Fatal ("unexpected argument after '%s'", testFile);
-
   if (!flags.prefixes.size ())
     flags.prefixes.push_back ("CHECK");
 
@@ -126,27 +122,48 @@ int main (int argc, char *argv[])
   if (auto *vars = getenv ("JOUST"))
     syms.text.Read (vars);
 
-  Engine engine (syms);
-  {
-    std::string pathname = syms.text.Origin (patternFile);
-    Parser parser (patternFile, engine);
-
-    // Scan the pattern file
-    parser.ScanFile (pathname, flags.prefixes);
-    engine.Initialize (parser);
-  }
-
-  if (Error::Errors ())
-    Fatal ("failed to construct patterns '%s'", patternFile);
-
-  if (flags.verbose)
+  std::ofstream sum, log;
+  if (!flags.out[flags.out[0] == '-'])
+    flags.out = nullptr;
+  else
     {
-      std::cerr << engine << '\n';
+      std::string out (flags.out);
+      size_t len = out.size ();
+      out.append (".sum");
+      sum.open (out);
+      if (!sum.is_open ())
+	Fatal ("cannot write '%s': %m", out.c_str ());
+      out.erase (len).append (".log");
+      log.open (out);
+      if (!log.is_open ())
+	Fatal ("cannot write '%s': %m", out.c_str ());
     }
 
-  engine.Process (testFile);
+  Engine engine (syms, flags.out ? sum : std::cout, flags.out ? log : std::cerr);
+
+  while (argno != argc)
+    {
+      char const *patternFile = argv[argno++];
+      std::string pathname = syms.text.Origin (patternFile);
+      Parser parser (patternFile, engine);
+
+      // Scan the pattern file
+      parser.ScanFile (pathname, flags.prefixes);
+      if (Error::Errors ())
+	Fatal ("failed to construct patterns '%s'", patternFile);
+    }
+
+  engine.Initialize ();
+
+  if (flags.verbose)
+    engine.Log () << engine << '\n';
+
+  engine.Process (flags.in);
 
   engine.Finalize ();
+
+  sum.close ();
+  log.close ();
 
   return Error::Errors ();
 }
