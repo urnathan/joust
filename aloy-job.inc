@@ -116,7 +116,7 @@ bool Job::Spawn (Logger &log,
  fail:
   int err = errno;
   log.Result (Logger::ERROR)
-    << "failed spawning " << *this << " " << strerror (err);
+    << "failed spawning " << *this << ":" << strerror (err);
 
   if (null_fd > 0)
     close (null_fd);

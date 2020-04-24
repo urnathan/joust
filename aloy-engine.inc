@@ -230,7 +230,8 @@ void Engine::ReadInput ()
   input_buffer.resize (size + (count >= 0 ? count : 0));
   if (count < 0 && errno != EINTR)
     {
-      // FIXME: Log ERROR
+      int err = errno;
+      Result (ERROR) << "failed to read input:" << strerror (err);
       count = 0;
     }
 
@@ -360,9 +361,11 @@ void Engine::StopMake ()
 
 void Engine::ReadMake ()
 {
+  // FIXME: Implement
 }
 
-// Able to write something to the make pipe.  do it.
+// Able to write something to the make pipe.  Do it.
+
 void Engine::WriteMake ()
 {
   size_t tokens = used_tokens.size ();
