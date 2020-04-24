@@ -122,7 +122,7 @@ bool Job::Spawn (Logger &log,
     close (null_fd);
   for (unsigned ix = 0; ix != 2; ix++)
     {
-      close (job_fds[2]);
+      close (job_fds[ix]);
       int fd = buffers[ix].Close ();
       epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
       close (fd);

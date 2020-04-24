@@ -1,0 +1,16 @@
+
+RUN-SIGNAL:ABRT ./die --nested | ezio $src
+
+CHECK-OPTION: matchSol
+CHECK: die: go boom
+CHECK-NEXT: 00-0x{:[0-9a-f]+} {:.*}/fatal.cc:{:[0-9]+} NMS::HCF (char const *,
+CHECK-NEXT: 01-0x{:[0-9a-f]+} {:.*}/die.cc:{:[0-9]+} NestedHCF (int)
+CHECK-NEXT: 02-0x{ret:[0-9a-f]+} {:.*}/die.cc:{:[0-9]+} NestedHCF (int)
+CHECK-NEXT: 03-0x{:$ret} {:.*}/die.cc:{:[0-9]+} NestedHCF (int)
+CHECK-NEXT: 04-0x{:$ret} {:.*}/die.cc:{:[0-9]+} NestedHCF (int)
+CHECK-NEXT: 05-0x{:[0-9a-f]+} {:.*}/die.cc:{:[0-9]+} main
+CHECK-NEXT: Version
+CHECK-NEXT: Report bugs
+CHECK-NEXT: Source
+CHECK-NEXT: Build is
+CHECK-NEXT: $EOF

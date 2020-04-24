@@ -25,6 +25,8 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+// C
+#include <stddef.h>
 // OS
 #include <fcntl.h>
 #include <unistd.h>
