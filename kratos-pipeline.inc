@@ -122,8 +122,6 @@ bool Pipeline::Execute (Logger &logger)
 
     // Pipes between commands.  The final command (if any) gets stderr,
     // the one before that (if any) gets stdout
-    // FIXME: We need to buffer at least one, so that the ultimate eater
-    // of our stdout/stderr doesn't see randomly interleaved text
     for (unsigned ix = 1; commands.size () - ix; ix++)
       {
 	// pipe ends: 0-read from, 1-write to

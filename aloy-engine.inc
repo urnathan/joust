@@ -419,7 +419,7 @@ bool Engine::Process (int timeout)
 	    {
 	      Job *job = reinterpret_cast<Job *> (cookie ^ (cookie & 7));
 
-	      job->Read (cookie & 7, poll_fd, *this);
+	      job->Read (*this, cookie & 7, poll_fd);
 	    }
 	    break;
 	  }
@@ -500,7 +500,7 @@ void Engine::Spawn ()
       {
 	if (job_limit > running)
 	  {
-	    if (iter->Spawn (command, poll_fd))
+	    if (iter->Spawn (*this, command, poll_fd))
 	      running++;
 	    else
 	      completed++;

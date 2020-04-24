@@ -23,9 +23,10 @@ private:
   Job &operator= (Job const &) = delete;
 
 public:
-  void Read (unsigned subcode, int poll_fd, Logger &);
+  void Read (Logger &, unsigned subcode, int poll_fd);
 
-  bool Spawn (std::vector<std::string> &cmd, int poll_fd, int token = -1);
+  bool Spawn (Logger &, std::vector<std::string> &cmd,
+	      int poll_fd, int token = -1);
   int Reap (int status);
   bool IsPid (pid_t p) const
   {
@@ -47,7 +48,7 @@ public:
   friend std::ostream &operator<< (std::ostream &, Job const &);
 };
 
-void Job::Read (unsigned subcode, int poll_fd, Logger &log)
+void Job::Read (Logger &log, unsigned subcode, int poll_fd)
 {
   Assert (subcode < 2 && state > 0);
 
@@ -69,7 +70,8 @@ void Job::Read (unsigned subcode, int poll_fd, Logger &log)
     }
 }
 
-bool Job::Spawn (std::vector<std::string> &cmd, int poll_fd, int token)
+bool Job::Spawn (Logger &log,
+		 std::vector<std::string> &cmd, int poll_fd, int token)
 {
   Assert (!state && buffers[0].empty () && buffers[0].empty ());
 
@@ -77,14 +79,14 @@ bool Job::Spawn (std::vector<std::string> &cmd, int poll_fd, int token)
     // No execute mode, we're done
     return false;
 
-  int job_fds[2];
+  int job_fds[2] {-1, -1};
+  int null_fd = -1;
 
   for (unsigned ix = 0; ix != 2; ix++)
     {
       int pipe[2];
       if (pipe2 (pipe, O_CLOEXEC) < 0)
-	; // FIXME: Log error
-
+	goto fail;
       job_fds[ix] = pipe[1];
       buffers[ix].Open (pipe[0]);
 
@@ -95,28 +97,38 @@ bool Job::Spawn (std::vector<std::string> &cmd, int poll_fd, int token)
 	Unreachable ();
     }
 
-  cmd.push_back (command);
-  int null_fd = open ("/dev/null", O_RDONLY | O_CLOEXEC);
+  null_fd = open ("/dev/null", O_RDONLY | O_CLOEXEC);
   if (null_fd < 0)
-    {
-      ; // FIXME: log error
-      null_fd = 0;
-    }
+    goto fail;
+  cmd.push_back (command);
   pid = Joust::Spawn (null_fd, job_fds[0], job_fds[1], cmd);
   cmd.pop_back ();
 
-  state = 3;
-
-  if (pid < 0)
+  if (pid > 0)
     {
-      // FIXME: Log error
-      state--;
-      return false;
+      state = 3;
+
+      // Keep the make token
+      make_token = token;
+      return true;
     }
 
-  // Keep the make token
-  make_token = token;
-  return true;
+ fail:
+  int err = errno;
+  log.Result (Logger::ERROR)
+    << "failed spawning " << *this << " " << strerror (err);
+
+  if (null_fd > 0)
+    close (null_fd);
+  for (unsigned ix = 0; ix != 2; ix++)
+    {
+      close (job_fds[2]);
+      int fd = buffers[ix].Close ();
+      epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
+      close (fd);
+    }
+
+  return false;
 }
 
 int Job::Reap (int status)
