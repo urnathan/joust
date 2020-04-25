@@ -1,10 +1,13 @@
 #! zsh
+# Joust Test Suite		-*- mode:zsh -*-
+# Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
+# Not For Distribution
 
 . $JOUST
 
+pushd $srcdir
 setopt nullglob
 for subdir in $@ ; do
-    pushd $srcdir
     echo $subdir/*(.^*)
-    popd
 done
+popd

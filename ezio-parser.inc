@@ -135,6 +135,8 @@ bool Parser::ProcessLine (std::string_view const &variant,
 {
   if (variant == "OPTION")
     Options (std::move (pattern));
+  else if (variant == "END")
+    return true;
   else
     {
       unsigned code = 0;

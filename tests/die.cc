@@ -11,7 +11,7 @@ using namespace NMS;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
-//Wattributes
+
 static void InvokeHCF [[gnu::always_inlne]] ()
 {
   HCF ("burn it all down");
