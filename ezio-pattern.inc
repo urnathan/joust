@@ -200,19 +200,24 @@ bool Pattern::Lexer::PatternRegexp ()
 	  goto append;
 	{
 	  char peek = Peek (1);
-	  if (!(peek == '{' || std::isalpha (peek)))
+	  bool braced = peek == '{';
+	  if (!(braced || std::isalpha (peek)))
+	    // not ${ or $[:alpha:]
 	    goto append;
 
-	  bool braced = peek == '{';
 	  Advance (1 + braced);
-	  if (!Identifier ())
-	    return false;
+	  bool ident = Identifier ();
 	  if (braced)
 	    {
 	      if (Peek () != '}')
 		return false;
+	      if (!ident)
+		// ${} emit the $ eat the {}
+		goto append;
 	      Advance ();
-	    }	  
+	    }
+	  else
+	    Assert (ident);
 	}
 	break;
 
@@ -357,19 +362,24 @@ bool Pattern::Lexer::Pattern ()
 	{
 	  char peek = Peek (1);
 
-	  if (!(std::isalpha (peek) || peek == '{'))
+	  bool braced = peek == '{';
+	  if (!(braced || std::isalpha (peek)))
+	    // not ${ or $[:alpha:]
 	    goto append;
 
-	  bool braced = peek == '{';
 	  Advance (1 + braced);
-	  if (!Identifier ())
-	    return false;
+	  bool ident = Identifier ();
 	  if (braced)
 	    {
 	      if (Peek () != '}')
 		return false;
+	      if (!ident)
+		// ${} emit the $ eat the {}
+		goto append;
 	      Advance ();
 	    }
+	  else
+	    Assert (ident);
 	}
 	break;
 
