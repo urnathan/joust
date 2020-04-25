@@ -15,55 +15,59 @@ using namespace NMS;
 namespace Joust {
 
 int Spawn (int fd_in, int fd_out, int fd_err,
-	   std::vector<std::string> const &words)
+	   std::vector<std::string> const &words, int &err)
 {
+  pid_t pid = 0;
   int pipe_fds[2];
 
   // pipe ends: 0-read from, 1-write to
   if (pipe2 (pipe_fds, O_CLOEXEC) < 0)
-    return -errno;
-
-  // Fork it!
-  pid_t pid = fork ();
-
-  if (!pid)
+    err = errno;
+  else
     {
-      // Child
-      close (pipe_fds[0]);
+      // Fork it!
+      pid = fork ();
 
-      // Count the arguments
-      unsigned nargs = words.size ();
+      if (!pid)
+	{
+	  // Child
+	  close (pipe_fds[0]);
 
-      // Assemble them
-      auto args = reinterpret_cast<char const **>
-	(alloca (sizeof (char const *) * (nargs + 1)));
-      unsigned ix = 0;
-      for (auto iter = words.begin (); iter != words.end (); ++iter)
-	args[ix++] = iter->c_str ();
-      args[ix] = nullptr;
+	  // Count the arguments
+	  unsigned nargs = words.size ();
 
-      if ((fd_in == 0 || dup2 (fd_in, 0) >= 0)
-	  && (fd_out == 1 || dup2 (fd_out, 1) >= 0)
-	  && (fd_err == 2 || dup2 (fd_err, 2) >= 0))
-	execvp (args[0], const_cast<char **> (args));
+	  // Assemble them
+	  auto args = reinterpret_cast<char const **>
+	    (alloca (sizeof (char const *) * (nargs + 1)));
+	  unsigned ix = 0;
+	  for (auto iter = words.begin (); iter != words.end (); ++iter)
+	    args[ix++] = iter->c_str ();
+	  args[ix] = nullptr;
 
-      // Something failed.  write errno to pipe;
-      write (pipe_fds[1], &errno, sizeof (errno));
+	  if ((fd_in == 0 || dup2 (fd_in, 0) >= 0)
+	      && (fd_out == 1 || dup2 (fd_out, 1) >= 0)
+	      && (fd_err == 2 || dup2 (fd_err, 2) >= 0))
+	    execvp (args[0], const_cast<char **> (args));
+
+	  // Something failed.  write errno to pipe;
+	  write (pipe_fds[1], &errno, sizeof (errno));
+	  close (pipe_fds[1]);
+	  exit (0);
+	  Unreachable ();
+	}
+
+      err = errno;
+
+      // Parent
       close (pipe_fds[1]);
-      exit (2);
-      Unreachable ();
+
+      if (pid < 0)
+	pid = 0;
+      else if (!read (pipe_fds[0], &err, sizeof (err)))
+	err = 0;
+
+      close (pipe_fds[0]);
     }
-
-  // Parent
-  close (pipe_fds[1]);
-
-  int err = errno;
-  bool failed = false;
-  if (pid < 0)
-    failed = true;
-  else if (read (pipe_fds[0], &err, sizeof (errno)) == sizeof (errno))
-    failed = true;
-  close (pipe_fds[0]);
 
   if (fd_in != 0)
     close (fd_in);
@@ -72,7 +76,7 @@ int Spawn (int fd_in, int fd_out, int fd_err,
   if (fd_err != 2)
     close (fd_err);
 
-  return failed ? pid_t (-err) : pid;
+  return pid;
 }
 
 }

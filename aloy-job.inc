@@ -82,11 +82,15 @@ bool Job::Spawn (Logger &log,
   int job_fds[2] {-1, -1};
   int null_fd = -1;
 
+  int err;
   for (unsigned ix = 0; ix != 2; ix++)
     {
       int pipe[2];
       if (pipe2 (pipe, O_CLOEXEC) < 0)
-	goto fail;
+	{
+	  err = errno;
+	  goto fail;
+	}
       job_fds[ix] = pipe[1];
       buffers[ix].Open (pipe[0]);
 
@@ -99,36 +103,40 @@ bool Job::Spawn (Logger &log,
 
   null_fd = open ("/dev/null", O_RDONLY | O_CLOEXEC);
   if (null_fd < 0)
-    goto fail;
-  cmd.push_back (command);
-  pid = Joust::Spawn (null_fd, job_fds[0], job_fds[1], cmd);
-  cmd.pop_back ();
+    err = errno;
+  else
+    {
+      cmd.push_back (command);
+      pid = Joust::Spawn (null_fd, job_fds[0], job_fds[1], cmd, err);
+      cmd.pop_back ();
+    }
 
-  if (pid > 0)
+ fail:
+  if (err)
+    log.Result (Logger::ERROR)
+      << "failed spawning " << *this << ":" << strerror (err);
+  
+  if (pid)
     {
       state = 3;
 
       // Keep the make token
       make_token = token;
-      return true;
     }
-
- fail:
-  int err = errno;
-  log.Result (Logger::ERROR)
-    << "failed spawning " << *this << ":" << strerror (err);
-
-  if (null_fd > 0)
-    close (null_fd);
-  for (unsigned ix = 0; ix != 2; ix++)
+  else
     {
-      close (job_fds[ix]);
-      int fd = buffers[ix].Close ();
-      epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
-      close (fd);
+      if (null_fd > 0)
+	close (null_fd);
+      for (unsigned ix = 0; ix != 2; ix++)
+	{
+	  close (job_fds[ix]);
+	  int fd = buffers[ix].Close ();
+	  epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
+	  close (fd);
+	}
     }
 
-  return false;
+  return pid != 0;
 }
 
 int Job::Reap (int status)

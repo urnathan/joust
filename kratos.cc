@@ -59,6 +59,7 @@ int main (int argc, char *argv[])
 {
   struct Flags 
   {
+    std::vector<char const *> prefixes; // Pattern prefixes
     std::vector<char const *> defines;  // Var defines
     char const *include = nullptr;  // file of var defines
     bool help = false;
@@ -90,6 +91,8 @@ int main (int argc, char *argv[])
       {nullptr, 'D', offsetof (Flags, defines), append, "+var=val", "Define"},
       {"defines", 'd', offsetof (Flags, include), nullptr,
        "file", "File of defines"},
+      {"prefix", 'p', offsetof (Flags, prefixes), append,
+       "prefix", "Pattern prefix (repeatable)"},
       {nullptr, 0, 0, nullptr, nullptr, nullptr}
     };
   int argno = options->Process (argc, argv, &flags);
@@ -109,6 +112,9 @@ int main (int argc, char *argv[])
     Fatal ("expected test filename");
   char const *testFile = argv[argno++];
 
+  if (!flags.prefixes.size ())
+    flags.prefixes.push_back ("RUN");
+
   Symbols syms;
 
   // Register defines
@@ -121,12 +127,11 @@ int main (int argc, char *argv[])
 
   std::vector<Pipeline> pipes;
   {
-    std::vector<char const *> prefixes {"RUN"};
     std::string pathname = syms.Origin (testFile);
     Parser parser (testFile, pipes, syms);
 
     // Scan the pattern file
-    parser.ScanFile (pathname, prefixes);
+    parser.ScanFile (pathname, flags.prefixes);
   }
 
   if (pipes.empty () || Error::Errors ())
