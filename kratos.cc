@@ -123,7 +123,8 @@ int main (int argc, char *argv[])
   if (flags.include)
     syms.Read (flags.include);
   if (auto *vars = getenv ("JOUST"))
-    syms.Read (vars);
+    if (*vars)
+      syms.Read (vars);
 
   std::vector<Pipeline> pipes;
   {

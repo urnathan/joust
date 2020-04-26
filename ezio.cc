@@ -122,7 +122,8 @@ int main (int argc, char *argv[])
   if (flags.include)
     syms.text.Read (flags.include);
   if (auto *vars = getenv ("JOUST"))
-    syms.text.Read (vars);
+    if (*vars)
+      syms.text.Read (vars);
 
   std::ofstream sum, log;
   if (!flags.out[flags.out[0] == '-'])
