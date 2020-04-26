@@ -31,15 +31,13 @@ clean::
 
 CXXFLAGS/regex.cc = -fexceptions
 
-joust.doc: dox.cfg
+doc: dox.cfg
 	cd $(<D); doxygen $(<F) >&dox.log
 
 clean::
 	rm -rf dox dox.log
 
-.PHONY: joust.all joust.test joust.doc
-
-ifeq ($(filter %clean,$(MAKECMDGOALS)),)
+ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 -include $(JOUSTPROGS:=.d)
 -include $(LIBJOUST.O:.o=.d)
 endif
