@@ -8,7 +8,7 @@
 namespace Joust {
 
 Token::Token (Token &&from)
-  : kind (from.kind)
+  : kind (from.kind), user (from.user)
 {
   if (kind >= INTEGER_LWM && kind < INTEGER_HWM)
     new (&value.integer) decltype (value.integer)

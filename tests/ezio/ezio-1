@@ -12,6 +12,7 @@ CHECK-NEXT: $ezio -p OUT -p ERR $inp
 CHECK-NONE: RUN
 CHECK-BLOCK: RUN-END:
 CHECK-BLOCK: CHECK: Yeah
+CHECK-END:
 
 # these are what the ezios checking the earlier invokcation checks
 # we must be careful to not hide CHECK lines the first ezio triggers on
@@ -42,6 +43,6 @@ OUT-NEXT: PASS: {:.*}:NONE RUN
 OUT-NEXT: PASS: {:.*}:BLOCK RUN-END:
 ERR-OPTION: matchSol
 ERR-NEXT: 6:
-ERR-BLOCK: 8:C{:.}ECK: Yeah,
+ERR-BLOCK: 8:CHECK: Yeah,
 ERR-OPTION: !matchEol
-OUT-NEXT: PASS: {:.*}:BLOCK C{:.}ECK: Yeah
+OUT-NEXT: PASS: {:.*}:BLOCK CHECK: Yeah

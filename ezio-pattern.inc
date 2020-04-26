@@ -122,7 +122,6 @@ public:
 
 private:
   Regex::Result DoExpand (Symtab const &);
-  std::vector<Token> CanonicalizeRegexCapture (std::vector<Token> &);
 
 public:
   static Pattern *Parse (Parser *, Kind kind, std::string_view const &);
@@ -147,11 +146,13 @@ public:
 //   variable: $ { _? :alpha: :alnum:* }
 //   string: $$
 //   string: .+
+// Final TOKEN_CLOSE has capture count 
 bool Pattern::Lexer::PatternRegexp ()
 {
   bool escape = false;
   unsigned square = 0;
   bool brace = false;
+  int captures = 0;
 
   while (char c = Peek ())
     switch (c)
@@ -166,6 +167,11 @@ bool Pattern::Lexer::PatternRegexp ()
 	  square = 0;
 	goto append;
 
+      case '(':
+	if (!escape && !square)
+	  captures++;
+	goto append;
+
       case '{':
 	if (!escape && !square)
 	  brace = true;
@@ -178,6 +184,7 @@ bool Pattern::Lexer::PatternRegexp ()
 	  {
 	    Advance ();
 	    Append (Token (Token::CLOSE));
+	    tokens.back ().SetUser (captures);
 	    return true;
 	  }
 	goto append;
@@ -511,6 +518,7 @@ bool Pattern::ParseEscape (Parser *parser, Lexer &lexer)
   if (next->GetKind () != Token::CLOSE)
     goto failed;
 
+  escape.SetUser (next->GetUser ());
   Append (std::move (escape));
 
   return true;
@@ -559,48 +567,11 @@ Pattern *Pattern::Parse (Parser *parser, Kind kind, std::string_view const &line
   return p;
 }
 
-std::vector<Token> Pattern::CanonicalizeRegexCapture
-  (std::vector<Token> &capture)
-{
-  std::vector<Token> canon;
-  canon.reserve (capture.size ());
-
-  canon.push_back (std::move (capture[0]));
-
-  std::string acc;
-  for (auto cap = capture.begin () + 1; cap != capture.end (); ++cap)
-    {
-      switch (cap->GetKind ())
-	{
-	case Token::STRING:
-	  acc.append (std::move (cap->GetString ()));
-	  break;
-
-	case Token::IDENTIFIER:
-	  if (acc.size ())
-	    {
-	      canon.push_back (Token (Token::STRING, std::move (acc)));
-	      acc.clear ();
-	    }
-	  canon.push_back (std::move (*cap));
-	  break;
-
-	default:
-	  Unreachable ();
-	}
-    }
-
-  if (acc.size ())
-    canon.push_back (Token (Token::STRING, std::move (acc)));
-
-  return canon;
-}
-
 // Canonicalize the pattern:
 // Remove leading & trailing whitespace
 // Regexify whitespace if !whiteSpace
 // Regexify strings
-// Promote escaped fixed regexes to strings
+// Promote fixed regexes to strings
 // Concatenate adjacent strings & whitespace
 // Prepend ^ and postpend $, if needed
 bool Pattern::Canonicalize ()
@@ -654,9 +625,8 @@ bool Pattern::Canonicalize ()
 
 	case Token::REGEX_CAPTURE:
 	  {
-	    std::vector<Token> capture
-	      (CanonicalizeRegexCapture (token->GetCapture ()));
-
+	    std::vector<Token> &capture = token->GetCapture ();
+	    
 	    if (capture.size () == 1)
 	      {
 		Error () << "capture captures nothing";
@@ -665,8 +635,10 @@ bool Pattern::Canonicalize ()
 
 	    if (capture.size () == 2
 		&& capture[0].GetKind () == Token::EMPTY
-		&& capture[1].GetKind () == Token::STRING)
-	      // A null capture of a single string can just be a string
+		&& capture[1].GetKind () == Token::STRING
+		&& !token->GetUser ())
+	      // A null capture of a single non-capturing string can
+	      // just be a string
 	      acc.append (std::move (capture[1].GetString ()));
 	    else
 	      {
@@ -675,8 +647,7 @@ bool Pattern::Canonicalize ()
 		    canon.push_back (Token (Token::STRING, std::move (acc)));
 		    acc.clear ();
 		  }
-		canon.push_back (Token (Token::REGEX_CAPTURE,
-					std::move (capture)));
+		canon.push_back (std::move (*token));
 	      }
 	    eof = -1;
 	  }
@@ -895,35 +866,37 @@ Regex::Result Pattern::Compare
     {
       has_matched = true;
 
-      if (match.size () > 1)
-	{
-	  auto sub = match.begin () + 1;
-
-	  // Fill in captures
-	  for (auto atom = atoms.begin (); atom != atoms.end (); ++atom)
-	    if (atom->GetKind () == Token::REGEX_CAPTURE
-		|| atom->GetKind () == Token::VALUE_CAPTURE)
+      auto match_iter = ++match.begin ();
+      for (auto atom_iter = atoms.begin ();
+	   atom_iter != atoms.end (); ++atom_iter)
+	if (atom_iter->GetKind () == Token::REGEX_CAPTURE
+	    || atom_iter->GetKind () == Token::VALUE_CAPTURE)
+	  {
+	    int captures = atom_iter->GetUser ();
+	    auto const &capture = atom_iter->GetCapture ();
+	    if (capture[0].GetKind () == Token::IDENTIFIER)
 	      {
-		auto const &capture = atom->GetCapture ();
-		if (capture[0].GetKind () == Token::IDENTIFIER)
+		Assert (match_iter->matched);
+		captures++;
+		auto const &var = capture[0].GetString ();
+		if (atom_iter->GetKind () == Token::REGEX_CAPTURE)
 		  {
-		    auto const &var = capture[0].GetString ();
-		    if (atom->GetKind () == Token::REGEX_CAPTURE)
-		      {
-			if (!symtab.text.Set (var, sub->str ()))
-			  Error () << "multiple definitions of '" << var << '\'';
-		      }
-		    else
-		      {
-			// FIXME: Implement
-			Unreachable ();
-		      }
-		    ++sub;
+		    if (!symtab.text.Set (var, match_iter->str ()))
+		      Error () << "multiple definitions of '" << var << '\'';
+		  }
+		else
+		  {
+		    // FIXME: Implement
+		    Unreachable ();
 		  }
 	      }
-	  
-	  Assert (sub == match.end ());
-	}
+	    Assert (match.end () - match_iter >= captures);
+	    match_iter += captures;
+	  }
+
+      // For some reason there can be trailing unmatched matches
+      for (; match_iter != match.end (); ++match_iter)
+	Assert (!match_iter->matched);
     }
 
   return matched;

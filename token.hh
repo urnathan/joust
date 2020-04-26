@@ -64,6 +64,7 @@ private:
   };
   Value value;
   Kind kind;
+  unsigned char user = 0;
 
 public:
   Token (Kind kind_ = EMPTY)
@@ -120,6 +121,16 @@ public:
   Kind GetKind () const
   {
     return kind;
+  }
+
+public:
+  unsigned GetUser () const
+  {
+    return user;
+  }
+  void SetUser (unsigned u)
+  {
+    user = u;
   }
 
 public:

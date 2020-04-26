@@ -9,6 +9,12 @@ RUN-END:
 2 frobs on a bong
 CHECK: {n:[0-9]+} captures on {art:[a-z+]} line
 CHECK-NEXT: $n frobs on $art bong
+word.maybe
+frob.maybe
+frob.baz
+CHECK: word{may:(.maybe)?}
+CHECK-NEXT: frob$may
+CHECK-NEXT: frob$may
 CHECK-END:
 
 OUT-OPTION: matchSol
@@ -17,4 +23,6 @@ OUT-NEVER: FAIL:
 OUT-OPTION: !matchSol
 OUT: PASS: {:.*}:BLOCK {:.*} captures on
 OUT: PASS: {:.*}:NEXT {:.*} frobs on
-
+OUT: PASS: {:.*}:BLOCK {:.*} word
+OUT: PASS: {:.*}:NEXT {:.*} frob
+OUT: FAIL: {:.*}:NEXT {:.*} frob
