@@ -14,10 +14,11 @@ using namespace NMS;
 
 namespace Joust {
 
-int Spawn (int fd_in, int fd_out, int fd_err,
-	   std::vector<std::string> const &words, int &err)
+std::tuple<pid_t, int> Spawn (int fd_in, int fd_out, int fd_err,
+	   std::vector<std::string> const &words)
 {
-  pid_t pid = 0;
+  std::tuple<pid_t, int> res {0, 0};
+  auto &[pid, err] = res;
   int pipe_fds[2];
 
   // pipe ends: 0-read from, 1-write to
@@ -76,7 +77,7 @@ int Spawn (int fd_in, int fd_out, int fd_err,
   if (fd_err != 2)
     close (fd_err);
 
-  return pid;
+  return res;
 }
 
 }

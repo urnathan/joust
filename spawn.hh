@@ -7,10 +7,13 @@
 // C++
 #include <string>
 #include <vector>
+#include <tuple>
 
 namespace Joust
 {
-// Return pid_t or negated errno
-pid_t Spawn (int fd_in, int fd_out, int fd_err,
-	     std::vector<std::string> const &words, int &err);
+
+
+// Return pid_t 7 errno
+std::tuple<pid_t,int> Spawn (int fd_in, int fd_out, int fd_err,
+			     std::vector<std::string> const &words);
 }

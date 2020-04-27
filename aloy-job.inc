@@ -107,7 +107,9 @@ bool Job::Spawn (Logger &log,
   else
     {
       cmd.push_back (command);
-      pid = Joust::Spawn (null_fd, job_fds[0], job_fds[1], cmd, err);
+      auto spawn = Joust::Spawn (null_fd, job_fds[0], job_fds[1], cmd);
+      pid = std::get<0> (spawn);
+      err = std::get<1> (spawn);
       cmd.pop_back ();
     }
 

@@ -93,14 +93,14 @@ void Command::Shellify ()
 
 bool Command::Execute (int fd_out, int fd_err)
 {
-  int err;
-  pid = Spawn (stdin, fd_out, fd_err, words, err);
+  auto spawn = Spawn (stdin, fd_out, fd_err, words);
 
-  if (err)
+  pid = std::get<0> (spawn);
+  if (int err = std::get<1> (spawn))
     Error () << "failed to spawn process '" << words[0]
 	     << "': " << strerror (err);
 
-  return pid != 0;
+  return std::get<0> (spawn);
 }
 
 std::ostream &operator<< (std::ostream &s, Command const &cmd)
