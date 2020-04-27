@@ -1,8 +1,0 @@
-
-RUN:  >$tmp ./die
-RUN: <$tmp ezio $src
-
-CHECK: Usage: die [options]
-CHECK-NEXT: Inline
-CHECK-NEXT: Nested
-CHECK-NEXT: $EOF
