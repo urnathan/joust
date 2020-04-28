@@ -20,10 +20,12 @@ private:
 private:
   std::deque<Job> jobs;
   std::vector<std::string> command;
-  std::string used_tokens;
+  std::string used_tokens; // tokens to send back to make
+  std::string ready_tokens; // tokens we've got from make
   std::vector<char> input_buffer;
   int in_fd = -1;
-  unsigned job_limit = 1;
+  unsigned job_limit = 1;  // static number of jobs we can spawn
+  unsigned fixed_jobs = 0; // non-jobserver jobs
   int make_in = -1, make_out = -1;
   int sig_fd = -1;
   int poll_fd = -1;
@@ -68,6 +70,7 @@ private:
   void StopMake ();
   void ReadMake ();
   void WriteMake ();
+  void QueueMake (int token);
 
   void Init (Job *);
   void Fini (Job *);
@@ -98,18 +101,27 @@ Engine::Engine (unsigned argc, char const *const argv[], unsigned limit,
       while (!mflags.empty ())
 	{
 	  auto not_space = mflags.find_first_not_of (' ');
-	  if (not_space != mflags.npos)
-	    mflags.remove_prefix (not_space);
-	  if (mflags.starts_with (jsa))
+	  if (not_space == mflags.npos)
+	    not_space = mflags.size ();
+	  auto space = mflags.find_first_of (' ', not_space);
+	  if (space == mflags.npos)
+	    space = mflags.size ();
+
+	  auto option = mflags.substr (not_space, space - not_space);
+	  mflags.remove_prefix (space);
+
+	  if (option == "--")
+	    break;
+	  else if (option.starts_with (jsa))
 	    {
-	      mflags.remove_prefix (jsa.size ());
-	      Lexer lexer (mflags);
+	      option.remove_prefix (jsa.size ());
+	      Lexer lexer (option);
 	      struct stat stat_buf;
 
 	      if (!lexer.Identifier ()
 		  || lexer.Peek () != ','
 		  || !lexer.Identifier ()
-		  || (lexer.Peek () && lexer.Peek () != ' ')
+		  || lexer.Peek ()
 		  || (make_in = lexer.GetToken ()->GetInteger (),
 		      make_out = lexer.GetToken ()->GetInteger (),
 		      fstat (make_in, &stat_buf) < 0
@@ -125,18 +137,11 @@ Engine::Engine (unsigned argc, char const *const argv[], unsigned limit,
 		}
 	      break;
 	    }
-	  else
+	  else if (first)
 	    {
-	      char c;
-	      do
-		{
-		  c = mflags[0];
-		  mflags.remove_prefix (1);
-		  if (first && c == 'n')
-		    // Non-execution
-		    command.clear ();
-		}
-	      while (c != ' ' && !mflags.empty ());
+	      if (option.find_first_of ('n') != option.npos)
+		// Non-execution
+		command.clear ();
 	      first = false;
 	    }
 	}
@@ -186,16 +191,19 @@ void Engine::Init ()
   epoll_event ev;
   ev.events = EPOLLIN;
   ev.data.u64 = unsigned (FD::SIGNAL);
-  if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
-    Unreachable ();
+  while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
+    Assert (errno == EINTR);
 
   ev.data.u64 = unsigned (FD::INPUT);
-  if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, in_fd, &ev) < 0)
+  while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, in_fd, &ev) < 0)
     {
+      if (errno == EINTR)
+	continue;
       Assert (errno == EPERM);
       // Input cannot be polled (it's a regular file)
       while (in_fd >= 0)
 	ReadInput ();
+      break;
     }
 }
 
@@ -219,6 +227,8 @@ void Engine::Fini (std::ostream *summary)
 void Engine::ReadInput ()
 {
   Assert (in_fd >= 0);
+
+  bool not_make = pending <= (job_limit - fixed_jobs);
 
   // Read
   size_t size = input_buffer.size ();
@@ -277,6 +287,15 @@ void Engine::ReadInput ()
   // Adjust
   if (first != input_buffer.begin ())
     input_buffer.erase (input_buffer.begin (), first);
+
+  if (make_in >= 0 && not_make && pending > (job_limit - fixed_jobs))
+    {
+      epoll_event ev;
+      ev.events = EPOLLIN;
+      ev.data.u64 = unsigned (FD::MAKE_IN);
+      while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, make_in, &ev) < 0)
+	Assert (errno == EINTR);
+    }
 }
 
 void Engine::ReadSignal ()
@@ -308,21 +327,10 @@ void Engine::ReadSignal ()
 		    {
 		      int token = iter->Reap (status);
 		      if (token != -1)
-			{
-			  // Write the token back to jobcontrol to
-			  // allow other processes a chance.
-			  Assert (make_out >= 0);
-			  if (used_tokens.empty ())
-			    {
-			      epoll_event ev;
-			      ev.events = EPOLLOUT;
-			      ev.data.u64 = unsigned (FD::MAKE_OUT);
-			      if (epoll_ctl (poll_fd, EPOLL_CTL_ADD,
-					     make_out, &ev) < 0)
-				Unreachable ();
-			    }
-			  used_tokens.push_back (char (token));
-			}
+			QueueMake (token);
+		      else
+			fixed_jobs--;
+
 		      completed++;
 		      running--;
 		      break;
@@ -361,7 +369,42 @@ void Engine::StopMake ()
 
 void Engine::ReadMake ()
 {
-  // FIXME: Implement
+  bool stop = true;
+  unsigned fixed = job_limit - fixed_jobs;
+  if (pending > fixed)
+    if (unsigned wanted = pending - fixed - ready_tokens.size ())
+      {
+	char buf[4];
+
+	ssize_t got = read (make_in, buf,
+			    wanted > sizeof (buf) ? sizeof (buf) : wanted);
+	stop = false;
+	if (got > 0)
+	  {
+	    ready_tokens.append (buf, got);
+	    stop = got == wanted;
+	  }
+      }
+
+  if (stop)
+    while (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_in, nullptr) < 0)
+      Assert (errno == EINTR);
+}
+
+// Write the token back to jobcontrol to
+// allow other processes a chance.
+void Engine::QueueMake (int token)
+{
+  if (used_tokens.empty ())
+    {
+      epoll_event ev;
+      ev.events = EPOLLOUT;
+      ev.data.u64 = unsigned (FD::MAKE_OUT);
+      while (epoll_ctl (poll_fd, EPOLL_CTL_ADD,
+			make_out, &ev) < 0)
+	Assert (errno == EINTR);
+    }
+  used_tokens.push_back (char (token));
 }
 
 // Able to write something to the make pipe.  Do it.
@@ -375,8 +418,8 @@ void Engine::WriteMake ()
   else if (size_t (wrote) == used_tokens.size ())
     {
       used_tokens.clear ();
-      if (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_out, nullptr) < 0)
-	Unreachable ();
+      while (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_out, nullptr) < 0)
+	Assert (errno == EINTR);
     }
   else
     used_tokens.erase (0, wrote);
@@ -501,17 +544,30 @@ void Engine::Spawn ()
   if (pending)
     for (auto iter = jobs.begin () + (completed + running); pending; ++iter)
       {
-	if (job_limit > running)
+	int token = -1;
+	if (job_limit > fixed_jobs)
+	  ;
+	else if (ready_tokens.size ())
 	  {
-	    if (iter->Spawn (*this, command, poll_fd))
-	      running++;
-	    else
-	      completed++;
-	    pending--;
+	    token = ready_tokens.back ();
+	    ready_tokens.pop_back ();
 	  }
 	else
 	  break;
-	// FIXME jobserver token?
+
+	if (iter->Spawn (*this, command, poll_fd, token))
+	  {
+	    running++;
+	    if (token < 0)
+	      fixed_jobs++;
+	  }
+	else
+	  {
+	    completed++;
+	    if (token >= 0)
+	      QueueMake (token);
+	  }
+	pending--;
       }
 }
 

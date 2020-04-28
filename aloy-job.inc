@@ -70,6 +70,8 @@ void Job::Read (Logger &log, unsigned subcode, int poll_fd)
     }
 }
 
+// Spawn a job, return true if we managed to spawn it.
+
 bool Job::Spawn (Logger &log,
 		 std::vector<std::string> &cmd, int poll_fd, int token)
 {
@@ -141,6 +143,7 @@ bool Job::Spawn (Logger &log,
   return pid != 0;
 }
 
+// Reap a completed job, returns the make token (or -1)
 int Job::Reap (int status)
 {
   Assert (pid >= 0 && state);
