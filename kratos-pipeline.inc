@@ -46,7 +46,7 @@ public:
   }
 
 public:
-  bool Execute (Logger &);
+  bool Execute (Logger &, unsigned const *);
 
 public:
   void Result (Logger &, Logger::Status);
@@ -71,20 +71,20 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
   s << ("! " + !pipe.expect_inverted);
   s << *iter << '\n';
 
+  unsigned fd = 0;
+  static char const *const outs[] = {" out", " err"};
   if (!pipe.srcsink[1].empty ())
     s << iter->File () << ':' << iter->Line ()
-      << " out> " << pipe.srcsink[1] << '\n';
+      << outs[fd++] << "> " << pipe.srcsink[1] << '\n';
 
-  static char const *const outs[] = {" out|", " err|"};
-  unsigned fd = 0;
   while (++iter != pipe.commands.end ())
     s << iter->File () << ':' << iter->Line ()
-      << outs[fd++] << *iter << '\n';
+      << outs[fd++] << "| " << *iter << '\n';
 
   return s;
 }
 
-bool Pipeline::Execute (Logger &logger)
+bool Pipeline::Execute (Logger &logger, unsigned const *limits)
 {
   Assert (commands.size () >= 1 && commands.size () <= 3);
 
@@ -151,7 +151,7 @@ bool Pipeline::Execute (Logger &logger)
   unsigned subtasks = 0;
   {
     auto iter = commands.begin ();
-    if (iter->Execute (fds[0], fds[1]))
+    if (iter->Execute (fds[0], fds[1], limits))
       subtasks++;
     while (++iter != commands.end ())
       {

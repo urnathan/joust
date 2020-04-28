@@ -9,13 +9,16 @@
 // OS
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 using namespace NMS;
 
 namespace Joust {
 
 std::tuple<pid_t, int> Spawn (int fd_in, int fd_out, int fd_err,
-	   std::vector<std::string> const &words)
+			      std::vector<std::string> const &words,
+			      unsigned const *limits)
 {
   std::tuple<pid_t, int> res {0, 0};
   auto &[pid, err] = res;
@@ -48,12 +51,37 @@ std::tuple<pid_t, int> Spawn (int fd_in, int fd_out, int fd_err,
 	  if ((fd_in == 0 || dup2 (fd_in, 0) >= 0)
 	      && (fd_out == 1 || dup2 (fd_out, 1) >= 0)
 	      && (fd_err == 2 || dup2 (fd_err, 2) >= 0))
-	    execvp (args[0], const_cast<char **> (args));
+	    {
+	      if (limits)
+		{
+		  // If limit setting fails, do not exec
+		  for (unsigned jx = PL_HWM; jx--;)
+		    if (limits[jx])
+		      {
+			rlim_t v = limits[jx];
+			if (jx == PL_CPU)
+			  v *= 60;
+			else
+			  v *= 1024 * 1024 * 1024;
 
+			struct rlimit limit;
+			limit.rlim_cur = limit.rlim_max = v;
+			static int const inits[PL_HWM]
+			  = {RLIMIT_CPU, RLIMIT_AS, RLIMIT_FSIZE};
+			if (setrlimit (inits[jx], &limit) < 0)
+			  goto failed;
+		      }
+		}
+
+	      execvp (args[0], const_cast<char **> (args));
+	    }
+
+	failed:
 	  // Something failed.  write errno to pipe;
 	  write (pipe_fds[1], &errno, sizeof (errno));
 	  close (pipe_fds[1]);
-	  exit (0);
+	  // Do not run atexit
+	  _exit (0);
 	  Unreachable ();
 	}
 

@@ -12,8 +12,16 @@
 namespace Joust
 {
 
+enum ProcLimits
+{
+  PL_CPU,
+  PL_MEM,
+  PL_FILE,
+  PL_HWM
+};
 
-// Return pid_t 7 errno
+// Return pid_t & errno
 std::tuple<pid_t,int> Spawn (int fd_in, int fd_out, int fd_err,
-			     std::vector<std::string> const &words);
+			     std::vector<std::string> const &words,
+			     unsigned const *limits = nullptr);
 }

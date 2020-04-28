@@ -35,7 +35,7 @@ public:
   }
 
 public:
-  bool Execute (int, int);
+  bool Execute (int, int, unsigned const *limits = nullptr);
 
 private:
   void Shellify ();
@@ -91,9 +91,9 @@ void Command::Shellify ()
     }
 }
 
-bool Command::Execute (int fd_out, int fd_err)
+bool Command::Execute (int fd_out, int fd_err, unsigned const *limits)
 {
-  auto spawn = Spawn (stdin, fd_out, fd_err, words);
+  auto spawn = Spawn (stdin, fd_out, fd_err, words, limits);
 
   pid = std::get<0> (spawn);
   if (int err = std::get<1> (spawn))

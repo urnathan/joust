@@ -147,11 +147,32 @@ int main (int argc, char *argv[])
 
   bool skipping = false;
   Logger logger;
+  unsigned limits[PL_HWM];
+
+  for (unsigned ix = PL_HWM; ix--;)
+    {
+      static char const *const vars[PL_HWM]
+	= {"cpulimit", "memlimit", "filesizelimit"};
+
+      // 1GB, 1Minute
+      limits[ix] = 1;
+      if (auto limit = syms.Get (vars[ix]))
+	{
+	  char *eptr;
+	  unsigned v = strtoul (limit->c_str (), &eptr, 10);
+	  if (*eptr)
+	    logger.Result (Logger::ERROR)
+	      << "limit '" << vars[ix] << "=" << limit << "' invalid";
+	  else
+	    limits[ix] = v;
+	}
+  }
   for (auto &pipe : pipes)
     {
       if (!skipping)
 	{
-	  if (!pipe.Execute (logger)
+	  logger.Log () << '\n';
+	  if (!pipe.Execute (logger, limits)
 	      && pipe.GetKind () == Pipeline::REQUIRE)
 	    {
 	      skipping = true;
