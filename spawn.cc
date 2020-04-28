@@ -67,7 +67,7 @@ std::tuple<pid_t, int> Spawn (int fd_in, int fd_out, int fd_err,
 			struct rlimit limit;
 			limit.rlim_cur = limit.rlim_max = v;
 			static int const inits[PL_HWM]
-			  = {RLIMIT_CPU, RLIMIT_AS, RLIMIT_FSIZE};
+			  = {RLIMIT_CPU, RLIMIT_DATA, RLIMIT_FSIZE};
 			if (setrlimit (inits[jx], &limit) < 0)
 			  goto failed;
 		      }
