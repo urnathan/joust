@@ -85,6 +85,15 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	  unsigned exit = 0;
 	  bool inverted = false;
 
+	  if (lexer.Peek () == '!')
+	    {
+	      if (state != IDLE)
+		Error ()
+		  << "status negation only permitted at start of pipeline";
+	      inverted = true;
+	      lexer.Advance ();
+	    }
+
 	  if (kind == Pipeline::RUN
 	      || kind == Pipeline::SIGNAL)
 	    {
@@ -133,13 +142,6 @@ bool Parser::ProcessLine (std::string_view const &variant,
 		    // By default we expect to get any signal!
 		    inverted = true;
 		}
-	    }
-	  if (lexer.Peek () == '!')
-	    {
-	      if (state != IDLE)
-		Error () << "status negation only permitted at start of pipelin";
-	      inverted = true;
-	      lexer.Advance ();
 	    }
 
 	  if (state == IDLE)
