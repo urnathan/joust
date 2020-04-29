@@ -30,6 +30,7 @@ private:
   unsigned gen_exit = 0;
   unsigned job_limit = 1;  // static number of jobs we can spawn
   unsigned fixed_jobs = 0; // non-jobserver jobs running
+  unsigned make_want = 0;
   int make_in = -1, make_out = -1;
   int sig_fd = -1;
   int poll_fd = -1;
@@ -50,7 +51,8 @@ public:
 public:
   bool IsLive () const
   {
-    return gen_state || !jobs.empty ();
+    return gen_state || !jobs.empty ()
+      || !used_tokens.empty () || !ready_tokens.empty ();
   }
   void Init (char const *tester, char const *generator,
 	     int argc, char const *const argv[]);
@@ -71,7 +73,8 @@ public:
 private:
   void ReadGen (unsigned);
   void ReadSignal ();
-  void StopMake ();
+  void StopMake (int);
+  void WantMake ();
   void ReadMake ();
   void WriteMake ();
   void QueueMake (int token);
@@ -382,18 +385,9 @@ void Engine::ReadGen (unsigned stream)
       // Adjust
       if (first != gen_buffers[0].begin ())
 	gen_buffers[0].erase (gen_buffers[0].begin (), first);
-    }
 
-#if 0
-  if (make_in >= 0 && not_make && pending > (job_limit - fixed_jobs))
-    {
-      epoll_event ev;
-      ev.events = EPOLLIN;
-      ev.data.u64 = unsigned (FD::MAKE_IN);
-      while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, make_in, &ev) < 0)
-	Assert (errno == EINTR);
+      WantMake ();
     }
-#endif
 }
 
 void Engine::ReadSignal ()
@@ -466,38 +460,64 @@ void Engine::ReadSignal ()
     }  
 }
 
-void Engine::StopMake ()
+void Engine::WantMake ()
+{
+  if (make_in >= 0)
+    {
+      unsigned want = pending;
+      unsigned ready = ready_tokens.size () + (job_limit - fixed_jobs);
+      if (want < ready)
+	want = 0;
+      else
+	want -= ready;
+
+      if (!want)
+	{
+	  if (make_want)
+	    while (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_in, nullptr) < 0)
+	      Assert (errno == EINTR);
+	}
+      else
+	{
+	  if (!make_want)
+	    {
+	      epoll_event ev;
+	      ev.events = EPOLLIN;
+	      ev.data.u64 = unsigned (FD::MAKE_IN);
+	      while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, make_in, &ev) < 0)
+		Assert (errno == EINTR);
+	    }
+	}
+      make_want = want;
+    }
+}
+
+void Engine::StopMake (int err)
 {
   Assert (make_out >= 0 && make_in >= 0);
   epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_out, nullptr);
   epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_in, nullptr);
   make_out = make_in = -1;
   used_tokens.clear ();
-  // FIXME: Log error
+  Result (Logger::ERROR) << " terminating jobserver:" << strerror (err);
 }
 
 void Engine::ReadMake ()
 {
-  bool stop = true;
-  unsigned fixed = job_limit - fixed_jobs;
-  if (pending > fixed)
-    if (unsigned wanted = pending - fixed - ready_tokens.size ())
-      {
-	char buf[4];
+  unsigned const block_size = 16;
+  char buffer[block_size];
+  
+  unsigned want = make_want < block_size ? make_want : block_size;
+  ssize_t got = read (make_in, buffer, want);
+  if (got < 0)
+    {
+      if (errno != EINTR)
+	StopMake (errno);
+    }
+  else
+    ready_tokens.append (buffer, got);
 
-	ssize_t got = read (make_in, buf,
-			    wanted > sizeof (buf) ? sizeof (buf) : wanted);
-	stop = false;
-	if (got > 0)
-	  {
-	    ready_tokens.append (buf, got);
-	    stop = got == wanted;
-	  }
-      }
-
-  if (stop)
-    while (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_in, nullptr) < 0)
-      Assert (errno == EINTR);
+  WantMake ();
 }
 
 // Write the token back to jobcontrol to
@@ -509,8 +529,7 @@ void Engine::QueueMake (int token)
       epoll_event ev;
       ev.events = EPOLLOUT;
       ev.data.u64 = unsigned (FD::MAKE_OUT);
-      while (epoll_ctl (poll_fd, EPOLL_CTL_ADD,
-			make_out, &ev) < 0)
+      while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, make_out, &ev) < 0)
 	Assert (errno == EINTR);
     }
   used_tokens.push_back (char (token));
@@ -523,8 +542,13 @@ void Engine::WriteMake ()
   size_t tokens = used_tokens.size ();
   ssize_t wrote = write (make_out, used_tokens.data (), used_tokens.size ());
   if (wrote < 0)
-    StopMake ();
-  else if (size_t (wrote) == used_tokens.size ())
+    {
+      if (errno != EINTR)
+	StopMake (errno);
+      wrote = 0;
+    }
+
+  if (size_t (wrote) == used_tokens.size ())
     {
       used_tokens.clear ();
       while (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_out, nullptr) < 0)
@@ -536,8 +560,6 @@ void Engine::WriteMake ()
 
 bool Engine::Process (int timeout)
 {
-  Assert (gen_state || running);
-  
   constexpr int max_events = 20;
   int count;
 
@@ -651,34 +673,41 @@ void Engine::Retire ()
 
 void Engine::Spawn ()
 {
-  if (pending)
-    for (auto iter = jobs.begin () + (completed + running); pending; ++iter)
-      {
-	int token = -1;
-	if (job_limit > fixed_jobs)
-	  ;
-	else if (ready_tokens.size ())
-	  {
-	    token = ready_tokens.back ();
-	    ready_tokens.pop_back ();
-	  }
-	else
-	  break;
+  for (auto iter = jobs.begin () + (completed + running); pending; ++iter)
+    {
+      int token = -1;
+      if (job_limit > fixed_jobs)
+	;
+      else if (ready_tokens.size ())
+	{
+	  token = ready_tokens.back ();
+	  ready_tokens.pop_back ();
+	}
+      else
+	break;
 
-	if (iter->Spawn (*this, command, poll_fd, token))
-	  {
-	    running++;
-	    if (token < 0)
-	      fixed_jobs++;
-	  }
-	else
-	  {
-	    completed++;
-	    if (token >= 0)
-	      QueueMake (token);
-	  }
-	pending--;
-      }
+      if (iter->Spawn (*this, command, poll_fd, token))
+	{
+	  running++;
+	  if (token < 0)
+	    fixed_jobs++;
+	}
+      else
+	{
+	  completed++;
+	  if (token >= 0)
+	    QueueMake (token);
+	}
+      pending--;
+    }
+
+  while (!ready_tokens.empty ())
+    {
+      QueueMake (ready_tokens.back ());
+      ready_tokens.pop_back ();
+    }
+
+  WantMake ();
 }
 
 std::string Engine::Progress ()

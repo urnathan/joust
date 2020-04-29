@@ -298,7 +298,7 @@ bool Pipeline::Execute (Logger &logger, unsigned const *limits)
 	      case SIGINT:
 	      case SIGQUIT:
 		{
-		  // FIXME: Terminate application, release tokens to make
+		  // FIXME: Terminate application
 		  Unreachable ();
 		}
 		break;
