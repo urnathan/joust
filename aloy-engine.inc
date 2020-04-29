@@ -21,7 +21,7 @@ private:
 private:
   std::deque<Job> jobs;
   std::vector<std::string> command;
-  std::string generator;
+  std::vector<std::string> generator;
   std::string used_tokens; // tokens to send back to make
   std::string ready_tokens; // tokens we've got from make
   ReadBuffer gen_buffers[2];
@@ -54,7 +54,7 @@ public:
     return gen_state || !jobs.empty ()
       || !used_tokens.empty () || !ready_tokens.empty ();
   }
-  void Init (char const *tester, char const *generator,
+  void Init (char const *tester, char const *genner,
 	     int argc, char const *const argv[]);
   void Fini (std::ostream * = nullptr);
   bool Process (int timeout);
@@ -170,20 +170,15 @@ std::ostream &operator<< (std::ostream &s, Engine const &self)
   return s;
 }
 
-void Engine::Init (char const *tester, char const *generate,
+void Engine::Init (char const *tester, char const *genner,
 		   int argc, char const *const argv[])
 {
   auto now = time (nullptr);
   *this << "Test run: " << ctime (&now) << "\n";
 
   // Initialize command vector and gen vector
-  std::vector<std::string> gen;
-  gen.reserve (argc + 1);
-  if (generate)
-    {
-      generator = generate;
-      gen.emplace_back (generator);
-    }
+  if (genner)
+    generator.emplace_back (genner);
   command.emplace_back (tester);
   bool dashed = false;
   for (int ix = 0; ix != argc; ix++)
@@ -192,14 +187,14 @@ void Engine::Init (char const *tester, char const *generate,
       if (!dashed && arg == "--")
 	{
 	  command.reserve (ix + 1);
-	  for (auto iter = gen.begin () + !generator.empty ();
-	       iter != gen.end (); ++iter)
+	  for (auto iter = generator.begin () + !!genner;
+	       iter != generator.end (); ++iter)
 	    command.emplace_back (std::move (*iter));
-	  gen.resize (!generator.empty ());
+	  generator.resize (!!genner);
 	  dashed = true;
 	}
       else
-	gen.emplace_back (arg);
+	generator.emplace_back (arg);
     }
 
   // Signal fd and block sigchild 
@@ -224,7 +219,7 @@ void Engine::Init (char const *tester, char const *generate,
   while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
     Assert (errno == EINTR);
 
-  if (!generator.empty ())
+  if (genner)
     {
       // Spawn generator process
       int gen_fds[2] = {-1, -1};
@@ -252,7 +247,7 @@ void Engine::Init (char const *tester, char const *generate,
 	err = errno;
       else
 	{
-	  auto spawn = Joust::Spawn (null_fd, gen_fds[0], gen_fds[1], gen);
+	  auto spawn = Joust::Spawn (null_fd, gen_fds[0], gen_fds[1], generator);
 	  gen_pid = std::get<0> (spawn);
 	  err = std::get<1> (spawn);
 	}
@@ -260,7 +255,8 @@ void Engine::Init (char const *tester, char const *generate,
     fail:
       if (err)
 	Result (Logger::ERROR)
-	  << "failed spawning generator " << generator << ":" << strerror (err);
+	  << "failed spawning generator "
+	  << generator[0] << ":" << strerror (err);
 
       gen_state = 2;
       if (gen_pid)
@@ -283,7 +279,7 @@ void Engine::Init (char const *tester, char const *generate,
     }
   else
     // Create pending job queue
-    for (auto iter = gen.begin (); iter != gen.end (); ++iter)
+    for (auto iter = generator.begin (); iter != generator.end (); ++iter)
       jobs.emplace_back (std::move (*iter));
 }
 
@@ -302,12 +298,12 @@ void Engine::Fini (std::ostream *summary)
       if (WIFSIGNALED (gen_exit))
 	{
 	  int sig = WTERMSIG (gen_exit);
-	  Result (Logger::ERROR) << generator
+	  Result (Logger::ERROR) << generator[0]
 				 << " terminated with signal " << sig;
 	}
       if (WIFEXITED (gen_exit))
 	if (int code = WEXITSTATUS (gen_exit))
-	  Result (Logger::ERROR) << generator
+	  Result (Logger::ERROR) << generator[0]
 				 << " exited with status " << code;
     }
 
@@ -337,7 +333,7 @@ void Engine::ReadGen (unsigned stream)
 	  static char const *const io[] = {" stdout:", " stderr:"};
 	  Result (Logger::ERROR)
 	    << "failed reading generator "
-	    << generator << io[stream] << strerror (done);
+	    << generator[0] << io[stream] << strerror (done);
 	}
 
       int fd = gen_buffers[stream].Close ();

@@ -93,7 +93,7 @@ void Command::Shellify ()
 
 bool Command::Execute (int fd_out, int fd_err, unsigned const *limits)
 {
-  auto spawn = Spawn (stdin, fd_out, fd_err, words, limits);
+  auto spawn = Spawn (stdin, fd_out, fd_err, words, nullptr, limits);
 
   pid = std::get<0> (spawn);
   if (int err = std::get<1> (spawn))

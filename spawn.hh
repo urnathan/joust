@@ -23,5 +23,6 @@ enum ProcLimits
 // Return pid_t & errno
 std::tuple<pid_t,int> Spawn (int fd_in, int fd_out, int fd_err,
 			     std::vector<std::string> const &words,
+			     std::vector<std::string> const *wrapper = nullptr,
 			     unsigned const *limits = nullptr);
 }

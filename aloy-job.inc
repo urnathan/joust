@@ -4,7 +4,7 @@
 
 class Job
 {
-  std::string command;
+  std::vector<std::string> command;
   ReadBuffer buffers[2];	// Job's stdout, stderr
   pid_t pid = pid_t (-1);	// Job's PID
   int exit_status = 0;		// Exit status of job
@@ -13,11 +13,14 @@ class Job
 
 public:
   Job (std::string_view const &cmd)
-    : command (cmd)
   {
+    command.emplace_back (cmd);
   }
   Job (std::string &&cmd)
-    : command (std::move (cmd))
+  {
+    command.emplace_back (std::move (cmd));
+  }
+  Job ()
   {
   }
 
@@ -29,7 +32,7 @@ private:
 public:
   void Read (Logger &, unsigned subcode, int poll_fd);
 
-  bool Spawn (Logger &, std::vector<std::string> &cmd,
+  bool Spawn (Logger &, std::vector<std::string> const &preamble,
 	      int poll_fd, int token = -1);
   int Reap (int status);
   bool IsPid (pid_t p) const
@@ -76,12 +79,12 @@ void Job::Read (Logger &log, unsigned subcode, int poll_fd)
 
 // Spawn a job, return true if we managed to spawn it.
 
-bool Job::Spawn (Logger &log,
-		 std::vector<std::string> &cmd, int poll_fd, int token)
+bool Job::Spawn (Logger &log, std::vector<std::string> const &preamble,
+		 int poll_fd, int token)
 {
   Assert (!state && buffers[0].empty () && buffers[0].empty ());
 
-  if (!cmd.size ())
+  if (!preamble.size ())
     // No execute mode, we're done
     return false;
 
@@ -112,11 +115,10 @@ bool Job::Spawn (Logger &log,
     err = errno;
   else
     {
-      cmd.push_back (command);
-      auto spawn = Joust::Spawn (null_fd, job_fds[0], job_fds[1], cmd);
+      auto spawn = Joust::Spawn (null_fd, job_fds[0], job_fds[1],
+				 command, &preamble);
       pid = std::get<0> (spawn);
       err = std::get<1> (spawn);
-      cmd.pop_back ();
     }
 
  fail:
@@ -163,7 +165,7 @@ int Job::Reap (int status)
 
 std::ostream &operator<< (std::ostream &s, Job const &job)
 {
-  s << job.command;
+  s << job.command[0];
 
   return s;
 }

@@ -17,7 +17,8 @@ using namespace NMS;
 namespace Joust {
 
 std::tuple<pid_t, int> Spawn (int fd_in, int fd_out, int fd_err,
-			      std::vector<std::string> const &words,
+			      std::vector<std::string> const &command,
+			      std::vector<std::string> const *wrapper,
 			      unsigned const *limits)
 {
   std::tuple<pid_t, int> res {0, 0};
@@ -38,13 +39,18 @@ std::tuple<pid_t, int> Spawn (int fd_in, int fd_out, int fd_err,
 	  close (pipe_fds[0]);
 
 	  // Count the arguments
-	  unsigned nargs = words.size ();
+	  unsigned nargs = command.size ();
+	  if (wrapper)
+	    nargs += wrapper->size ();
 
 	  // Assemble them
 	  auto args = reinterpret_cast<char const **>
 	    (alloca (sizeof (char const *) * (nargs + 1)));
 	  unsigned ix = 0;
-	  for (auto iter = words.begin (); iter != words.end (); ++iter)
+	  if (wrapper)
+	    for (auto iter = wrapper->begin (); iter != wrapper->end (); ++iter)
+	      args[ix++] = iter->c_str ();
+	  for (auto iter = command.begin (); iter != command.end (); ++iter)
 	    args[ix++] = iter->c_str ();
 	  args[ix] = nullptr;
 
