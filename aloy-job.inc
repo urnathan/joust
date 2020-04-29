@@ -16,6 +16,10 @@ public:
     : command (cmd)
   {
   }
+  Job (std::string &&cmd)
+    : command (std::move (cmd))
+  {
+  }
 
 private:
   // We rely on object reference invariance, so ban copies
@@ -99,8 +103,8 @@ bool Job::Spawn (Logger &log,
       epoll_event ev;
       ev.events = EPOLLIN;
       ev.data.u64 = reinterpret_cast<uint64_t> (this) | ix;
-      if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe[0], &ev) < 0)
-	Unreachable ();
+      while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe[0], &ev) < 0)
+	Assert (errno == EINTR);
     }
 
   null_fd = open ("/dev/null", O_RDONLY | O_CLOEXEC);

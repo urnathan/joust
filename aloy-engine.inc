@@ -11,7 +11,8 @@ private:
   enum class FD
   {
     SIGNAL,	// sig_fd
-    INPUT,	// in_fd
+    GEN_OUT,	// gen_out
+    GEN_ERR,	// gen_err
     MAKE_IN,	// make_in
     MAKE_OUT,	// make_out
     HWM
@@ -20,12 +21,15 @@ private:
 private:
   std::deque<Job> jobs;
   std::vector<std::string> command;
+  std::string generator;
   std::string used_tokens; // tokens to send back to make
   std::string ready_tokens; // tokens we've got from make
-  std::vector<char> input_buffer;
-  int in_fd = -1;
+  ReadBuffer gen_buffers[2];
+  pid_t gen_pid = 0;
+  unsigned gen_state = 0;
+  unsigned gen_exit = 0;
   unsigned job_limit = 1;  // static number of jobs we can spawn
-  unsigned fixed_jobs = 0; // non-jobserver jobs
+  unsigned fixed_jobs = 0; // non-jobserver jobs running
   int make_in = -1, make_out = -1;
   int sig_fd = -1;
   int poll_fd = -1;
@@ -40,16 +44,16 @@ private:
   unsigned counts[STATUS_HWM];
 
 public:
-  Engine (unsigned argc, char const *const argv[], unsigned limit,
-	  int in, std::ostream &sum, std::ostream &log);
+  Engine (unsigned limit, std::ostream &sum, std::ostream &log);
   ~Engine ();
 
 public:
   bool IsLive () const
   {
-    return in_fd >= 0 || !jobs.empty ();
+    return gen_state || !jobs.empty ();
   }
-  void Init ();
+  void Init (char const *tester, char const *generator,
+	     int argc, char const *const argv[]);
   void Fini (std::ostream * = nullptr);
   bool Process (int timeout);
   void Retire ();
@@ -65,7 +69,7 @@ public:
   }
 
 private:
-  void ReadInput ();
+  void ReadGen (unsigned);
   void ReadSignal ();
   void StopMake ();
   void ReadMake ();
@@ -78,15 +82,12 @@ private:
   friend std::ostream &operator<< (std::ostream &, Engine const &);
 };
 
-Engine::Engine (unsigned argc, char const *const argv[], unsigned limit,
-		int in, std::ostream &sum_, std::ostream &log_)
-  : Parent (sum_, log_), in_fd (in), job_limit (limit)
+Engine::Engine (unsigned limit,
+		std::ostream &sum_, std::ostream &log_)
+  : Parent (sum_, log_), job_limit (limit)
 {
   for (unsigned ix = STATUS_HWM; ix--;)
     counts[ix] = 0;
-  command.reserve (argc);
-  for (unsigned ix = 0; ix != argc; ix++)
-    command.emplace_back (argv[ix]);
 
   // Get jobserver FDs
   if (job_limit)
@@ -118,9 +119,9 @@ Engine::Engine (unsigned argc, char const *const argv[], unsigned limit,
 	      Lexer lexer (option);
 	      struct stat stat_buf;
 
-	      if (!lexer.Identifier ()
-		  || lexer.Peek () != ','
-		  || !lexer.Identifier ()
+	      if (!lexer.Integer ()
+		  || lexer.PeekAdvance () != ','
+		  || !lexer.Integer ()
 		  || lexer.Peek ()
 		  || (make_in = lexer.GetToken ()->GetInteger (),
 		      make_out = lexer.GetToken ()->GetInteger (),
@@ -155,7 +156,6 @@ Engine::Engine (unsigned argc, char const *const argv[], unsigned limit,
 
 Engine::~Engine ()
 {
-  close (in_fd);
 }
 
 std::ostream &operator<< (std::ostream &s, Engine const &self)
@@ -167,10 +167,37 @@ std::ostream &operator<< (std::ostream &s, Engine const &self)
   return s;
 }
 
-void Engine::Init ()
+void Engine::Init (char const *tester, char const *generate,
+		   int argc, char const *const argv[])
 {
   auto now = time (nullptr);
   *this << "Test run: " << ctime (&now) << "\n";
+
+  // Initialize command vector and gen vector
+  std::vector<std::string> gen;
+  gen.reserve (argc + 1);
+  if (generate)
+    {
+      generator = generate;
+      gen.emplace_back (generator);
+    }
+  command.emplace_back (tester);
+  bool dashed = false;
+  for (int ix = 0; ix != argc; ix++)
+    {
+      std::string_view arg (argv[ix]);
+      if (!dashed && arg == "--")
+	{
+	  command.reserve (ix + 1);
+	  for (auto iter = gen.begin () + !generator.empty ();
+	       iter != gen.end (); ++iter)
+	    command.emplace_back (std::move (*iter));
+	  gen.resize (!generator.empty ());
+	  dashed = true;
+	}
+      else
+	gen.emplace_back (arg);
+    }
 
   // Signal fd and block sigchild 
   sigset_t sigmask;
@@ -194,21 +221,93 @@ void Engine::Init ()
   while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
     Assert (errno == EINTR);
 
-  ev.data.u64 = unsigned (FD::INPUT);
-  while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, in_fd, &ev) < 0)
+  if (!generator.empty ())
     {
-      if (errno == EINTR)
-	continue;
-      Assert (errno == EPERM);
-      // Input cannot be polled (it's a regular file)
-      while (in_fd >= 0)
-	ReadInput ();
-      break;
+      // Spawn generator process
+      int gen_fds[2] = {-1, -1};
+      int null_fd = -1;
+
+      int err;
+      for (unsigned ix = 0; ix != 2; ix++)
+	{
+	  int pipe[2];
+	  if (pipe2 (pipe, O_CLOEXEC) < 0)
+	    {
+	      err = errno;
+	      goto fail;
+	    }
+	  gen_fds[ix] = pipe[1];
+	  gen_buffers[ix].Open (pipe[0]);
+
+	  ev.data.u64 = unsigned (FD::GEN_OUT) + ix;
+	  while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe[0], &ev) < 0)
+	    Assert (errno == EINTR);
+	}
+
+      null_fd = open ("/dev/null", O_RDONLY | O_CLOEXEC);
+      if (null_fd < 0)
+	err = errno;
+      else
+	{
+	  auto spawn = Joust::Spawn (null_fd, gen_fds[0], gen_fds[1], gen);
+	  gen_pid = std::get<0> (spawn);
+	  err = std::get<1> (spawn);
+	}
+
+    fail:
+      if (err)
+	Result (Logger::ERROR)
+	  << "failed spawning generator " << generator << ":" << strerror (err);
+
+      gen_state = 2;
+      if (gen_pid)
+	{
+	  fixed_jobs++;
+	  gen_state++;
+	}
+      else
+	{
+	  if (null_fd > 0)
+	    close (null_fd);
+	  for (unsigned ix = 0; ix != 2; ix++)
+	    {
+	      close (gen_fds[ix]);
+	      int fd = gen_buffers[ix].Close ();
+	      epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
+	      close (fd);
+	    }
+	}
     }
+  else
+    // Create pending job queue
+    for (auto iter = gen.begin (); iter != gen.end (); ++iter)
+      jobs.emplace_back (std::move (*iter));
 }
 
 void Engine::Fini (std::ostream *summary)
 {
+  if (!generator.empty ()
+      && (!gen_buffers[1].empty ()
+	  || WIFSIGNALED (gen_exit)
+	  || (WIFEXITED (gen_exit) && WEXITSTATUS (gen_exit))))
+    {
+      Log () << '\n';
+      Log () << "# Generator Errors";
+      Log () << std::string_view (gen_buffers[1].data (),
+				  gen_buffers[1].size ());
+
+      if (WIFSIGNALED (gen_exit))
+	{
+	  int sig = WTERMSIG (gen_exit);
+	  Result (Logger::ERROR) << generator
+				 << " terminated with signal " << sig;
+	}
+      if (WIFEXITED (gen_exit))
+	if (int code = WEXITSTATUS (gen_exit))
+	  Result (Logger::ERROR) << generator
+				 << " exited with status " << code;
+    }
+
   if (summary)
     *summary << "# Summary of " << retired << " tests \n" << *this;
   Sum () << '\n';
@@ -224,70 +323,68 @@ void Engine::Fini (std::ostream *summary)
   // FIXME: Restore sigmask
 }
 
-void Engine::ReadInput ()
+void Engine::ReadGen (unsigned stream)
 {
-  Assert (in_fd >= 0);
-
-  bool not_make = pending <= (job_limit - fixed_jobs);
-
   // Read
-  size_t size = input_buffer.size ();
-  size_t hwm = input_buffer.capacity ();
-  if (hwm - size < 10)
-    hwm += 1024;
-  input_buffer.resize (hwm);
-  ssize_t count = read (in_fd, &input_buffer[size], hwm - size);
-  input_buffer.resize (size + (count >= 0 ? count : 0));
-  if (count < 0 && errno != EINTR)
+  bool out_live = true;
+  if (int done = gen_buffers[stream].Read ())
     {
-      int err = errno;
-      Result (ERROR) << "failed to read input:" << strerror (err);
-      count = 0;
-    }
-
-  if (!count)
-    {
-      epoll_ctl (poll_fd, EPOLL_CTL_DEL, in_fd, nullptr);
-      close (in_fd);
-      in_fd = -1;
-    }
-
-  // Lex
-  unsigned added = 0;
-  auto first = input_buffer.begin ();
-  auto last = input_buffer.end ();
-  while (first != last)
-    {
-      auto eol = std::find (first, last, '\n');
-      if (eol == last && in_fd >= 0)
-	break;
-
-      std::string_view line (first, eol);
-      first = eol + (in_fd >= 0);
-
-      bool sol = true;
-      for (size_t pos = 0;; sol = false)
+      if (done >= 0)
 	{
-	  pos = line.find_first_not_of (' ', pos);
-	  if (pos == line.npos)
-	    break;
-	  if (sol && line[pos] == '#')
-	    break;
-
-	  size_t end = line.find_first_of (' ', pos);
-	  if (end == line.npos)
-	    end = line.size ();
-
-	  jobs.emplace_back (line.substr (pos, end - pos));
-	  pending++;
-	  pos = end;
+	  static char const *const io[] = {" stdout:", " stderr:"};
+	  Result (Logger::ERROR)
+	    << "failed reading generator "
+	    << generator << io[stream] << strerror (done);
 	}
+
+      int fd = gen_buffers[stream].Close ();
+
+      epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
+      close (fd);
+      gen_state--;
+      out_live = false;
     }
 
-  // Adjust
-  if (first != input_buffer.begin ())
-    input_buffer.erase (input_buffer.begin (), first);
+  if (!stream)
+    {
+      // Lex
+      unsigned added = 0;
+      auto first = gen_buffers[0].begin ();
+      auto last = gen_buffers[0].end ();
+      while (first != last)
+	{
+	  auto eol = std::find (first, last, '\n');
+	  if (eol == last && out_live)
+	    break;
 
+	  std::string_view line (first, eol);
+	  first = eol + out_live;
+
+	  bool sol = true;
+	  for (size_t pos = 0;; sol = false)
+	    {
+	      pos = line.find_first_not_of (' ', pos);
+	      if (pos == line.npos)
+		break;
+	      if (sol && line[pos] == '#')
+		break;
+
+	      size_t end = line.find_first_of (' ', pos);
+	      if (end == line.npos)
+		end = line.size ();
+
+	      jobs.emplace_back (line.substr (pos, end - pos));
+	      pending++;
+	      pos = end;
+	    }
+	}
+
+      // Adjust
+      if (first != gen_buffers[0].begin ())
+	gen_buffers[0].erase (gen_buffers[0].begin (), first);
+    }
+
+#if 0
   if (make_in >= 0 && not_make && pending > (job_limit - fixed_jobs))
     {
       epoll_event ev;
@@ -296,6 +393,7 @@ void Engine::ReadInput ()
       while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, make_in, &ev) < 0)
 	Assert (errno == EINTR);
     }
+#endif
 }
 
 void Engine::ReadSignal ()
@@ -315,28 +413,39 @@ void Engine::ReadSignal ()
 	  {
 	    if (child == pid_t (-1))
 	      {
-		Assert (!running);
+		Assert (!running && gen_pid == -1);
 		break;
 	      }
 
 	    if (WIFEXITED (status) || WIFSIGNALED (status))
 	      {
-		auto iter = jobs.begin ();
-		for (unsigned limit = completed + running; limit--; ++iter)
-		  if (iter->IsPid (child))
-		    {
-		      int token = iter->Reap (status);
-		      if (token != -1)
-			QueueMake (token);
-		      else
-			fixed_jobs--;
+		if (child == gen_pid)
+		  {
+		    gen_state--;
+		    gen_pid = -1;
+		    fixed_jobs--;
 
-		      completed++;
-		      running--;
-		      break;
-		    }
+		    gen_exit = status;
+		  }
+		else
+		  {
+		    auto iter = jobs.begin ();
+		    for (unsigned limit = completed + running; limit--; ++iter)
+		      if (iter->IsPid (child))
+			{
+			  int token = iter->Reap (status);
+			  if (token != -1)
+			    QueueMake (token);
+			  else
+			    fixed_jobs--;
+
+			  completed++;
+			  running--;
+			  break;
+			}
+		  }
 	      }
-	    if (!running)
+	    if (!running && gen_pid == -1)
 	      break;
 	  }
       }
@@ -427,7 +536,7 @@ void Engine::WriteMake ()
 
 bool Engine::Process (int timeout)
 {
-  Assert (in_fd >= 0 || running);
+  Assert (gen_state || running);
   
   constexpr int max_events = 20;
   int count;
@@ -445,8 +554,9 @@ bool Engine::Process (int timeout)
       for (int ix = 0; ix != count; ix++)
 	switch (uint64_t cookie = events[ix].data.u64)
 	  {
-	  case unsigned (FD::INPUT):
-	    ReadInput ();
+	  case unsigned (FD::GEN_OUT):
+	  case unsigned (FD::GEN_ERR):
+	    ReadGen (unsigned (cookie - unsigned (FD::GEN_OUT)));
 	    break;
 
 	  case unsigned (FD::SIGNAL):
@@ -586,7 +696,7 @@ std::string Engine::Progress ()
 	   << "] " << done * 100 / (total + !total) << '%';
   if (!jobs.empty ())
     progress << ' ' << jobs.front ();
-  else if (in_fd >= 0)
+  else if (gen_state)
     progress << " ...";
   return progress.str ();
 }

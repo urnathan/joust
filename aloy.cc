@@ -59,8 +59,11 @@ int main (int argc, char *argv[])
     bool version = false;
     bool verbose = false;
     unsigned jobs = 0;
+    char const *tester = "kratos";
+    char const *gen = nullptr;
     char const *in = "";
     char const *out = "";
+    char const *dir = nullptr;
   } flags;
   constexpr auto uint_fn
     = [] (Option const *option, char const *opt, char const *arg, void *f)
@@ -75,9 +78,11 @@ int main (int argc, char *argv[])
       {"help", 'h', offsetof (Flags, help), nullptr, nullptr, "Help"},
       {"version", 0, offsetof (Flags, version), nullptr, nullptr, "Version"},
       {"verbose", 'v', offsetof (Flags, verbose), nullptr, nullptr, "Verbose"},
+      {"dir", 'C', offsetof (Flags, dir), nullptr, "directory", "Set directory"},
       {"jobs", 'j', offsetof (Flags, jobs), uint_fn, "+val", "Define"},
-      {"in", 'i', offsetof (Flags, in), nullptr, "file", "List"},
+      {"gen", 'g', offsetof (Flags, gen), nullptr, "prog", "Generator"},
       {"out", 'o', offsetof (Flags, out), nullptr, "file", "Output"},
+      {"tester", 't', offsetof (Flags, tester), nullptr, "prog", "Tester"},
       {nullptr, 0, 0, nullptr, nullptr, nullptr}
     };
   int argno = options->Process (argc, argv, &flags);
@@ -93,19 +98,9 @@ int main (int argc, char *argv[])
       BuildNote (stdout);
       return 0;
     }
-
-  // Get the forwarding command
-  if (argno == argc)
-    Fatal ("no command to invoke");
-
-  // Get the listing FD
-  int in_fd = 0;
-  if (flags.in[flags.in[0] == '-'])
-    {
-      in_fd = open (flags.in, O_RDONLY | O_CLOEXEC);
-      if (in_fd < 0)
-	Fatal ("cannot read '%s': %m", flags.in);
-    }
+  if (flags.dir)
+    if (chdir (flags.dir) < 0)
+      Fatal ("cannot chdir '%s': %m", flags.dir);
 
   // Get the log streams
   std::ofstream sum, log;
@@ -125,10 +120,10 @@ int main (int argc, char *argv[])
 	Fatal ("cannot write '%s': %m", out.c_str ());
     }
 
-  Engine engine (argc - argno, argv + argno, std::min (flags.jobs, 256u), in_fd,
+  Engine engine (std::min (flags.jobs, 256u),
 		 flags.out ? sum : std::cout, flags.out ? log : std::cerr);
 
-  engine.Init ();
+  engine.Init (flags.tester, flags.gen, argc - argno, argv + argno);
   bool show_progress = flags.out && isatty (1);;
   size_t progress_size = 0;
 

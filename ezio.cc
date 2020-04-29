@@ -61,6 +61,7 @@ int main (int argc, char *argv[])
     char const *include = nullptr;  // File of var defines
     char const *in = "";
     char const *out = "";
+    char const *dir = nullptr;
     bool help = false;
     bool version = false;
     bool verbose = false;
@@ -87,6 +88,7 @@ int main (int argc, char *argv[])
       {"help", 'h', offsetof (Flags, help), nullptr, nullptr, "Help"},
       {"version", 0, offsetof (Flags, version), nullptr, nullptr, "Version"},
       {"verbose", 'v', offsetof (Flags, verbose), nullptr, nullptr, "Verbose"},
+      {"dir", 'C', offsetof (Flags, dir), nullptr, "directory", "Set directory"},
       {nullptr, 'D', offsetof (Flags, defines), append, "+var=val", "Define"},
       {"defines", 'd', offsetof (Flags, include), nullptr,
        "file", "File of defines"},
@@ -109,6 +111,9 @@ int main (int argc, char *argv[])
       BuildNote (stdout);
       return 0;
     }
+  if (flags.dir)
+    if (chdir (flags.dir) < 0)
+      Fatal ("cannot chdir '%s': %m", flags.dir);
 
   if (!flags.prefixes.size ())
     flags.prefixes.push_back ("CHECK");

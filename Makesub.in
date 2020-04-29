@@ -6,17 +6,13 @@ CXXFLAGS/ += $(CXXFLAGS/nms/) -I $(srcdir)
 
 JOUSTPROGS := ezio kratos aloy
 
-all:: joust $(JOUSTPROGS)
+all:: $(JOUSTPROGS)
 
 $(JOUSTPROGS): %: %.o libnms.a libjoust.a
 	$(CXX) $(LDFLAGS) $< -lnms -ljoust $(LIBS) -o $@
 
-joust: $(srcdir)/joust.sh
-	cp $< $@
-	chmod +x $@
-
 clean::
-	rm -f $(JOUSTPROGS) joust
+	rm -f $(JOUSTPROGS)
 	rm -f $(JOUSTPROGS:=.o) $(JOUSTPROGS:=.d)
 
 LIBJOUST.O := error.o lexer.o logger.o readBuffer.o regex.o \

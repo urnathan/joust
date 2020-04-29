@@ -2,7 +2,7 @@
 # we feed this file into a sub aloy which invokes the the shell on this file
 # stdout and stderr are then checked via ezio
 
-# RUN: <$srcdir$src aloy $SHELL $srcdir$src |
+# RUN: aloy -t $SHELL -g cat $srcdir$src -- $srcdir$src |
 # RUN: ezio -p STD $src |
 # RUN: ezio -p ERR $src
 

@@ -3633,7 +3633,7 @@ fi
 
 
 SUBDIRS="nms"
-CONFIG_FILES="Makefile nms/Maketop nms/gdbinit"
+CONFIG_FILES="Makefile nms/gdbinit"
 
 configure_args=$ac_configure_args
 
@@ -3645,9 +3645,10 @@ configure_args=$ac_configure_args
 CONFIG_FILES+=" gdbinit"
 for dir in $SUBDIRS
 do
-  CONFIG_FILES+=" $dir/Makesub $dir/tests/Makesub"
+  CONFIG_FILES+=" $dir/Makesub"
+  test -f ${srcdir}/$dir/tests/Makesub.in && CONFIG_FILES+=" $dir/tests/Makesub"
 done
-for cfg in Makesub tests/Makesub
+for cfg in Makesub
 do
   test -f ${srcdir}/$cfg.in && CONFIG_FILES+=" $cfg"
 done
