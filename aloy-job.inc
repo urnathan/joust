@@ -30,6 +30,20 @@ private:
   Job &operator= (Job const &) = delete;
 
 public:
+  std::vector<std::string> &Command ()
+  {
+    return command;
+  }
+  auto &Buffer (unsigned ix)
+  {
+    return buffers[ix];
+  }
+  auto const &Buffer (unsigned ix) const
+  {
+    return buffers[ix];
+  }
+
+public:
   void Read (Logger &, unsigned subcode, int poll_fd);
 
   bool Spawn (Logger &, std::vector<std::string> const &preamble,
@@ -43,14 +57,12 @@ public:
   {
     return !state;
   }
-  int Exit () const
+  bool ExitFailed () const
   {
-    return exit_status;
+    return (WIFSIGNALED (exit_status)
+	    || (WIFEXITED (exit_status) && WEXITSTATUS (exit_status)));
   }
-  auto const &Buffer (unsigned ix) const
-  {
-    return buffers[ix];
-  }
+  void ReportExit (Logger &) const;
 
   friend std::ostream &operator<< (std::ostream &, Job const &);
 };
@@ -161,6 +173,22 @@ int Job::Reap (int status)
   int r = make_token;
   make_token = -1;
   return r;
+}
+
+void Job::ReportExit (Logger &log) const
+{
+  if (WIFSIGNALED (exit_status))
+    {
+      int sig = WTERMSIG (exit_status);
+      log.Result (Logger::ERROR) << *this << " terminated with signal " << sig;
+    }
+  else if (WIFEXITED (exit_status))
+    {
+      int code = WEXITSTATUS (exit_status);
+      log.Result (Logger::ERROR) << *this << " exited with status " << code;
+    }
+  else
+    Unreachable ();
 }
 
 std::ostream &operator<< (std::ostream &s, Job const &job)

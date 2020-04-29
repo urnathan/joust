@@ -26,6 +26,10 @@ public:
   int Read ();
 
 public:
+  bool IsOpen () const
+  {
+    return fd >= 0;
+  }
   void Open (int f)
   {
     fd = f;
