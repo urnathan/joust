@@ -18,9 +18,11 @@
 #include "fatal.hh"
 #include "option.hh"
 // C++
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <string_view>
+
 // C
 #include <cstring>
 // OS
@@ -138,15 +140,15 @@ int main (int argc, char *argv[])
   if (pipes.empty () || Error::Errors ())
     Fatal ("failed to construct commands '%s'", testFile);
 
+  Logger logger;
   if (flags.verbose)
     {
-      std::cout << "Pipelines\n";
+      logger.Sum () << "Pipelines\n";
       for (unsigned ix = 0; ix != pipes.size (); ix++)
-	std::cout << ix << pipes[ix];
+	logger.Sum () << ix << pipes[ix];
     }
 
   bool skipping = false;
-  Logger logger;
   unsigned limits[PL_HWM];
 
   for (unsigned ix = PL_HWM; ix--;)
@@ -166,7 +168,8 @@ int main (int argc, char *argv[])
 	  else
 	    limits[ix] = v;
 	}
-  }
+    }
+
   for (auto &pipe : pipes)
     {
       if (!skipping)

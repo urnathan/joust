@@ -10,17 +10,18 @@ public:
 private:
   struct Frame 
   {
-    std::vector<Pattern *> nones;
+    std::vector<Pattern *> none;
     std::vector<Pattern *> body;
     Pattern *head = nullptr;
 
   public:
-    Frame (Pattern *h = nullptr)
-      : head (h)
+    Frame (Pattern *b = nullptr)
+      : head (b)
     {
+      Assert (!b || b->GetKind () == Pattern::BLOCK);
     }
     Frame (Frame &&from)
-      : nones (std::move (from.nones)),
+      : none (std::move (from.none)),
 	body (std::move (from.body)),
 	head (from.head)
     {
@@ -32,13 +33,15 @@ private:
     Frame &operator= (Frame &&) = delete;
     
   };
+  using BodyIter = NullIterator<Pattern *>;
+  using FrameIter = NullIterator<Frame>;
 
 private:
   Symtab &syms;
   std::vector<Pattern *> nevers;
   std::vector<Frame> frames;
-  unsigned frameIndex = 0;
-  unsigned bodyIndex = 0;
+  FrameIter frameIter; // Current frame
+  BodyIter bodyIter; // Current element
 
 public:
   Engine (Symtab &syms_, std::ostream &sum_, std::ostream &log_)
@@ -52,13 +55,22 @@ private:
   Engine &operator= (Engine &&) = delete;
 
 public:
-  void FrameAdvance (unsigned frameIndex);
-  void BodyAdvance (unsigned frameIndex);
+  // Advance in current frame, NULL to include the nones
+  void BodyAdvance (BodyIter);
+
+public:
+  // Advance to frame
+  void FrameAdvance (FrameIter);
+
+public:
   void Process (char const *file);
   void Process (std::string_view const &line, bool eof);
 
 public:
+  // Add pattern to frames or nevers, might start a new frame
   void Add (Pattern *);
+
+public:
   void Initialize ();
   void Finalize ();
 
@@ -69,7 +81,7 @@ public:
 
 Engine::Frame::~Frame ()
 {
-  for (auto *n : nones)
+  for (auto *n : none)
     delete n;
   for (auto *b : body)
     delete b;
@@ -103,7 +115,7 @@ std::ostream &operator<< (std::ostream &s, Engine::Frame const &f)
   if (auto *h = f.head)
     s << *h;
 
-  s << f.body << f.nones;
+  s << f.body << f.none;
  
   return s;
 }
@@ -123,180 +135,149 @@ void Engine::Add (Pattern *p)
   switch (p->GetKind ())
     {
     case Pattern::NEVER:
+      // Add to the nevers
       nevers.push_back (p);
       break;
 
     case Pattern::BLOCK:
+      // Start a new frame
+      frames.emplace_back (p);
+      break;
+
+    case Pattern::NONE:
+      // Append to the current frame's nones
       if (frames.empty ())
-	frames.push_back (Frame ());
-      frames.push_back (Frame (p));
+	frames.emplace_back ();
+
+      frames.back ().none.emplace_back (p);
       break;
 
     default:
-      {
-	if (frames.empty ())
-	  frames.push_back (Frame ());
+      // Append to the current frame's body
+      if (frames.empty ())
+	frames.emplace_back ();
 
-	auto &frame = frames.back ();
-	if (p->GetKind () == Pattern::NONE)
-	  frame.nones.push_back (p);
-	else
-	  {
-	    if (p->GetKind () == Pattern::NOT)
-	      if ((frame.body.empty () && !frame.head)
-		  || (frame.body.back ()->GetKind () != Pattern::MATCH
-		      && frame.body.back ()->GetKind () != Pattern::NEXT))
-		p->Error () << "pattern requires positive match predecessor";
-	    frame.body.push_back (p);
-	  }
-      }
+      frames.back ().body.emplace_back (p);
       break;
     }
 }
 
-void Engine::BodyAdvance (unsigned bIndex)
+void Engine::BodyAdvance (BodyIter bodyIx)
 {
-  Frame const &frame = frames[frameIndex];
+  Frame const &frame = *frameIter;
 
-  for (unsigned ix = bodyIndex; ix != bIndex; ix++)
+  if (!bodyIter)
     {
-      auto *p = frame.body[ix];
-
-      if (p->Errored ())
-	p->Result (*this, Logger::ERROR);
-      else if (p->GetKind () != Pattern::NOT)
-	p->Result (*this, false);
-      else if (!p->Matched ())
-	p->Result (*this, true);
+      if (frameIter->head)
+	frameIter->head->Result (*this);
+      bodyIter = frameIter->body.begin ();
     }
-  bodyIndex = bIndex;
+
+  for (BodyIter limit = bodyIx ? bodyIx : frameIter->body.end ();
+       bodyIter != limit; ++bodyIter)
+    (*bodyIter)->Result (*this);
+
+  if (!bodyIx)
+    // Advancing to next frame
+    for (auto iter = frameIter->none.begin ();
+	 iter != frameIter->none.end (); ++iter)
+      (*iter)->Result (*this);
 }
 
-void Engine::FrameAdvance (unsigned fIndex)
+void Engine::FrameAdvance (FrameIter frameIx)
 {
-  bool head = false;
-  for (; frameIndex != fIndex; frameIndex++,  head = true, bodyIndex = 0)
-    {
-      Frame const &frame = frames[frameIndex];
+  for (FrameIter limit = frameIx ? frameIx : frames.end ();
+       frameIter != limit; ++frameIter, bodyIter = nullptr)
+    BodyAdvance (nullptr);
 
-      if (head && frame.head)
-	{
-	  if (frame.head->Errored ())
-	    frame.head->Result (*this, Logger::ERROR);
-	  else
-	    frame.head->Result (*this, false);
-	}
-
-      BodyAdvance (frame.body.size ());
-      for (auto none = frame.nones.begin (); none != frame.nones.end (); ++none)
-	{
-	  auto *p = *none;
-	  if (p->Errored ())
-	    p->Result (*this, Logger::ERROR);
-	  else if (!p->Matched ())
-	    p->Result (*this, true);
-	}
-    }
-
-  bodyIndex = 0;
-
-  if (frameIndex == frames.size ())
-    for (auto never = nevers.begin (); never != nevers.end (); ++never)
-      {
-	auto *p = *never;
-	if (p->Errored ())
-	  p->Result (*this, Logger::ERROR);
-	else if (!p->Matched ())
-	  p->Result (*this, true);
-      }
+  if (!frameIx)
+    // We're done
+    for (auto iter = nevers.begin (); iter != nevers.end (); ++iter)
+      (*iter)->Result (*this);
 }
 
 void Engine::Initialize ()
 {
   if (frames.empty () && nevers.empty ())
     Fatal ("nothing to check");
+
+  frameIter = frames.begin ();
+  if (!frames.empty () && !frameIter->head)
+    bodyIter = frameIter->body.begin ();
 }
 
 void Engine::Process (std::string_view const &text, bool eof)
 {
-  // If any block-head matches, advance to that block
-  // Otherwise if body matches, advance to next body
-  // Othterwise if body is NEXT, fail and repeat
-  // Otherwise if any none or never matches, fail
-
-  if (frameIndex == frames.size ())
-    return;
-
   bool maybe_captures = false;
 
-  // Look in the current frame
-  bool seen_error = false;
-  Frame &frame = frames[frameIndex];
-  for (unsigned ix = bodyIndex; ix != frame.body.size (); ix++)
+  if (bodyIter)
     {
-      auto *p = frame.body[ix];
-      auto expn = p->Expand (syms);
-      if (expn != Regex::FOUND)
+      // We're inside a frame, process it
+      for (auto peek = bodyIter; peek != frameIter->body.end (); ++peek)
 	{
-	  // We couldn't compile the pattern
-	  if (expn == Regex::NOTFOUND)
-	    p->Error () << "match contains unexpandable escape";
-	  seen_error = true;
-	  continue;
-	}
+	  auto *p = *peek;
 
-      switch (p->GetKind ())
-	{
-	case Pattern::NEXT:
-	  Assert (ix == bodyIndex || p->Errored () || seen_error);
-	  [[fallthrough]];
-	case Pattern::MATCH:
-	  {
+	  if (p->Errored ())
+	    continue;
+
+	  auto expn = p->Expand (syms);
+	  if (expn != Regex::FOUND)
+	    {
+	      // We couldn't compile the pattern
+	      if (expn == Regex::NOTFOUND)
+		p->Error () << "match contains unexpandable escape";
+	      continue;
+	    }
+
 	    auto cmp = p->Compare (syms, text, eof);
 	    if (cmp == Regex::FAILED)
 	      continue;
 
-	    if (cmp == Regex::FOUND)
+	    switch (p->GetKind ())
 	      {
-		BodyAdvance (ix);
-		p->Result (*this, true);
-		bodyIndex = ix + 1;
-		return;
-	      }
+	      case Pattern::NEXT:
+	      case Pattern::MATCH:
+		if (cmp == Regex::FOUND)
+		  {
+		    BodyAdvance (peek);
+		    p->Matched (*this);
+		    bodyIter = ++peek;
+		    return;
+		  }
 
-	    if (p->GetKind () == Pattern::NEXT)
-	      {
-		p->Result (*this, false);
-		bodyIndex = ix + 1;
+		if (p->GetKind () == Pattern::NEXT)
+		  BodyAdvance (++peek);
+		else
+		  maybe_captures = true;
+		goto no_match;
+
+	      case Pattern::NOT:
+		if (cmp == Regex::FOUND)
+		  p->Matched (*this);
+		continue;
+
+	      default:
+		Unreachable ();
 	      }
-	    else
-	      maybe_captures = true;
 	  }
-	  goto no_match;
-
-	case Pattern::NOT:
-	  if (p->Compare (syms, text, eof) == Regex::FOUND)
-	    p->Result (*this, false);
-	  continue;
-
-	default:
-	  Unreachable ();
-	}
+    no_match:;
     }
- no_match:;
 
-  // Look in future frames
-  for (unsigned ix = frameIndex + 1; ix < frames.size (); ix++)
+  // Look if any HEAD matches, and if so advance to it
+  bool first = true;
+  for (auto framePeek = frameIter + bool (bodyIter);
+       framePeek != frames.end (); ++framePeek, first = false)
     {
-      auto *p = frames[ix].head;
+      Pattern *p = framePeek->head;
 
-      if (!p)
-	continue;
+      Assert (p);
 
       auto expn = p->Expand (syms);
       if (expn != Regex::FOUND)
 	{
-	  if (expn == Regex::NOTFOUND && !maybe_captures && ix == frameIndex + 1)
+	  // Failed to expand it, ignore this but check if definitely
+	  // an error
+	  if (expn == Regex::NOTFOUND && !maybe_captures && first)
 	    p->Error () << "block contains unexpandable escape";
 	  continue;
 	}
@@ -304,27 +285,34 @@ void Engine::Process (std::string_view const &text, bool eof)
       if (p->Compare (syms, text, eof) != Regex::FOUND)
 	continue;
 
-      FrameAdvance (ix);
-      p->Result (*this, true);
-      return;
+      // We've found a matching BLOCK, advance and be done
+      FrameAdvance (framePeek);
+      p->Matched (*this);
+      bodyIter = frameIter->body.begin ();
+
+      return;     
     }
+
+  // Failed a positive match, check the negative ones
 
   // Look for NONEs
-  for (auto none = frame.nones.begin (); none != frame.nones.end (); ++none)
-    {
-      auto *p = *none;
-      if (p->Expand (syms) == Regex::FOUND
-	  && p->Compare (syms, text, eof) == Regex::FOUND)
-	p->Result (*this, false);
-    }
+  if (frameIter != frames.end ())
+    for (auto iter = frameIter->none.begin ();
+	 iter != frameIter->none.end (); ++iter)
+      {
+	auto *p = *iter;
+	if (p->Expand (syms) == Regex::FOUND
+	    && p->Compare (syms, text, eof) == Regex::FOUND)
+	  p->Matched (*this);
+      }
 
   // Look for NEVERs
-  for (auto never = nevers.begin (); never != nevers.end (); ++never)
+  for (auto iter = nevers.begin (); iter != nevers.end (); ++iter)
     {
-      auto *p = *never;
+      auto *p = *iter;
       if (p->Expand (syms) == Regex::FOUND
 	  && p->Compare (syms, text, eof) == Regex::FOUND)
-	p->Result (*this, false);
+	p->Matched (*this);
     }
 }
 
@@ -392,6 +380,7 @@ void Engine::Process (char const *file)
 		     MAP_PRIVATE, fd, 0);
       if (buffer == MAP_FAILED)
 	goto fatal;
+
       // Don't really care about error code
       madvise (buffer, alloc, MADV_SEQUENTIAL);
     }
@@ -420,5 +409,5 @@ void Engine::Process (char const *file)
 void Engine::Finalize ()
 {
   Process ("", true);
-  FrameAdvance (frames.size ());
+  FrameAdvance (nullptr);
 }

@@ -23,8 +23,8 @@ class Pattern
   
 public:
 #define PATTERN_KINDS							\
-  PATTERN_KIND_FROB(BLOCK),						\
-    PATTERN_KIND_FROB(MATCH), PATTERN_KIND_FROB(NEXT),			\
+  PATTERN_KIND_FROB(MATCH), PATTERN_KIND_FROB(NEXT),			\
+    PATTERN_KIND_FROB(BLOCK),						\
     PATTERN_KIND_FROB(NOT),						\
     PATTERN_KIND_FROB(NEVER), PATTERN_KIND_FROB(NONE),			\
     PATTERN_KIND_FROB(UNKNOWN)
@@ -54,6 +54,7 @@ private:
   bool matchSpace : 1 = false;
   bool matchSol : 1 = false;
   bool matchEol : 1 = false;
+  bool is_eof : 1 = false;
   bool is_xfail : 1 = false;
   bool has_error : 1 = false;
   bool has_matched : 1 = false;
@@ -129,12 +130,12 @@ public:
 private:
   bool ParseEscape (Parser *, Lexer &);
 
-public:
+private:
   void Result (Logger &, Logger::Status) const;
-  void Result (Logger &l, bool pass) const
-  {
-    Result (l, Logger::PassFail (pass, is_xfail));
-  }
+
+public:
+  void Result (Logger &) const;
+  void Matched (Logger &) const;
 
   friend std::ostream &operator<< (std::ostream &s, Pattern const &p);
 };
@@ -578,9 +579,9 @@ bool Pattern::Canonicalize ()
 {
   std::vector<Token> canon;
   canon.reserve (atoms.size ());
+  int eof = 0;
 
   std::string acc; // Current accumulation
-  int eof = 0;
 
   if (matchSol)
     acc.push_back ('^');
@@ -604,9 +605,9 @@ bool Pattern::Canonicalize ()
 
 	case Token::STRING:
 	  {
-	    eof = -1;
 	    std::string escaped = Regex::Protect (token->GetString ());
 	    acc.append (std::move (escaped));
+	    eof = -1;
 	  }
 	  break;
 
@@ -660,7 +661,6 @@ bool Pattern::Canonicalize ()
 		canon.push_back (Token (Token::STRING, std::move (acc)));
 		acc.clear ();
 	      }
-
 	    canon.push_back (std::move (*token));
 	    eof = -1;
 	  }
@@ -683,9 +683,11 @@ bool Pattern::Canonicalize ()
       return false;
     }
 
-  // End Of File is an empty pattern with special syntax
   if (eof == 1)
-    canon.clear ();
+    {
+      canon.clear ();
+      is_eof = true;
+    }
 
   atoms = std::move (canon);
 
@@ -849,10 +851,13 @@ Regex::Result Pattern::Expand (Symtab const &symtab)
 Regex::Result Pattern::Compare
   (Symtab &symtab, std::string_view const &text, bool eof)
 {
-  if (expansion.empty ())
-    return eof ? Regex::FOUND : Regex::NOTFOUND;
-  else if (eof)
+  if (is_eof != eof)
     return Regex::NOTFOUND;
+  else if (eof)
+    {
+      has_matched = true;
+      return Regex::FOUND;
+    }
 
   std::cmatch match;
   int error;
@@ -906,4 +911,20 @@ Regex::Result Pattern::Compare
 void Pattern::Result (Logger &logger, Logger::Status s) const
 {
   logger.Result (s, file, line) << kinds[GetKind ()] << ' ' << original;
+}
+
+/* Emit result for a skipped-over pattern.  */
+void Pattern::Result (Logger &log) const
+{
+  if (Errored ())
+    Result (log, Logger::ERROR);
+  else if (!Matched ())
+    Result (log, Logger::PassFail (GetKind () >= CAPTURE_HWM, is_xfail));
+}
+
+void Pattern::Matched (Logger &log) const
+{
+  Assert (!Errored () && Matched ());
+
+  Result (log, Logger::PassFail (GetKind () < CAPTURE_HWM, is_xfail));
 }

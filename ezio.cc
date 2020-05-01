@@ -10,6 +10,7 @@
 #include "error.hh"
 #include "lexer.hh"
 #include "logger.hh"
+#include "nullIterator.hh"
 #include "regex.hh"
 #include "scanner.hh"
 #include "symbols.hh"
@@ -121,7 +122,7 @@ int main (int argc, char *argv[])
   Symtab syms;
 
   // Register defines
-  syms.text.Set ("EOF", "");
+  syms.text.Set ("EOF", "${}EOF");
   for (auto d : flags.defines)
     syms.text.Define (std::string_view (d));
   if (flags.include)

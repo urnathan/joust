@@ -21,8 +21,8 @@ OUT-OPTION: matchSol
 OUT-NEVER: ERROR:
 OUT-NEVER: FAIL:
 OUT-OPTION: !matchSol
-OUT: PASS: {:.*}:BLOCK {:.*} captures on
+OUT: PASS: {:.*}:MATCH {:.*} captures on
 OUT: PASS: {:.*}:NEXT {:.*} frobs on
-OUT: PASS: {:.*}:BLOCK {:.*} word
+OUT: PASS: {:.*}:MATCH {:.*} word
 OUT: PASS: {:.*}:NEXT {:.*} frob
 OUT: FAIL: {:.*}:NEXT {:.*} frob

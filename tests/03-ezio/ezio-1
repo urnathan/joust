@@ -23,7 +23,7 @@ OUT-OPTION: !matchSol
 ERR-OPTION: matchSol
 ERR: 1:
 ERR-OPTION: !matchEol
-OUT: PASS: {:.*}:BLOCK Yeah
+OUT: PASS: {:.*}:MATCH Yeah
 ERR-OPTION: matchSol
 ERR-NEXT: 2:
 ERR-OPTION: !matchEol
@@ -31,7 +31,7 @@ OUT-NEXT: PASS: {:.*}:NEXT RUN:
 ERR-OPTION: matchSol
 ERR-NEXT: 3:
 ERR-OPTION: !matchEol
-OUT-NEXT: PASS: {:.*}:BLOCK {:.}ezio -p
+OUT-NEXT: PASS: {:.*}:MATCH {:.}ezio -p
 ERR-OPTION: matchSol
 ERR-NEXT: 4:
 ERR-OPTION: !matchEol

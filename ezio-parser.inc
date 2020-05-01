@@ -149,8 +149,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	found:;
 	}
       
-      if (auto *p
-	  = Pattern::Parse (this, Pattern::Kind (code), pattern))
+      if (auto *p = Pattern::Parse (this, Pattern::Kind (code), pattern))
 	e.Add (p);
 
       xfail = false;

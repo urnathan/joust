@@ -19,15 +19,15 @@ CHECK: 6 ${}$ 7
 
 OUT-OPTION: matchSol
 ERR: 6:1
-OUT: PASS: $src:{:[0-9]+}:BLOCK  1
+OUT: PASS: $src:{:[0-9]+}:MATCH  1
 ERR-NEXT: 7:2
-OUT: PASS: $src:{:[0-9]+}:BLOCK  2
+OUT: PASS: $src:{:[0-9]+}:MATCH  2
 ERR-NEXT: 8:3
 OUT: PASS: $src:{:[0-9]+}:NEXT  3
 ERR-NEXT: 9:4
-OUT: PASS: $src:{:[0-9]+}:BLOCK  4
+OUT: PASS: $src:{:[0-9]+}:MATCH  4
 ERR-NEXT: 10:5
-OUT: PASS: $src:{:[0-9]+}:BLOCK  5
+OUT: PASS: $src:{:[0-9]+}:MATCH  5
 ERR-NEXT: 11:6
-OUT: PASS: $src:{:[0-9]+}:BLOCK  6
+OUT: PASS: $src:{:[0-9]+}:MATCH  6
 ERR-NEXT: 12:

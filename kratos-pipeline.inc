@@ -143,6 +143,22 @@ bool Pipeline::Execute (Logger &logger, unsigned const *limits)
   Assert (poll_fd >= 0);
   epoll_event ev;
 
+  // Signal fd and block sigchild 
+  sigset_t sigmask, sigold;
+  sigemptyset (&sigmask);
+  static constexpr unsigned char sigs[] =
+    {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, 0 };
+  for (unsigned ix = 0; sigs[ix]; ix++)
+    sigaddset (&sigmask, sigs[ix]);
+  int sig_fd = signalfd (-1, &sigmask, SFD_NONBLOCK | SFD_CLOEXEC);
+  Assert (sig_fd >= 0);
+  while (sigprocmask (SIG_BLOCK, &sigmask, &sigold) < 0)
+    Assert (errno == EINTR);
+  ev.events = EPOLLIN;
+  ev.data.u64 = 0;
+  while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
+    Assert (errno == EINTR);
+
   // We must buffer the 4 streams from the 2 filters, otherwise the
   // output can be randomly intermixed, and that'll be terribly
   // confusing at best.
@@ -176,22 +192,6 @@ bool Pipeline::Execute (Logger &logger, unsigned const *limits)
 	  }
       }
   }
-
-  // Signal fd and block sigchild 
-  sigset_t sigmask, sigold;
-  sigemptyset (&sigmask);
-  static constexpr unsigned char sigs[] =
-    {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, 0 };
-  for (unsigned ix = 0; sigs[ix]; ix++)
-    sigaddset (&sigmask, sigs[ix]);
-  int sig_fd = signalfd (-1, &sigmask, SFD_NONBLOCK | SFD_CLOEXEC);
-  Assert (sig_fd >= 0);
-  if (sigprocmask (SIG_BLOCK, &sigmask, &sigold) < 0)
-    Unreachable ();
-  ev.events = EPOLLIN;
-  ev.data.u64 = 0;
-  if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
-    Unreachable ();
 
   // Wait for completion
   bool signalled = false;
