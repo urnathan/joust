@@ -324,8 +324,6 @@ bool Parser::RecursivelyExpand (std::vector<std::string> &words,
 
   if (std::string const *val = syms.Get (var))
     ok = RecursivelyExpand (words, *val, quoted, word, stack);
-  else if (char const *eval = getenv (var.c_str ()))
-    ok = RecursivelyExpand (words, eval, quoted, word, stack);
   else
     {
       Error () << "undefined variable '" << var << "'";

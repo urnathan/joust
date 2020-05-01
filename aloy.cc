@@ -61,7 +61,6 @@ int main (int argc, char *argv[])
     unsigned jobs = 0;
     char const *tester = "kratos";
     char const *gen = nullptr;
-    char const *in = "";
     char const *out = "";
     char const *dir = nullptr;
   } flags;

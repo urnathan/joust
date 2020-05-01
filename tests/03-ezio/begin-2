@@ -1,0 +1,41 @@
+RUN: ezio -i $srcdir$src $src |
+RUN: ezio -p OUT $src |
+RUN: ezio -p OUT -p ERR $src
+RUN-END:
+
+one
+ first
+two
+ second
+three
+ third 
+four
+ fourth
+
+
+CHECK-BLOCK: one
+CHECK-NEXT: ^first
+CHECK-BLOCK: two
+CHECK-NEXT: ^ second
+CHECK-BLOCK: three
+CHECK-NEXT: third$
+CHECK-BLOCK: four
+CHECK-NEXT: fourth$
+CHECK-END:
+
+ERR:{:[0-9]+}:one
+OUT: PASS: $src:{:[0-9]+}:BLOCK  one
+ERR:{:[0-9]+}: first
+OUT: FAIL: $src:{:[0-9]+}:NEXT  ^first
+ERR:{:[0-9]+}:two
+OUT: PASS: $src:{:[0-9]+}:BLOCK  two
+ERR:{:[0-9]+}: second
+OUT: PASS: $src:{:[0-9]+}:NEXT  ^ second
+ERR:{:[0-9]+}:three
+OUT: PASS: $src:{:[0-9]+}:BLOCK  three
+ERR:{:[0-9]+}: third
+OUT: FAIL: $src:{:[0-9]+}:NEXT  third{:\$}
+ERR:{:[0-9]+}:four
+OUT: PASS: $src:{:[0-9]+}:BLOCK  four
+ERR:{:[0-9]+}: fourth
+OUT: PASS: $src:{:[0-9]+}:NEXT  fourth{:\$}

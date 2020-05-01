@@ -24,7 +24,7 @@ Result Search (std::regex const &, std::string_view const &text,
 	       std::cmatch &, int &) noexcept;
 char const *Error (int);
 void Protect (std::string &, std::string_view const &);
-inline std::string Protect (std::string const &src)
+inline std::string Protect (std::string_view const &src)
 {
   std::string dst;
   Protect (dst, src);

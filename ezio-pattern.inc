@@ -586,6 +586,7 @@ bool Pattern::Canonicalize ()
   if (matchSol)
     acc.push_back ('^');
 
+  bool eol = matchEol;
   for (auto token = atoms.begin (); token != atoms.end (); ++token)
     {
       switch (token->GetKind ())
@@ -605,7 +606,22 @@ bool Pattern::Canonicalize ()
 
 	case Token::STRING:
 	  {
-	    std::string escaped = Regex::Protect (token->GetString ());
+	    std::string_view string = token->GetString ();
+	    // SOL can also be matched with explicit ^
+	    if (canon.empty () && acc.size () == matchSol
+		&& string.front () == '^')
+	      {
+		string.remove_prefix (1);
+		if (acc.empty ())
+		  acc.push_back ('^');
+	      }
+	    // EOL can also match be matched with explicit $
+	    if (token + 1 == atoms.end () && string.back () == '$')
+	      {
+		eol = true;
+		string.remove_suffix (1);
+	      }
+	    std::string escaped = Regex::Protect (string);
 	    acc.append (std::move (escaped));
 	    eof = -1;
 	  }
@@ -671,7 +687,7 @@ bool Pattern::Canonicalize ()
 	}
     }
 
-  if (matchEol)
+  if (eol)
     acc.push_back ('$');
 
   if (acc.size ())

@@ -2,8 +2,8 @@
 # we feed this file into a sub aloy which invokes the the shell on this file
 # stdout and stderr are then checked via ezio
 
-# RUN: aloy -t $SHELL -g cat $srcdir$src -- $srcdir$src |
-# RUN: ezio -p STD $src |
+# RUN: aloy -t $SHELL -g cat -o - $srcdir$src -- $srcdir$src |
+# RUN: ezio -p OUT $src |
 # RUN: ezio -p ERR $src
 
 # we'll invoke the shell on each word here
@@ -12,9 +12,9 @@ exit 0
 
 and we're done
 
-# STD: Test run:
-# STD: # Summary of
-# STD: PASS 0
+# OUT: Test run:
+# OUT: # Summary of
+# OUT: PASS 0
 
 # ERR: Test run:
 # ERR-BLOCK: Test:0 echo
