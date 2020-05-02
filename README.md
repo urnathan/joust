@@ -152,6 +152,13 @@ via a temporary file `$tmp-1`.  That file could also be used by a
 subsequent program under test.  (`$tmp` is an automatically defined
 variable.)
 
+System resources can be constrained by use of variables:
+
+* $cpulimit:  Maximum cpu time, in minutes (1 minute).
+* $memlimit:  Maxiumum memory use, in GB (1 GB).
+* $filelimit:  Maximum filesize, in GB (1 GB).
+* $timelimit:  Maximum wall clock time, in minutes (unlimited).
+
 ## EZIO: Expect Zero Irregularities Observed
 
 EZIO is a pattern matcher.  It scans a source file, extracting
@@ -180,6 +187,17 @@ patterns from it, and then matches the patterns against a test file.
 ## Commonalities
 
 ### Variables
+
+Variables can be specfied in:
+* -D$var=$val command line options
+* -d$file file specified on the command line
+* File specified in a $JOUST environment variable.
+
+They are initialized in that order, and the first initializer wins.
+These are unrelated to environment variables.  (Although environment
+variables can influence tests, because they are visible to the
+programs being tested.)  Typically setup code will create a file of
+values and initialize JOUST to point at it.
 
 All the programs expect a `$srcdir` variable to be specified pointing
 at the source directory.  They will automatically prepend it to

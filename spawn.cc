@@ -65,9 +65,7 @@ std::tuple<pid_t, int> Spawn (int fd_in, int fd_out, int fd_err,
 		    if (limits[jx])
 		      {
 			rlim_t v = limits[jx];
-			if (jx == PL_CPU)
-			  v *= 60;
-			else
+			if (jx != PL_CPU)
 			  v *= 1024 * 1024 * 1024;
 
 			struct rlimit limit;

@@ -204,7 +204,7 @@ void Engine::Init (char const *tester, char const *genner,
   sigset_t sigmask;
   sigemptyset (&sigmask);
   static constexpr unsigned char sigs[] =
-    {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, 0 };
+    {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGTERM, 0 };
   for (unsigned ix = 0; sigs[ix]; ix++)
     sigaddset (&sigmask, sigs[ix]);
   sig_fd = signalfd (-1, &sigmask, SFD_NONBLOCK | SFD_CLOEXEC);
@@ -362,6 +362,7 @@ void Engine::ReadSignal ()
     case SIGHUP:
     case SIGINT:
     case SIGQUIT:
+    case SIGTERM:
       Stop (sig.ssi_signo);
       break;
       

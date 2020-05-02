@@ -22,7 +22,6 @@
 #include <iostream>
 #include <string>
 #include <string_view>
-
 // C
 #include <cstring>
 // OS
@@ -33,14 +32,24 @@
 #include <sys/epoll.h>
 #include <sys/fcntl.h>
 #include <sys/signalfd.h>
+#include <sys/time.h>
 #include <sys/wait.h>
 
 using namespace NMS;
 using namespace Joust;
 
-// FIXME: add RUN-ITERATE: var {val1} {val2} ...
-// FIXME: expand variables upon execution
-// FIXME: add RUN-COPY: way of copying files to remote
+// Not (yet) supported (because I don't have a need for it):
+
+// * Offloading to a remote execution system.  Add $wrapper variable or
+// something?
+
+// * Copying files to/from remote system.  Add $cpto $cp from
+// variables along with RUN-AUX: or similar.
+
+// * Iteration over a set of flags.  Add RUN-ITERATE: along with
+// ability to defer some toplevel variable expansion to runtime.
+// RUN-REQUIRE inside a loop would continue to the next iteration of
+// the loop.
 
 namespace {
 
@@ -149,15 +158,14 @@ int main (int argc, char *argv[])
     }
 
   bool skipping = false;
-  unsigned limits[PL_HWM];
+  unsigned limits[PL_HWM + 1];
 
-  for (unsigned ix = PL_HWM; ix--;)
+  for (unsigned ix = PL_HWM + 1; ix--;)
     {
-      static char const *const vars[PL_HWM]
-	= {"cpulimit", "memlimit", "filesizelimit"};
+      static char const *const vars[PL_HWM + 1]
+	= {"cpulimit", "memlimit", "filelimit", "timelimit"};
 
-      // 1GB, 1Minute
-      limits[ix] = 1;
+      limits[ix] = 0;
       if (auto limit = syms.Get (vars[ix]))
 	{
 	  char *eptr;
@@ -175,7 +183,8 @@ int main (int argc, char *argv[])
       if (!skipping)
 	{
 	  logger.Log () << '\n';
-	  int e = pipe.Execute (logger, limits);
+	  int e = pipe.Execute (logger, pipe.GetKind () != Pipeline::REQUIRE
+				? limits : nullptr);
 	  if (e && pipe.GetKind () == Pipeline::REQUIRE)
 	    skipping = true;
 	  if (e == EINTR)

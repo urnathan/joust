@@ -148,7 +148,7 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
   sigset_t sigmask, sigold;
   sigemptyset (&sigmask);
   static constexpr unsigned char sigs[] =
-    {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, 0 };
+    {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGALRM, SIGTERM, 0 };
   for (unsigned ix = 0; sigs[ix]; ix++)
     sigaddset (&sigmask, sigs[ix]);
   int sig_fd = signalfd (-1, &sigmask, SFD_NONBLOCK | SFD_CLOEXEC);
@@ -195,6 +195,14 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
   }
 
   // Wait for completion
+  itimerval timeout = {{0, 0}, {0, 0}};
+  if (limits && limits[PL_HWM])
+    {
+      timeout.it_value.tv_sec = limits[PL_HWM];
+      setitimer (ITIMER_REAL, &timeout, nullptr);
+      timeout.it_value.tv_sec = 0;
+    }
+
   bool signalled = false;
   int exit_code = -1;
   while (subtasks || num_streams)
@@ -273,9 +281,10 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 
 			    iter->pid = -1;
 			    subtasks--;
-			    if (iter == commands.begin ()
-				&& (kind != REQUIRE || !is_sig))
+			    if (iter == commands.begin ())
 			      {
+				if (limits)
+				  setitimer (ITIMER_REAL, &timeout, nullptr);
 				signalled = is_sig;
 				exit_code = ex;
 			      }
@@ -298,10 +307,18 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 	      case SIGHUP:
 	      case SIGINT:
 	      case SIGQUIT:
+	      case SIGTERM:
 		stopped = true;
 		commands.front ().Stop (sig.ssi_signo);
 		break;
-		
+
+	      case SIGALRM:
+		commands.front ().Stop (SIGTERM);
+		commands.front ().Error ()
+		  << "TIMEOUT after " << limits[PL_HWM] << " seconds";
+		Result (logger, Logger::ERROR);
+		break;
+
 	      case SIGPIPE:
 	      default:
 		Unreachable ();
@@ -324,7 +341,7 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 	  if (ix & 1)
 	    {
 	      s = &std::cerr;
-	      *s << "#ERR " << iter->File () << ':' << iter->Line ()
+	      *s << "# Checker " << iter->File () << ':' << iter->Line ()
 		 << *iter << '\n';
 	    }
 	  *s << std::string_view (streams[ix].data (), size);
