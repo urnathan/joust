@@ -12,20 +12,16 @@ private:
   {
     std::vector<Pattern *> none;
     std::vector<Pattern *> body;
-    Pattern *head = nullptr;
 
   public:
-    Frame (Pattern *b = nullptr)
-      : head (b)
+    Frame (Pattern *head = nullptr)
     {
-      Assert (!b || b->GetKind () == Pattern::BLOCK);
+      body.emplace_back (head);
     }
     Frame (Frame &&from)
       : none (std::move (from.none)),
-	body (std::move (from.body)),
-	head (from.head)
+	body (std::move (from.body))
     {
-      from.head = nullptr;
     }
     ~Frame ();
 
@@ -33,8 +29,8 @@ private:
     Frame &operator= (Frame &&) = delete;
     
   };
-  using BodyIter = NullIterator<Pattern *>;
-  using FrameIter = NullIterator<Frame>;
+  using BodyIter = std::vector<Pattern *>::iterator;
+  using FrameIter = std::vector<Frame>::iterator;
 
 private:
   Symbols &syms;
@@ -55,7 +51,6 @@ private:
   Engine &operator= (Engine &&) = delete;
 
 public:
-  // Advance in current frame, NULL to include the nones
   void BodyAdvance (BodyIter);
 
 public:
@@ -85,7 +80,6 @@ Engine::Frame::~Frame ()
     delete n;
   for (auto *b : body)
     delete b;
-  delete head;
 }
 
 Engine::~Engine ()
@@ -97,7 +91,8 @@ Engine::~Engine ()
 std::ostream &operator<< (std::ostream &s, std::vector<Pattern *> const &vec)
 {
   for (auto iter = vec.begin (); iter != vec.end (); ++iter)
-    s << **iter;
+    if (auto p = *iter)
+      s << *p;
 
   return s;
 }
@@ -112,9 +107,6 @@ std::ostream &operator<< (std::ostream &s, std::vector<Engine::Frame> const &vec
 
 std::ostream &operator<< (std::ostream &s, Engine::Frame const &f)
 {
-  if (auto *h = f.head)
-    s << *h;
-
   s << f.body << f.none;
  
   return s;
@@ -164,53 +156,44 @@ void Engine::Add (Pattern *p)
 
 void Engine::BodyAdvance (BodyIter bodyIx)
 {
-  Frame const &frame = *frameIter;
-
-  if (!bodyIter)
-    {
-      if (frameIter->head)
-	frameIter->head->Result (*this);
-      bodyIter = frameIter->body.begin ();
-    }
-
-  for (BodyIter limit = bodyIx ? bodyIx : frameIter->body.end ();
-       bodyIter != limit; ++bodyIter)
+  for (Frame const &frame = *frameIter;
+       bodyIter != bodyIx; ++bodyIter)
     (*bodyIter)->Result (*this);
-
-  if (!bodyIx)
-    // Advancing to next frame
-    for (auto iter = frameIter->none.begin ();
-	 iter != frameIter->none.end (); ++iter)
-      (*iter)->Result (*this);
 }
 
 void Engine::FrameAdvance (FrameIter frameIx)
 {
-  for (FrameIter limit = frameIx ? frameIx : frames.end ();
-       frameIter != limit; ++frameIter, bodyIter = nullptr)
-    BodyAdvance (nullptr);
-
-  if (!frameIx)
-    // We're done
-    for (auto iter = nevers.begin (); iter != nevers.end (); ++iter)
-      (*iter)->Result (*this);
+  while (frameIter != frameIx)
+    {
+      BodyAdvance (frameIter->body.end ());
+      for (auto iter = frameIter->none.begin ();
+	   iter != frameIter->none.end (); ++iter)
+	(*iter)->Result (*this);
+      ++frameIter;
+      if (frameIter != frames.end ())
+	bodyIter = frameIter->body.begin ();
+    }
 }
 
 void Engine::Initialize ()
 {
-  if (frames.empty () && nevers.empty ())
-    Fatal ("nothing to check");
-
+  if (frames.empty ())
+    {
+      if (nevers.empty ())
+	Fatal ("nothing to check");
+      frames.emplace_back ();
+    }
   frameIter = frames.begin ();
-  if (!frames.empty () && !frameIter->head)
-    bodyIter = frameIter->body.begin ();
+  bodyIter = frameIter->body.begin ();
+  if (!*bodyIter)
+    ++bodyIter;
 }
 
 void Engine::Process (std::string_view const &text, bool eof)
 {
   bool maybe_captures = false;
 
-  if (bodyIter)
+  if (bodyIter != frameIter->body.begin ())
     {
       // We're inside a frame, process it
       for (auto peek = bodyIter; peek != frameIter->body.end (); ++peek)
@@ -265,10 +248,10 @@ void Engine::Process (std::string_view const &text, bool eof)
 
   // Look if any HEAD matches, and if so advance to it
   bool first = true;
-  for (auto framePeek = frameIter + bool (bodyIter);
+  for (auto framePeek = frameIter + bool (bodyIter != frameIter->body.begin ());
        framePeek != frames.end (); ++framePeek, first = false)
     {
-      Pattern *p = framePeek->head;
+      Pattern *p = framePeek->body.front ();
 
       Assert (p);
 
@@ -288,7 +271,7 @@ void Engine::Process (std::string_view const &text, bool eof)
       // We've found a matching BLOCK, advance and be done
       FrameAdvance (framePeek);
       p->Matched (*this);
-      bodyIter = frameIter->body.begin ();
+      ++bodyIter;
 
       return;     
     }
@@ -409,5 +392,7 @@ void Engine::Process (char const *file)
 void Engine::Finalize ()
 {
   Process ("", true);
-  FrameAdvance (nullptr);
+  FrameAdvance (frames.end ());
+  for (auto iter = nevers.begin (); iter != nevers.end (); ++iter)
+    (*iter)->Result (*this);
 }

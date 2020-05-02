@@ -10,7 +10,6 @@
 #include "error.hh"
 #include "lexer.hh"
 #include "logger.hh"
-#include "nullIterator.hh"
 #include "regex.hh"
 #include "scanner.hh"
 #include "symbols.hh"
