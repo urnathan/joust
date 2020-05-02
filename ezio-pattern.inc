@@ -118,11 +118,11 @@ public:
   bool Canonicalize ();
 
 public:
-  Regex::Result Expand (Symtab const &);
-  Regex::Result Compare (Symtab &, std::string_view const &text, bool eof);
+  Regex::Result Expand (Symbols const &);
+  Regex::Result Compare (Symbols &, std::string_view const &text, bool eof);
 
 private:
-  Regex::Result DoExpand (Symtab const &);
+  Regex::Result DoExpand (Symbols const &);
 
 public:
   static Pattern *Parse (Parser *, Kind kind, std::string_view const &);
@@ -639,7 +639,7 @@ bool Pattern::Canonicalize ()
   return true;
 }
 
-Regex::Result Pattern::DoExpand (Symtab const &symtab)
+Regex::Result Pattern::DoExpand (Symbols const &symbols)
 {
   for (auto token = atoms.begin (); token != atoms.end (); ++token)
     switch (token->GetKind ())
@@ -649,7 +649,7 @@ Regex::Result Pattern::DoExpand (Symtab const &symtab)
 	break;
 
       case Token::IDENTIFIER:
-	if (auto *val = symtab.text.Get (token->GetString ()))
+	if (auto *val = symbols.Get (token->GetString ()))
 	  Regex::Protect (expansion, *val);
 	else
 	  return Regex::NOTFOUND;
@@ -670,7 +670,7 @@ Regex::Result Pattern::DoExpand (Symtab const &symtab)
 		break;
 
 	      case Token::IDENTIFIER:
-		if (auto *val = symtab.text.Get (cap->GetString ()))
+		if (auto *val = symbols.Get (cap->GetString ()))
 		  Regex::Protect (expansion, *val);
 		else
 		  return Regex::NOTFOUND;
@@ -692,7 +692,7 @@ Regex::Result Pattern::DoExpand (Symtab const &symtab)
 }
 
 // Expand tokens to expansion
-Regex::Result Pattern::Expand (Symtab const &symtab)
+Regex::Result Pattern::Expand (Symbols const &symbols)
 {
   if (Errored ())
     return Regex::FAILED;
@@ -711,7 +711,7 @@ Regex::Result Pattern::Expand (Symtab const &symtab)
       atoms.clear ();
     }
   else
-    exit = DoExpand (symtab);
+    exit = DoExpand (symbols);
   
   if (exit == Regex::FOUND)
     {
@@ -727,7 +727,7 @@ Regex::Result Pattern::Expand (Symtab const &symtab)
 }
 
 Regex::Result Pattern::Compare
-  (Symtab &symtab, std::string_view const &text, bool eof)
+  (Symbols &symbols, std::string_view const &text, bool eof)
 {
   if (is_eof != eof)
     return Regex::NOTFOUND;
@@ -761,7 +761,7 @@ Regex::Result Pattern::Compare
 		Assert (match_iter->matched);
 		captures++;
 		auto const &var = capture[0].GetString ();
-		if (!symtab.text.Set (var, match_iter->str ()))
+		if (!symbols.Set (var, match_iter->str ()))
 		  Error () << "multiple definitions of '" << var << '\'';
 	      }
 	    Assert (match.end () - match_iter >= captures);

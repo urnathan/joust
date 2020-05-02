@@ -37,14 +37,14 @@ private:
   using FrameIter = NullIterator<Frame>;
 
 private:
-  Symtab &syms;
+  Symbols &syms;
   std::vector<Pattern *> nevers;
   std::vector<Frame> frames;
   FrameIter frameIter; // Current frame
   BodyIter bodyIter; // Current element
 
 public:
-  Engine (Symtab &syms_, std::ostream &sum_, std::ostream &log_)
+  Engine (Symbols &syms_, std::ostream &sum_, std::ostream &log_)
     : Parent (sum_, log_), syms (syms_)
   {
   }

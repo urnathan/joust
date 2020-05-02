@@ -41,7 +41,6 @@ namespace {
 
 class Engine;
 #include "ezio-parser.inc"
-#include "ezio-symtab.inc"
 #include "ezio-pattern.inc"
 #include "ezio-engine.inc"
 #include "ezio-parser.inc"
@@ -119,17 +118,17 @@ int main (int argc, char *argv[])
   if (!flags.prefixes.size ())
     flags.prefixes.push_back ("CHECK");
 
-  Symtab syms;
+  Symbols syms;
 
   // Register defines
-  syms.text.Set ("EOF", "${}EOF");
+  syms.Set ("EOF", "${}EOF");
   for (auto d : flags.defines)
-    syms.text.Define (std::string_view (d));
+    syms.Define (std::string_view (d));
   if (flags.include)
-    syms.text.Read (flags.include);
+    syms.Read (flags.include);
   if (auto *vars = getenv ("JOUST"))
     if (*vars)
-      syms.text.Read (vars);
+      syms.Read (vars);
 
   std::ofstream sum, log;
   if (!flags.out[flags.out[0] == '-'])
@@ -153,7 +152,7 @@ int main (int argc, char *argv[])
   while (argno != argc)
     {
       char const *patternFile = argv[argno++];
-      std::string pathname = syms.text.Origin (patternFile);
+      std::string pathname = syms.Origin (patternFile);
       Parser parser (patternFile, engine);
 
       // Scan the pattern file
