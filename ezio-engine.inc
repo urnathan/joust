@@ -228,8 +228,8 @@ void Engine::Process (std::string_view const &text, bool eof)
 		    p->Matched (*this);
 		    return;
 		  }
-		// FIXME:Record in p if it has captures
-		maybe_captures = true;
+		if (p->Captures ())
+		  maybe_captures = true;
 		continue;
 
 	      case Pattern::NEXT:
@@ -244,7 +244,7 @@ void Engine::Process (std::string_view const &text, bool eof)
 
 		if (p->GetKind () == Pattern::NEXT)
 		  BodyAdvance (++peek);
-		else
+		else if (p->Captures ())
 		  maybe_captures = true;
 		goto no_match;
 

@@ -57,6 +57,7 @@ private:
   bool is_xfail : 1 = false;
   bool has_error : 1 = false;
   bool has_matched : 1 = false;
+  bool has_captures : 1 = false;
 
 private:
   std::string original;
@@ -98,6 +99,10 @@ public:
   bool Matched () const
   {
     return has_matched;
+  }
+  bool Captures () const
+  {
+    return has_captures;
   }
 
 private:
@@ -505,6 +510,9 @@ bool Pattern::Canonicalize ()
 		Error () << "capture captures nothing";
 		return false;
 	      }
+
+	    if (capture[0].GetKind () == Token::IDENTIFIER)
+	      has_captures = true;
 
 	    if (capture.size () == 2
 		&& capture[0].GetKind () == Token::EMPTY
