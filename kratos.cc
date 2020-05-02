@@ -175,18 +175,14 @@ int main (int argc, char *argv[])
       if (!skipping)
 	{
 	  logger.Log () << '\n';
-	  if (!pipe.Execute (logger, limits)
-	      && pipe.GetKind () == Pipeline::REQUIRE)
-	    {
-	      skipping = true;
-	      goto unsupported;
-	    }
+	  int e = pipe.Execute (logger, limits);
+	  if (e && pipe.GetKind () == Pipeline::REQUIRE)
+	    skipping = true;
+	  if (e == EINTR)
+	    break;
 	}
       else
-	{
-	unsupported:
-	  pipe.Result (logger, Logger::UNSUPPORTED);
-	}
+	pipe.Result (logger, Logger::UNSUPPORTED);
     }
 
   return Error::Errors ();

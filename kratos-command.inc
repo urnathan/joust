@@ -36,6 +36,11 @@ public:
 
 public:
   bool Execute (int, int, unsigned const *limits = nullptr);
+  void Stop (int sig)
+  {
+    if (pid > 0)
+      kill (pid, sig);
+  }
 
 private:
   void Shellify ();

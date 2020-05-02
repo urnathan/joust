@@ -32,6 +32,7 @@ private:
   unsigned expected_exit : 8 = 0;
   bool expect_inverted : 1 = false;
   bool xfailed : 1 = false;
+  bool stopped : 1 = false;
 
 public:
   Pipeline (Kind k, bool inverted, unsigned exit = 0)
@@ -46,7 +47,7 @@ public:
   }
 
 public:
-  bool Execute (Logger &, unsigned const *);
+  int Execute (Logger &, unsigned const *);
 
 public:
   void Result (Logger &, Logger::Status);
@@ -84,7 +85,7 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
   return s;
 }
 
-bool Pipeline::Execute (Logger &logger, unsigned const *limits)
+int Pipeline::Execute (Logger &logger, unsigned const *limits)
 {
   Assert (commands.size () >= 1 && commands.size () <= 3);
 
@@ -297,10 +298,8 @@ bool Pipeline::Execute (Logger &logger, unsigned const *limits)
 	      case SIGHUP:
 	      case SIGINT:
 	      case SIGQUIT:
-		{
-		  // FIXME: Terminate application
-		  Unreachable ();
-		}
+		stopped = true;
+		commands.front ().Stop (sig.ssi_signo);
 		break;
 		
 	      case SIGPIPE:
@@ -332,18 +331,25 @@ bool Pipeline::Execute (Logger &logger, unsigned const *limits)
 	}
     }
 
-  bool pass = (exit_code >= 0
-	       && signalled == (kind == SIGNAL)
+  Assert (exit_code >= 0);
+
+  bool pass = (signalled == (kind == SIGNAL)
 	       && (exit_code == expected_exit) == !expect_inverted);
-  if (exit_code >= 0 && kind != REQUIRE)
+  if (!pass && (kind != REQUIRE || signalled))
+    logger.Log () << commands.front ().words[0] << " exited with "
+		  << (signalled ? "signal " : "code ") << exit_code << '\n';
+  if (kind == REQUIRE)
+    Result (logger, pass ? Logger::PASS : Logger::UNSUPPORTED);
+  else
+    Result (logger, Logger::PassFail (pass, xfailed));
+
+  if (stopped)
     {
-      if (!pass)
-	logger.Log () << commands.front ().words[0] << " exited with "
-		      << (signalled ? "signal " : "code ") << exit_code << '\n';
-      Result (logger, Logger::PassFail (pass, xfailed));
+      commands.front ().Error () << " terminated via signal";
+      return EINTR;
     }
 
-  return pass;
+  return pass ? 0 : EINVAL;
 }
 
 void Pipeline::Result (Logger &logger, Logger::Status status)

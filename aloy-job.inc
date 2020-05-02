@@ -55,7 +55,7 @@ public:
   }
   void Stop (int signal)
   {
-    if (pid >= 0)
+    if (pid > 0)
       kill (pid, signal);
   }
   bool Ready () const

@@ -362,8 +362,7 @@ void Engine::ReadSignal ()
     case SIGHUP:
     case SIGINT:
     case SIGQUIT:
-      if (!stopping)
-	Stop (sig.ssi_signo);
+      Stop (sig.ssi_signo);
       break;
       
     case SIGPIPE:
@@ -376,8 +375,10 @@ void Engine::Stop (int sig)
 {
   stopping = true;
   generator.Stop (sig);
-  for (; pending; pending--)
-    jobs.pop_back ();
+  if (pending)
+    do
+      jobs.pop_back ();
+    while (--pending);
   for (auto iter = jobs.begin (); iter != jobs.end (); ++iter)
     iter->Stop (sig);
 }
