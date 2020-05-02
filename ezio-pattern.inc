@@ -18,7 +18,6 @@ class Pattern
 
   protected:
     bool PatternRegexp ();
-    bool PatternExpr ();
   };
   
 public:
@@ -246,59 +245,6 @@ bool Pattern::Lexer::PatternRegexp ()
   return false;
 }
 
-// PATTERN_EXPR is
-//   white-space: [ \t]:
-//   close-braces: } -> PATTERN
-//   variable: :alpha: :alnum:*
-//   integer: :digit: :alnum:*
-//   string: .*
-bool Pattern::Lexer::PatternExpr ()
-{
-  while (char c = Peek ())
-    switch (c)
-      {
-      case ' ':
-      case '\t':
-	// Ignore whitespace in the expression
-	Advance ();
-	break;
-
-      case '}':
-	Advance ();
-	Append (Token (Token::CLOSE));
-	return true;
-
-      case '0'...'9':
-	if (!Integer ())
-	  return false;
-	break;
-
-      default:
-	if (Identifier ())
-	  break;
-
-	Advance ();
-	Append (Token::STRING, c);
-	break;
-      }
-
-  return false;
-}
-
-// A somewhat contextual lexer
-// ATTRIBUTE is
-//  ...
-// OPTION is
-//   white-space: [ \t]+
-//  ...
-// PATTERN is
-//   white-space: [ \t]+
-//   open-braces: {{ -> PATTERN_FIRST
-//   variable: $ _? :alpha: :alnum:*
-//   variable: $ { _? :alpha: :alnum:* }
-//   string: $$
-//   string: .+
-
 bool Pattern::Lexer::Pattern ()
 {
   while (char c = Peek ())
@@ -315,7 +261,7 @@ bool Pattern::Lexer::Pattern ()
 	  char peek = Peek (1);
 
 	  bool ident = std::isalpha (peek);
-	  if (!(ident || peek == ':' || peek == '%'))
+	  if (!(ident || peek == ':'))
 	    goto append;
 
 	  Advance ();
@@ -332,36 +278,9 @@ bool Pattern::Lexer::Pattern ()
 	    {
 	      Advance ();
 	      Append (Token (Token::COLON));
-	      if (!PatternRegexp ())
-		return false;
 	    }
-	  else if (peek == '%')
-	    {
-	      unsigned begin = c_ix;
-	      for (;;)
-		{
-		  peek = AdvancePeek ();
-		  if (std::isalpha (peek))
-		    {
-		      Advance ();
-		      break;
-		    }
-		  else if (peek == '}' || peek == ':')
-		    break;
-		}
-	      Append (Token (Token::STRING, string.substr (begin,
-							   c_ix - begin)));
-	      if (peek == ':')
-		{
-		  Advance ();
-		  Append (Token (Token::COLON));
-		  if (!PatternExpr ())
-		    return false;
-		}
-	      else
-		return false;
-	    }
-	  else
+
+	  if (!PatternRegexp ())
 	    return false;
 	}
 	break;
@@ -438,25 +357,21 @@ bool Pattern::ParseEscape (Parser *parser, Lexer &lexer)
       return false;
     }
 
-  if (next->GetKind () == Token::COLON)
-    next = lexer.GetToken ();
-  else if (ident.GetKind () == Token::IDENTIFIER)
+  if (next->GetKind () != Token::COLON)
     goto failed;
 
   escape.GetCapture ().emplace_back (std::move (ident));
 
-  for (;; next = lexer.GetToken ())
-    {
-      if (!next)
-	goto failed;
-      if (next->GetKind () == Token::IDENTIFIER
-	  || next->GetKind () == Token::STRING
-	  || next->GetKind () == Token::WHITESPACE)
-	escape.GetCapture ().emplace_back (std::move (*next));
-      else
-	break;
-    }
+  while ((next = lexer.GetToken ()))
+    if (next->GetKind () == Token::IDENTIFIER
+	|| next->GetKind () == Token::STRING
+	|| next->GetKind () == Token::WHITESPACE)
+      escape.GetCapture ().emplace_back (std::move (*next));
+    else
+      break;
 
+  if (!next)
+    goto failed;
   if (next->GetKind () != Token::CLOSE)
     goto failed;
 
