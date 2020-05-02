@@ -10,8 +10,8 @@ CHECK-NEXT: RUN: {:.*} {ezio:e.io} {inp:[^ ]+} |
 CHECK: $ezio -p OUT $inp |
 CHECK-NEXT: $ezio -p OUT -p ERR $inp
 CHECK-NONE: RUN
-CHECK-BLOCK: RUN-END:
-CHECK-BLOCK: CHECK: Yeah
+CHECK-LABEL: RUN-END:
+CHECK-LABEL: CHECK: Yeah
 CHECK-END:
 
 # these are what the ezios checking the earlier invokcation checks
@@ -40,9 +40,9 @@ ERR-OPTION: matchSol
 ERR-NEXT: 5:
 ERR-OPTION: !matchEol
 OUT-NEXT: PASS: {:.*}:NONE RUN
-OUT-NEXT: PASS: {:.*}:BLOCK RUN-END:
+OUT-NEXT: PASS: {:.*}:LABEL RUN-END:
 ERR-OPTION: matchSol
 ERR-NEXT: 6:
-ERR-BLOCK: 8:CHECK: Yeah,
+ERR-LABEL: 8:CHECK: Yeah,
 ERR-OPTION: !matchEol
-OUT-NEXT: PASS: {:.*}:BLOCK CHECK: Yeah
+OUT-NEXT: PASS: {:.*}:LABEL CHECK: Yeah

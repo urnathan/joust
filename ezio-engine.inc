@@ -131,7 +131,7 @@ void Engine::Add (Pattern *p)
       nevers.push_back (p);
       break;
 
-    case Pattern::BLOCK:
+    case Pattern::LABEL:
       // Start a new frame
       frames.emplace_back (p);
       break;
@@ -261,14 +261,14 @@ void Engine::Process (std::string_view const &text, bool eof)
 	  // Failed to expand it, ignore this but check if definitely
 	  // an error
 	  if (expn == Regex::NOTFOUND && !maybe_captures && first)
-	    p->Error () << "block contains unexpandable escape";
+	    p->Error () << "LABEL contains unexpandable escape";
 	  continue;
 	}
 
       if (p->Compare (syms, text, eof) != Regex::FOUND)
 	continue;
 
-      // We've found a matching BLOCK, advance and be done
+      // We've found a matching LABEL, advance and be done
       FrameAdvance (framePeek);
       p->Matched (*this);
       ++bodyIter;

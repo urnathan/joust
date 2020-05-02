@@ -1,7 +1,7 @@
 RUN: ezio -i $srcdir/$src $src |
 RUN: ezio -p COM -p OUT $src | ezio -p COM -p ERR $src
 
-BLOCK checking
+LABEL checking
 
 one
 two
@@ -12,25 +12,25 @@ four
 five
 five
 
-CHECK-BLOCK: two
-CHECK-BLOCK: three
-CHECK-BLOCK: four
+CHECK-LABEL: two
+CHECK-LABEL: three
+CHECK-LABEL: four
 CHECK: four
-CHECK-BLOCK: five
+CHECK-LABEL: five
 CHECK-NEXT: five
 
 ERR: {:[0-9]+}:one
 ERR-NEXT: {:[0-9]+}:two
-COM: PASS: 03-ezio/block-1:15:BLOCK  two
+COM: PASS: 03-ezio/label-1:15:LABEL  two
 ERR-NEXT: {:[0-9]+}:three
-COM-NEXT: PASS: 03-ezio/block-1:16:BLOCK  three
+COM-NEXT: PASS: 03-ezio/label-1:16:LABEL  three
 ERR-NEXT: {:[0-9]+}:three
 ERR-NEXT: {:[0-9]+}:four
-COM-NEXT: PASS: 03-ezio/block-1:17:BLOCK  four
+COM-NEXT: PASS: 03-ezio/label-1:17:LABEL  four
 ERR-NEXT: {:[0-9]+}:four
-COM-NEXT: PASS: 03-ezio/block-1:18:MATCH  four
+COM-NEXT: PASS: 03-ezio/label-1:18:MATCH  four
 ERR-NEXT: {:[0-9]+}:five
-COM-NEXT: PASS: 03-ezio/block-1:19:BLOCK  five
+COM-NEXT: PASS: 03-ezio/label-1:19:LABEL  five
 ERR-NEXT: {:[0-9]+}:five
-COM-NEXT: PASS: 03-ezio/block-1:20:NEXT  five
+COM-NEXT: PASS: 03-ezio/label-1:20:NEXT  five
 OUT-NEXT: $EOF

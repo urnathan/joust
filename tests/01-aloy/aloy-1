@@ -17,15 +17,15 @@ and we're done
 # OUT: PASS 0
 
 # ERR: Test run:
-# ERR-BLOCK: Test:0 echo
+# ERR-LABEL: Test:0 echo
 # ERR-NEXT: ALOY:{:.*}zsh {:.*}/aloy-1 echo
 # ERR-NEXT: echo
-# ERR-BLOCK: Test:1 "$@"
-# ERR-BLOCK: Test:2 >&2
-# ERR-BLOCK: Test:3 exit
-# ERR-BLOCK: Test:4 0
-# ERR-BLOCK: Test:5 and
-# ERR-BLOCK: Test:6 we're
-# ERR-BLOCK: Test:7 done
-# ERR-BLOCK: Summary of 8 tests
+# ERR-LABEL: Test:1 "$@"
+# ERR-LABEL: Test:2 >&2
+# ERR-LABEL: Test:3 exit
+# ERR-LABEL: Test:4 0
+# ERR-LABEL: Test:5 and
+# ERR-LABEL: Test:6 we're
+# ERR-LABEL: Test:7 done
+# ERR-LABEL: Summary of 8 tests
 # ERR: PASS 0

@@ -7,7 +7,7 @@ RUN-END:
 
 CHECK-NEXT: first
 CHECK-NEXT: ^$
-CHECK-BLOCK: ^last
+CHECK-LABEL: ^last
 CHECK-NEXT: $EOF
 CHECK-END:
 
@@ -16,7 +16,7 @@ OUT: PASS: $src:{:[0-9]+}:NEXT  first
 ERR: 2:
 OUT: PASS: $src:{:[0-9]+}:NEXT  {:\^\$}
 ERR: ^{:[0-9]+}:last
-OUT: PASS: $src:{:[0-9]+}:BLOCK  ^last
+OUT: PASS: $src:{:[0-9]+}:LABEL  ^last
 OUT: PASS: $src:{:[0-9]+}:NEXT  ${}EOF
 
 last
