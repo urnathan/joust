@@ -414,22 +414,16 @@ std::ostream &operator<< (std::ostream &s, Pattern const &p)
 }
 
 // match-escape: IDENTIFIER-opt COLON regexp-expand CLOSE
-//             | IDENTIFIER STRING="%.*" CLOSE
-//             |            STRING="%.*" COLON expr-expand CLOSE
 // regexp-expand: regexp-expand-opt STRING
 //              | regexp-expand-opt IDENTIFIER
-// expr-expand: expr-primary
-//            | expr-expand + expr-primary
-//            | expr-expand - expr-primary
-// expr-primary: IDENTIFIER | INTEGER
 
 bool Pattern::ParseEscape (Parser *parser, Lexer &lexer)
 {
-  Token ident;
-
+  Token escape (Token::REGEX_CAPTURE);
   Token *next = lexer.GetToken ();
-  bool have_ident = next && next->GetKind () == Token::IDENTIFIER;
-  if (have_ident)
+
+  Token ident;
+  if (next && next->GetKind () == Token::IDENTIFIER)
     {
       if (GetKind () >= CAPTURE_HWM)
 	Error () << "capture not permitted in " << kinds[GetKind ()];
@@ -444,76 +438,23 @@ bool Pattern::ParseEscape (Parser *parser, Lexer &lexer)
       return false;
     }
 
-  unsigned format = 0;
-  if (next->GetKind () == Token::STRING
-      && next->GetString ()[0] == '%')
+  if (next->GetKind () == Token::COLON)
+    next = lexer.GetToken ();
+  else if (ident.GetKind () == Token::IDENTIFIER)
+    goto failed;
+
+  escape.GetCapture ().emplace_back (std::move (ident));
+
+  for (;; next = lexer.GetToken ())
     {
-      auto fmt = next->GetString ();
-      format = fmt.back ();
-      if (fmt.size () != 2 || !(format == 'u'))
-	{
-	  Error () << "unrecognized value capture '" << fmt << '\'';
-	  format = 'u';
-	}
-      next = lexer.GetToken ();
       if (!next)
 	goto failed;
-    }
-
-  Token escape (format ? Token::VALUE_CAPTURE : Token::REGEX_CAPTURE);
-
-  if (!format || have_ident)
-    escape.GetCapture ().push_back (std::move (ident));
-  if (format)
-    escape.GetCapture ().push_back (Token (Token::FORMAT, format));
-
-  if (!(format && have_ident))
-    {
-      bool op = false;
-      bool first = true;
-
-      for (;; first = false, next = lexer.GetToken ())
-	{
-	  if (!next)
-	    goto failed;
-	  if (first && next->GetKind () == Token::COLON)
-	    ;
-	  else if (first && (format || have_ident))
-	    goto failed;
-	  else if (op)
-	    {
-	      if (next->GetKind () != Token::STRING)
-		break;
-	      auto op_string = next->GetString ();
-	      if (op_string.size () != 1)
-		break;
-	      else if (op_string[0] == '+')
-		;
-	      else if (op_string[0] == '-')
-		escape.GetCapture ().push_back (Token (Token::MINUS));
-	      else 
-		break;
-	      op = false;
-	    }
-	  else
-	    {
-	      if (format
-		  && next->GetKind () == Token::IDENTIFIER
-		  && next->GetString () == "LINE")
-		escape.GetCapture ().push_back (Token (Token::INTEGER, line));
-	      else if (next->GetKind () == Token::IDENTIFIER
-		       || (format ? next->GetKind () == Token::INTEGER
-			   : (next->GetKind () == Token::STRING
-			      || next->GetKind () == Token::WHITESPACE)))
-		escape.GetCapture ().push_back (std::move (*next));
-	      else if (format)
-		goto failed;
-	      else
-		break;
-	      if (format)
-		op = true;
-	    }
-	}
+      if (next->GetKind () == Token::IDENTIFIER
+	  || next->GetKind () == Token::STRING
+	  || next->GetKind () == Token::WHITESPACE)
+	escape.GetCapture ().emplace_back (std::move (*next));
+      else
+	break;
     }
 
   if (next->GetKind () != Token::CLOSE)
@@ -670,18 +611,6 @@ bool Pattern::Canonicalize ()
 	  }
 	  break;
 
-	case Token::VALUE_CAPTURE:
-	  {
-	    if (acc.size ())
-	      {
-		canon.push_back (Token (Token::STRING, std::move (acc)));
-		acc.clear ();
-	      }
-	    canon.push_back (std::move (*token));
-	    eof = -1;
-	  }
-	  break;
-
 	default:
 	  Unreachable ();
 	}
@@ -754,73 +683,6 @@ Regex::Result Pattern::DoExpand (Symtab const &symtab)
 	    expansion.push_back (')');
 	}
 	break;
-	  
-      case Token::VALUE_CAPTURE:
-	{
-	  std::vector<Token> const &capture = token->GetCapture ();
-	  if (capture[0].GetKind () == Token::IDENTIFIER)
-	    {
-	      unsigned long fmt = capture[1].GetInteger ();
-	      char const *format = nullptr;
-	      switch (fmt & 255)
-		{
-		case 'u':
-		  format = "[0-9]+";
-		  break;
-
-		default:
-		  Unreachable ();
-		}
-	      expansion.push_back ('(');
-	      expansion.append (std::string (format));
-	      expansion.push_back (')');
-	    }
-	  else
-	    {
-	      unsigned long val = 0, op;
-	      bool sub = false;
-	      for (auto cap = capture.begin () + 1;
-		   cap != capture.end (); ++cap)
-		switch (token->GetKind ())
-		  {
-		  case Token::MINUS:
-		    sub = true;
-		    break;
-
-		  case Token::IDENTIFIER:
-		    if (auto *v = symtab.ints.Get (cap->GetString ()))
-		      op = *v;
-		    else
-		      return Regex::NOTFOUND;
-		    goto acc;
-
-		  case Token::INTEGER:
-		    op = cap->GetInteger ();
-		  acc:
-		    if (sub)
-		      val -= op;
-		    else
-		      val += op;
-		    sub = false;
-		    break;
-
-		  default:
-		    Unreachable ();
-		  }
-
-	      unsigned long fmt = capture[0].GetInteger ();
-	      switch (fmt & 255)
-		{
-		case 'u':
-		  expansion.append (std::to_string (val));
-		  break;
-
-		default:
-		  Unreachable ();
-		}
-	    }
-	}
-	break;
 
       default:
 	Unreachable ();
@@ -890,8 +752,7 @@ Regex::Result Pattern::Compare
       auto match_iter = ++match.begin ();
       for (auto atom_iter = atoms.begin ();
 	   atom_iter != atoms.end (); ++atom_iter)
-	if (atom_iter->GetKind () == Token::REGEX_CAPTURE
-	    || atom_iter->GetKind () == Token::VALUE_CAPTURE)
+	if (atom_iter->GetKind () == Token::REGEX_CAPTURE)
 	  {
 	    int captures = atom_iter->GetUser ();
 	    auto const &capture = atom_iter->GetCapture ();
@@ -900,16 +761,8 @@ Regex::Result Pattern::Compare
 		Assert (match_iter->matched);
 		captures++;
 		auto const &var = capture[0].GetString ();
-		if (atom_iter->GetKind () == Token::REGEX_CAPTURE)
-		  {
-		    if (!symtab.text.Set (var, match_iter->str ()))
-		      Error () << "multiple definitions of '" << var << '\'';
-		  }
-		else
-		  {
-		    // FIXME: Implement
-		    Unreachable ();
-		  }
+		if (!symtab.text.Set (var, match_iter->str ()))
+		  Error () << "multiple definitions of '" << var << '\'';
 	      }
 	    Assert (match.end () - match_iter >= captures);
 	    match_iter += captures;

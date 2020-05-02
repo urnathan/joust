@@ -21,14 +21,12 @@ class Token
     TOKEN_KIND_FROB (OPEN, "{"),					\
     TOKEN_KIND_FROB (CLOSE, "}"),					\
     TOKEN_KIND_FROB (COLON, ":"),					\
-    TOKEN_KIND_FROB (MINUS, "-"),					\
     TOKEN_KIND_FROB (INTEGER, "integer"),				\
     TOKEN_KIND_FROB (FORMAT, "format"),					\
     TOKEN_KIND_FROB (STRING, "string"),					\
     TOKEN_KIND_FROB (IDENTIFIER, "identifier"),				\
     TOKEN_KIND_FROB (WHITESPACE, "whitespace"),				\
-    TOKEN_KIND_FROB (REGEX_CAPTURE, "regex-capture"),			\
-    TOKEN_KIND_FROB (VALUE_CAPTURE, "value-capture")
+    TOKEN_KIND_FROB (REGEX_CAPTURE, "regex-capture")
 #define TOKEN_KIND_FROB(KIND, STRING) KIND
 public:
   enum Kind : unsigned char
