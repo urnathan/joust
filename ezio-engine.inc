@@ -203,12 +203,16 @@ void Engine::Process (std::string_view const &text, bool eof)
 	  if (p->Errored ())
 	    continue;
 
+	  if (p->GetKind () < Pattern::CAPTURE_HWM && p->Matched ())
+	    continue;
+
 	  auto expn = p->Expand (syms);
 	  if (expn != Regex::FOUND)
 	    {
 	      // We couldn't compile the pattern
-	      if (expn == Regex::NOTFOUND)
-		p->Error () << "match contains unexpandable escape";
+	      if (!maybe_captures && expn == Regex::NOTFOUND)
+		p->Error () << Pattern::kinds[p->GetKind ()]
+			    << " contains unexpandable escape";
 	      continue;
 	    }
 
@@ -218,6 +222,16 @@ void Engine::Process (std::string_view const &text, bool eof)
 
 	    switch (p->GetKind ())
 	      {
+	      case Pattern::DAG:
+		if (cmp == Regex::FOUND)
+		  {
+		    p->Matched (*this);
+		    return;
+		  }
+		// FIXME:Record in p if it has captures
+		maybe_captures = true;
+		continue;
+
 	      case Pattern::NEXT:
 	      case Pattern::MATCH:
 		if (cmp == Regex::FOUND)
@@ -246,7 +260,7 @@ void Engine::Process (std::string_view const &text, bool eof)
     no_match:;
     }
 
-  // Look if any HEAD matches, and if so advance to it
+  // Look if any HEAD matches, and if so advance to just after it
   bool first = true;
   for (auto framePeek = frameIter + bool (bodyIter != frameIter->body.begin ());
        framePeek != frames.end (); ++framePeek, first = false)

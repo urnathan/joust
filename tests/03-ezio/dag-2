@@ -1,0 +1,34 @@
+RUN: ezio -i $srcdir/$src $src |
+RUN: ezio -p OUT -p COM $src | ezio -p COM -p ERR $src
+
+DAG checking in the unexpected order
+
+mov r2,2
+mov r4,symbol
+mov r1,1
+add r3,r1,r2
+st r4,r3
+done
+
+CHECK-DAG: mov r1,1
+CHECK-DAG: mov r2,2
+CHECK-DAG: add r3,r1,r2
+CHECK-DAG: mov r4,symbol
+CHECK-DAG: st r4,r3
+CHECK-LABEL: done
+CHECK-END:
+
+
+ERR: {:[0-9]+}:mov r2,2
+COM: PASS: $src:{:[0-9]+}:DAG  mov r2,2
+ERR-NEXT: {:[0-9]+}:mov r4,symbol
+COM-NEXT: PASS: $src:{:[0-9]+}:DAG  mov r4,symbol
+ERR-NEXT: {:[0-9]+}:mov r1,1
+COM-NEXT: PASS: $src:{:[0-9]+}:DAG  mov r1,1
+ERR-NEXT: {:[0-9]+}:add r3,r1,r2
+COM-NEXT: PASS: $src:{:[0-9]+}:DAG  add r3,r1,r2
+ERR-NEXT: {:[0-9]+}:st r4,r3
+COM-NEXT: PASS: $src:{:[0-9]+}:DAG  st r4,r3
+ERR-NEXT: {:[0-9]+}:done
+COM-NEXT: PASS: $src:{:[0-9]+}:LABEL  done
+OUT-NEXT: $EOF

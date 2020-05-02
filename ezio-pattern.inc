@@ -23,7 +23,7 @@ class Pattern
 public:
 #define PATTERN_KINDS							\
   PATTERN_KIND_FROB(MATCH), PATTERN_KIND_FROB(NEXT),			\
-    PATTERN_KIND_FROB(LABEL),						\
+    PATTERN_KIND_FROB(DAG), PATTERN_KIND_FROB(LABEL),			\
     PATTERN_KIND_FROB(NOT),						\
     PATTERN_KIND_FROB(NEVER), PATTERN_KIND_FROB(NONE),			\
     PATTERN_KIND_FROB(UNKNOWN)
@@ -637,6 +637,8 @@ Regex::Result Pattern::Expand (Symbols const &symbols)
 	Error () << "regex '" << expansion << "' contains "
 		 << Regex::Error (fail);
     }
+  else
+    expansion.clear ();
 
   return exit;
 }

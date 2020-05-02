@@ -1,0 +1,33 @@
+RUN: ezio -i $srcdir/$src $src |
+RUN: ezio -p OUT -p COM $src | ezio -p COM -p ERR $src
+
+DAG checking in the unexpected order with captures
+
+mov r2,2
+mov r4,symbol
+mov r1,1
+add r3,r1,r2
+st r4,r3
+done
+
+CHECK-DAG: mov {rA:r[0-9]+},1
+CHECK-DAG: mov {rB:r[0-9]+},2
+CHECK-DAG: add {rC:r[0-9]+},$rA,$rB
+CHECK-DAG: mov {rD:r[0-9]+},symbol
+CHECK-DAG: st $rD,$rC
+CHECK-LABEL: done
+CHECK-END:
+
+ERR: {:[0-9]+}:mov r2,2
+COM: PASS: $src:{:[0-9]+}:DAG  mov {:[{]}rB:r[0-9]+},2
+ERR-NEXT: {:[0-9]+}:mov r4,symbol
+COM-NEXT: PASS: $src:{:[0-9]+}:DAG  mov {:[{]}rD:r[0-9]+},symbol
+ERR-NEXT: {:[0-9]+}:mov r1,1
+COM-NEXT: PASS: $src:{:[0-9]+}:DAG  mov {:[{]}rA:r[0-9]+},1
+ERR-NEXT: {:[0-9]+}:add r3,r1,r2
+COM-NEXT: PASS: $src:{:[0-9]+}:DAG  add {:[{]}rC:r[0-9]+},${}rA,${}rB
+ERR-NEXT: {:[0-9]+}:st r4,r3
+COM-NEXT: PASS: $src:{:[0-9]+}:DAG  st ${}rD,${}rC
+ERR-NEXT: {:[0-9]+}:done
+COM-NEXT: PASS: $src:{:[0-9]+}:LABEL  done
+OUT-NEXT: $EOF
