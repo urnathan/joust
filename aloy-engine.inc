@@ -22,19 +22,19 @@ private:
   std::string used_tokens; // tokens to send back to make
   std::string ready_tokens; // tokens we've got from make
   Job generator;
-#if 0
-  std::vector<std::string> generator;
-  ReadBuffer gen_buffers[2];
-  pid_t gen_pid = 0;
-  unsigned gen_state = 0;
-  unsigned gen_exit = 0;
-#endif
+
+private:
   unsigned job_limit = 1;  // static number of jobs we can spawn
   unsigned fixed_jobs = 0; // non-jobserver jobs running
   unsigned make_want = 0;
   int make_in = -1, make_out = -1;
+
+private:
   int sig_fd = -1;
   int poll_fd = -1;
+
+private:
+  bool stopping = false;
 
 private:
   unsigned retired = 0; // Jobs written out
@@ -58,6 +58,7 @@ public:
   void Init (char const *tester, char const *genner,
 	     int argc, char const *const argv[]);
   void Fini (std::ostream * = nullptr);
+  void Stop (int sig);
   bool Process (int timeout);
   void Retire ();
   void Fini (Job const &);
@@ -262,8 +263,6 @@ void Engine::Fini (std::ostream *summary)
   poll_fd = -1;
   close (sig_fd);
   sig_fd = -1;
-
-  // FIXME: Restore sigmask
 }
 
 void Engine::ReadGenerator ()
@@ -363,16 +362,24 @@ void Engine::ReadSignal ()
     case SIGHUP:
     case SIGINT:
     case SIGQUIT:
-      {
-	// FIXME: Terminate application, release tokens to make
-	Unreachable ();
-      }
+      if (!stopping)
+	Stop (sig.ssi_signo);
       break;
       
     case SIGPIPE:
     default:
       Unreachable ();
-    }  
+    }
+}
+
+void Engine::Stop (int sig)
+{
+  stopping = true;
+  generator.Stop (sig);
+  for (; pending; pending--)
+    jobs.pop_back ();
+  for (auto iter = jobs.begin (); iter != jobs.end (); ++iter)
+    iter->Stop (sig);
 }
 
 void Engine::WantMake ()
@@ -509,7 +516,8 @@ bool Engine::Process (int timeout)
 
 	      job->Read (*this, cookie & 7, poll_fd);
 
-	      if (!(cookie & 7) && job == &generator)
+	      if (!stopping
+		  && !(cookie & 7) && job == &generator)
 		ReadGenerator ();
 	    }
 	    break;

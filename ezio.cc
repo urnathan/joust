@@ -101,7 +101,7 @@ int main (int argc, char *argv[])
   if (flags.help)
     {
       Title (stdout);
-      options->Help (stdout, "pattern-file [test-file]");
+      options->Help (stdout, "pattern-files+");
       return 0;
     }
   if (flags.version)

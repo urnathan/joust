@@ -14,6 +14,13 @@ tester to invoke and a generator program.
 Aloy will read from the generator's stdout, with each word being a
 test program to run.  Aloy can parallelize the tester jobs.
 
+I accidentally wrote this when I realized the test harness I was
+adding to another project, was a project in its own right.  I didn't
+want to use `dejagnu`.  Grepping for test harnesses found lots of
+confusing ones.  Finally llvm's test harness is not a separate
+component, and so hard to use elsewhere.  You'll notice that Kratos
+and Ezio have some comonalities with that harness.
+
 * ALOY: Apply List, Observe Yield
 
 A testsuite runner that takes a list of test files and command to run.
@@ -46,11 +53,11 @@ provide some scripts for its use.  Typical invocation is:
 
 `aloy [options] [tester args --] [generator args]`
 
- * `-C $DIR`:  Change to `$DIR` before doing anything else.
- * `-j $COUNT`:  Fixed job limit
- * `-g $GEN`:  Generator program, defaults to `kratos`
- * `-o $STEM`  Output file stem, defaults to '-' (stdout/stderr)
- * `-t $TESTER` Tester program, defaults to `kratos`
+* `-C $DIR`:  Change to `$DIR` before doing anything else.
+* `-j $COUNT`:  Fixed job limit
+* `-g $GEN`:  Generator program, defaults to `kratos`
+* `-o $STEM`  Output file stem, defaults to '-' (stdout/stderr)
+* `-t $TESTER` Tester program, defaults to `kratos`
 
 Additional arguments can be passed to the tester program, by using a
 `--` separator after them.  The remaining arguments are passed to the
@@ -73,17 +80,19 @@ with the output going to user-specified checker programs.  Several
 separate tests can be specified in a single file, they are executed
 sequentially.
 
- * `-D $VAR=$VALUE`: Define variable
- * `-d $FILE`:  Specify file of variable definitions
- * `-p $PREFIX`: Command line prefix, defaults `RUN`
+`kratos [options] test-file`
+
+* `-D $VAR=$VALUE`: Define variable
+* `-d $FILE`:  Specify file of variable definitions
+* `-p $PREFIX`: Command line prefix, defaults `RUN`
 
 The environment variable `JOUST` can be set to specify another file of
 variable definitions.
 
- * RUN: A test pipeline to execute
- * RUN-SIGNAL: A test pipeline, terminating via a signal
- * RUN-REQUIRE: A predicate to evaluate
- * RUN-END: Stop scanning test file
+* RUN: A test pipeline to execute
+* RUN-SIGNAL: A test pipeline, terminating via a signal
+* RUN-REQUIRE: A predicate to evaluate
+* RUN-END: Stop scanning test file
 
 Both `RUN` and `RUN-SIGNAL` are similar, except the latter expects the
 program to terminate via a signal.  In both cases the command may
@@ -91,7 +100,7 @@ specify an exit code or signal, together with `!` to indicate `not`.
 It doesn't matter what characters appear before `RUN` on the line
 (provided there is a non-alphanumeric just before).  For instance:
 
-`# RUN: true`
+`# RUN: true`  
 `// RUN:!0 false`
 
 The first exits with a zero exit code, and the second exits with a
@@ -130,10 +139,10 @@ piped depends on ordering -- there's no explicit numbering of pipes.
 There can be one or two checkers.  The last checker receives stderr,
 and the one before that (if any) gets stdout.  For example:
 
-`// 1 RUN: prog $srcdir$src |`
-`// 2 RUN: ezio $src`
-`// 3 RUN: prog $srcdir$src | ezio -p OUT $src | ezio $src`
-`// 4 RUN: >$tmp-1 prog $srcdir$src | ezio $src`
+`// 1 RUN: prog $srcdir$src |`  
+`// 2 RUN: ezio $src`  
+`// 3 RUN: prog $srcdir$src | ezio -p OUT $src | ezio $src`  
+`// 4 RUN: >$tmp-1 prog $srcdir$src | ezio $src`  
 `// 5 RUN: <$tmp-1 ezio -p OUT $src`
 
 Here lines 1 & 2 form a single pipeline, with `prog`'s stderr being
@@ -144,6 +153,27 @@ subsequent program under test.  (`$tmp` is an automatically defined
 variable.)
 
 ## EZIO: Expect Zero Irregularities Observed
+
+EZIO is a pattern matcher.  It scans a source file, extracting
+patterns from it, and then matches the patterns against a test file.
+
+`ezio [options] pattern-files+`
+
+* `-C $DIR`:  Change to `$DIR` before doing anything else.
+* `-D $VAR=$VALUE`: Define variable
+* `-d $FILE`:  Specify file of variable definitions
+* `-i $INPUT`  Input file, defaults to '-' (stdin)
+* `-o $STEM`  Output file stem, defaults to '-' (stdout/stderr)
+* `-p $PREFIX`: Command line prefix, defaults `CHECK`, repeatable
+
+* CHECK:
+* CHECK-MATCH:
+* CHECK-NEXT:
+* CHECK-DAG:
+* CHECK-LABEL:
+* CHECK-NOT:
+* CHECK-NONE:
+* CHECK-NEVER:
 
 ## DRAKE: Dynamic Response And Keyboard Emulation
 
