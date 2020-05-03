@@ -5,9 +5,9 @@ Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 GNU Affero GPL v3.0
 (but not yet ready for public consumption)
 
-JOUST is a testsuite infrastructure consisting of a few components.
+Joust is a testsuite infrastructure consisting of a few components.
 These either interact directly, or via user scripts.  Typically you'll
-create a file of variable assignments, point at it with the JOUST
+create a file of variable assignments, point at it with the Joust
 environment variable, then invoke `aloy` giving it the name of a
 tester to invoke and a generator program.  Aloy will read from the
 generator's stdout, with each word being a test program to run.
@@ -163,8 +163,8 @@ sequentially.
 * `-o STEM`  Output file stem, defaults to '-' (stdout/stderr)
 * `-p PREFIX`: Command line prefix, defaults `RUN`, repeatable
 
-The environment variable `JOUST` can be set to specify another file of
-variable definitions.
+The environment variable `$JOUST` can be set to specify another file
+of variable definitions.
 
 * RUN: A test pipeline to execute
 * RUN-SIGNAL: A test pipeline, terminating via a signal
@@ -368,18 +368,21 @@ external to the test itself.
 
 ## Commonalities
 
+As you might expect for a set of related programs, they share some
+semantics and syntax.
+
 ### Variables
 
 Variables can be specfied in:
-* -Dvar=val command line options
-* -d file file specified on the command line
-* File specified in a $JOUST environment variable.
+* `-Dvar=val` command line options
+* `-d file` file specified on the command line
+* File specified in a `$JOUST` environment variable.
 
 They are initialized in that order, and the first initializer wins.
 These are unrelated to environment variables.  (Although environment
 variables can influence tests, because they are visible to the
 programs being tested.)  Typically setup code will create a file of
-values and initialize JOUST to point at it.
+values and initialize `$JOUST` to point at it.
 
 All the programs expect a `$srcdir` variable to be specified pointing
 at the source directory.  They will automatically prepend it to
@@ -387,7 +390,7 @@ certain arguments.  The following variables will be automatically created:
 
 * `$src`: The source being tested.
 
-* `$stem`: The basename of $src, stripping both directory and suffix
+* `$stem`: The basename of `$src`, stripping both directory and suffix
   components.
 
 * `$subdir`: The directory fragment of `$src` including a final `/`.
@@ -418,15 +421,59 @@ duplicated.  Use the shell to redirect to separate files (`>sum 2>log`).
 
 ## Future
 
-* Kratos offloading to a remote execution system.  Add $wrapper variable or
-something?
+* Kratos offloading to a remote execution system.  Add $wrapper
+variable or something?
 
 * Kratos copying files to/from remote system.  Add $cpto $cp from
 variables along with RUN-AUX: or similar.
 
 * Kratos iteration over a set of flags.  Add RUN-ITERATE: along with
 ability to defer some toplevel variable expansion to runtime.
-RUN-REQUIRE inside a loop would continue to the next iteration of
-the loop.
+RUN-REQUIRE inside a loop would continue to the next iteration of the
+loop.
+
+## Building Joust
+
+Building Joust is reasonably straight forwards.  The only(?) quirk is
+that it relies upon my utility project, NMS.  That provides Makefile &
+autoconf pieces along with an assert, backtrace and option processing
+library.  You'll see there's an `nms` symlink in the top directory.
+You can install NMS in a sibling directory, or replace the symlink
+with the NMS project itself.  The former is easier and how I build it.
+
+You will need a C++20 compiler, as I use some features of C++20.  The
+configure script allows you to point at special build tools with
+`--with-tools=TOOLDIR`.  I used this to point at a prerelease C++20
+toolchain.
+
+Although building in the source tree probably works, I do not build
+and test that configuration.  I create a sibling `obj` directory, and
+build there.
+
+Here's a recipe
+
+```zsh
+mkdir src obj
+git clone git@github.com:urnathan/joust.git src/joust
+git clone git@github.com:urnathan/nms.git src/nms
+cd obj
+../src/joust/configure
+make
+make check
+```
+
+The `configure` script supports a number of options, you can disable
+checking, and backtrace for instance.  When building you can override
+`CXXFLAGS` f needs be -- I often used `make CXXFLAGS=-g3` if I need to
+debug it.
+
+The Makefile will automatically enable parallelism, trying to keep
+each available CPU busy.  You can override this by adding
+`PARALLELISM=` on the command line.  Set it to empty, or to the
+desired parallelism.
+
+### Install
+
+I've not yet written install rules, sorry.
 
 [^1] or 'Journal Of Utterly Stupid Tests'
