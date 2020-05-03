@@ -107,9 +107,9 @@ void Parser::Options (std::string_view const &text)
 	break;
 
       case Token::IDENTIFIER:
-	if (token->GetString () == "matchspace")
+	if (token->GetString () == "matchSpace")
 	  matchSpace = on;
-	else if (token->GetString () == "matchline")
+	else if (token->GetString () == "matchLine")
 	  matchSol = matchEol = on;
 	else if (token->GetString () == "matchSol")
 	  matchSol = on;

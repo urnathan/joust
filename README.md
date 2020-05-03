@@ -119,7 +119,7 @@ The program's stdin can be sourced from a file and its stdout can be
 written to one.  Unlike the shell, these indirections _must_ be first
 in the line, otherwise they will not be recognized.
 
-`<$srcdir$src $srcdir$src`
+`<$srcdir$src $srcdir$src`  
 `>$tmp-1 $srcdir$src`
 
 The first will read from `$srcdir$src` and the second will write to `$tmp-1`.
@@ -173,14 +173,61 @@ patterns from it, and then matches the patterns against a test file.
 * `-o $STEM`  Output file stem, defaults to '-' (stdout/stderr)
 * `-p $PREFIX`: Command line prefix, defaults `CHECK`, repeatable
 
-* CHECK:
-* CHECK-MATCH:
-* CHECK-NEXT:
-* CHECK-DAG:
-* CHECK-LABEL:
-* CHECK-NOT:
-* CHECK-NONE:
-* CHECK-NEVER:
+There are several kinds of check patterns.  Some are positive matches
+(& fail if no match is found), others are negative matches (& fail if
+they match).  Positive matches are never checked again, once they
+match.  Negative matches might be checked multiple times (and produce
+several fails).
+
+* CHECK:  A synonym for MATCH.
+
+* CHECK-MATCH: Match a pattern.  Is repeatedly checked until it
+  matches, or we move to a next labelled block.
+
+* CHECK-NEXT: Match the next line only.  Fails if it doesn't match.
+  If this is the first match, it applies to the first line of the
+  file.
+
+* CHECK-DAG: A set of lines may represent a DAG, which implies a
+  partial ordering.  This allows the lines of the DAG to be checked.
+
+* CHECK-LABEL: Blocks of the input file can be separated with this
+  pattern.  If the current pattern does not match, later LABELS are
+  checked to see if we should advance.
+
+* CHECK-NOT: A negative match.  It is expected not to match, until the
+  next positive match advances.
+
+* CHECK-NONE: A negative match that applies to an entire block.  Lines
+  that do not make a positive match are expected to not match any of
+  these lines either.
+
+* CHECK-NEVER: A negative match that applies to the entire file.  As
+  with NONE, lines that fail any positive match are expected to not
+  match these either.  Only the first negative match that matches is
+  checked -- a NONE and a NEVER that check the same pattern will not
+  trigger twice.
+
+* CHECK-OPTION: Set options for the following patterns.  Options are:
+
+  * matchSol: The pattern is anchored to the start of line.
+  * matchEol: The pattern is anchored to the end of the line.
+  * matchLine: The pattern is anchored at both start & end.
+  * matchSpace: Whitespace must match exactly.
+  * xfail: The pattern is xfailed -- expected to fail.
+
+  Options are space or `,` separated.  They may be preceded by `!` to
+  turn the option off.  `matchLine` is equivalent to specifying both
+  `matchSol` and `matchEol`.  An `xfail` only applies to the next
+  pattern, unlike the other options it resets.
+
+Patterns are literal matches, with the following extensions:
+
+* Leading and trailing whitespace is elided.  If you must match such space, use a regexp escpe.
+
+* A leadeing `^` will anchor a particlar pattern at the start of line (regardless of `matchSol`).
+
+* A trailing `$` will anchor at the end of line.
 
 ## DRAKE: Dynamic Response And Keyboard Emulation
 

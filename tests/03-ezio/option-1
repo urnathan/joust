@@ -1,0 +1,65 @@
+Test option handlng
+
+RUN: <$srcdir$src ezio -p TEST $src |
+RUN: ezio -p COM -p OUT $src | ezio -p COM -p ERR $src
+RUN-END:
+
+ begin NO
+begin YES
+next YES
+ end b
+end
+the whole line
+the whole line
+the  wholish	 line
+the  wholish  line
+the  wholish  line
+bill
+bob
+bob
+
+TEST-OPTION: matchSol
+TEST: begin
+TEST-NEXT: next
+TEST-OPTION: matchEol
+TEST-NEXT: end
+TEST-NEXT: end
+TEST-NEXT: whole
+TEST-OPTION: !matchLine
+TEST-NEXT: whole
+TEST-NEXT: the wholish line
+TEST-OPTION: matchSpace
+TEST-NEXT: the wholish line
+TEST-NEXT: the  wholish  line
+TEST-OPTION: !matchSpace xfail
+TEST-NEXT: bob
+TEST-NEXT: bob
+TEST-OPTION: xfail
+TEST-NEXT: bob
+
+ERR: begin NO
+ERR-NEXT: begin YES
+COM-NEXT: PASS: $src:{:[0-9]+}:MATCH  begin
+ERR-NEXT: next YES
+COM-NEXT: PASS: $src:{:[0-9]+}:NEXT  next
+ERR-NEXT: end b
+COM-NEXT: FAIL: $src:{:[0-9]+}:NEXT  end
+ERR-NEXT: end
+COM-NEXT: PASS: $src:{:[0-9]+}:NEXT  end
+ERR-NEXT: the whole line
+COM-NEXT: FAIL: $src:{:[0-9]+}:NEXT  whole
+ERR-NEXT: the whole line
+COM-NEXT: PASS: $src:{:[0-9]+}:NEXT  whole
+ERR-NEXT: the wholish line
+COM-NEXT: PASS: $src:{:[0-9]+}:NEXT  the wholish line
+ERR-NEXT: the wholish line
+COM-NEXT: FAIL: $src:{:[0-9]+}:NEXT  the wholish line
+ERR-NEXT: the wholish line
+COM-NEXT: PASS: $src:{:[0-9]+}:NEXT  the  wholish  line
+ERR-NEXT: bill
+COM-NEXT: XFAIL: $src:{:[0-9]+}:NEXT  bob
+ERR-NEXT: bob
+COM-NEXT: PASS: $src:{:[0-9]+}:NEXT  bob
+ERR-NEXT: bob
+COM-NEXT: XPASS: $src:{:[0-9]+}:NEXT  bob
+OUT-NEXT: $EOF
