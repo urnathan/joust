@@ -55,15 +55,15 @@ int main (int argc, char *argv[])
 {
   struct Flags 
   {
+    bool help = false;
+    bool version = false;
+    bool verbose = false;
     std::vector<char const *> prefixes; // Pattern prefixes
     std::vector<char const *> defines;  // Var defines
     char const *include = nullptr;  // File of var defines
     char const *in = "";
     char const *out = "";
     char const *dir = nullptr;
-    bool help = false;
-    bool version = false;
-    bool verbose = false;
   } flags;
   auto append = []
     (Option const *option, char const *opt, char const *arg, void *f)

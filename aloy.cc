@@ -79,8 +79,8 @@ int main (int argc, char *argv[])
       {"verbose", 'v', offsetof (Flags, verbose), nullptr, nullptr, "Verbose"},
       {"dir", 'C', offsetof (Flags, dir), nullptr, "directory", "Set directory"},
       {"jobs", 'j', offsetof (Flags, jobs), uint_fn, "+val", "Define"},
-      {"gen", 'g', offsetof (Flags, gen), nullptr, "prog", "Generator"},
       {"out", 'o', offsetof (Flags, out), nullptr, "file", "Output"},
+      {"gen", 'g', offsetof (Flags, gen), nullptr, "prog", "Generator"},
       {"tester", 't', offsetof (Flags, tester), nullptr, "prog", "Tester"},
       {nullptr, 0, 0, nullptr, nullptr, nullptr}
     };

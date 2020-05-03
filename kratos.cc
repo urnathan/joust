@@ -70,12 +70,14 @@ int main (int argc, char *argv[])
 {
   struct Flags 
   {
-    std::vector<char const *> prefixes; // Pattern prefixes
-    std::vector<char const *> defines;  // Var defines
-    char const *include = nullptr;  // file of var defines
     bool help = false;
     bool version = false;
     bool verbose = false;
+    std::vector<char const *> prefixes; // Pattern prefixes
+    std::vector<char const *> defines;  // Var defines
+    char const *include = nullptr;  // file of var defines
+    char const *out = "";
+    char const *dir = nullptr;
   } flags;
   auto append = []
     (Option const *option, char const *opt, char const *arg, void *f)
@@ -99,9 +101,11 @@ int main (int argc, char *argv[])
       {"help", 'h', offsetof (Flags, help), nullptr, nullptr, "Help"},
       {"version", 0, offsetof (Flags, version), nullptr, nullptr, "Version"},
       {"verbose", 'v', offsetof (Flags, verbose), nullptr, nullptr, "Verbose"},
+      {"dir", 'C', offsetof (Flags, dir), nullptr, "directory", "Set directory"},
       {nullptr, 'D', offsetof (Flags, defines), append, "+var=val", "Define"},
       {"defines", 'd', offsetof (Flags, include), nullptr,
        "file", "File of defines"},
+      {"out", 'o', offsetof (Flags, out), nullptr, "file", "Output"},
       {"prefix", 'p', offsetof (Flags, prefixes), append,
        "prefix", "Pattern prefix (repeatable)"},
       {nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -119,6 +123,10 @@ int main (int argc, char *argv[])
       BuildNote (stdout);
       return 0;
     }
+  if (flags.dir)
+    if (chdir (flags.dir) < 0)
+      Fatal ("cannot chdir '%s': %m", flags.dir);
+
   if (argno == argc)
     Fatal ("expected test filename");
   char const *testFile = argv[argno++];
@@ -149,7 +157,24 @@ int main (int argc, char *argv[])
   if (pipes.empty () || Error::Errors ())
     Fatal ("failed to construct commands '%s'", testFile);
 
-  Logger logger;
+  std::ofstream sum, log;
+  if (!flags.out[flags.out[0] == '-'])
+    flags.out = nullptr;
+  else
+    {
+      std::string out (flags.out);
+      size_t len = out.size ();
+      out.append (".sum");
+      sum.open (out);
+      if (!sum.is_open ())
+	Fatal ("cannot write '%s': %m", out.c_str ());
+      out.erase (len).append (".log");
+      log.open (out);
+      if (!log.is_open ())
+	Fatal ("cannot write '%s': %m", out.c_str ());
+    }
+
+  Logger logger (flags.out ? sum : std::cout, flags.out ? log : std::cerr);
   if (flags.verbose)
     {
       logger.Sum () << "Pipelines\n";
