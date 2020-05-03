@@ -80,6 +80,48 @@ $(TESTS/iblis): %: %.o libiblis.a libnms.a
 	$(CXX) $(LDFLAGS) $< -liblis -lnms $(LIBS) -o $@
 ```
 
+You might notice, that's providing `../../$(srcdir)/iblis/tests/jouster` as a generator program.  It happens to be a script in the source directory:
+
+```zsh
+pushd ${0%/*}
+setopt nullglob
+for subdir in $@ ; do
+    echo $subdir/*(.^*)
+done
+popd
+```
+
+The first test is `tests/00-basic/axiom.cc`, which is compiled by the
+above Makefile before the testsuite is invoked.  The source file
+contains the following fragment:
+
+```c++
+// Check backtrace dtrt
+// RUN-SIGNAL:6 $subdir$stem | ezio -p FATAL $src
+// FATAL: I am unwell
+// FATAL-NEXT: 00-0x{:[0-9a-f]+}
+// FATAL: InvokeHCF
+// FATAL: main
+// FATAL-NEXT: Version
+// FATAL-END:
+
+// Check that the ABI is optimial for passing Ref<T>'s the same as T &.
+// RUN: $objcopy -Obinary -jidentity1 $subdir$stem.o $tmp.1
+// RUN: $objcopy -Obinary -jidentity2 $subdir$stem.o $tmp.2
+// RUN: cmp -s $tmp.1 $tmp.2
+
+// RUN-END:
+```
+
+This contains 4 test invocations, one for each `RUN:` line.  The
+`RUN-SIGNAL:` line is checking that a failed assert produces a
+backtrace and exits with a signal.  You'll see it's invoking Ezio to
+check the backtrace, and tells it to use the `FATAL:` lines for that
+checking.  The next 2 `RUN:` lines invoke objcopy to extract some
+information from the object file, writing to two temporary files.  The
+final `RUN:` line compares those temporaries and we only care it exits
+with zero.
+
 ## ALOY: Apply List, Observe Yield
 
 ALOY is the major driver of the testsuite.  It is expected that you'll
