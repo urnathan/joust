@@ -130,7 +130,7 @@ int main (int argc, char *argv[])
   while (engine.IsLive ())
     {
       engine.Spawn ();
-      engine.Process (-1);
+      engine.Process ();
       engine.Retire ();
       if (show_progress)
 	{

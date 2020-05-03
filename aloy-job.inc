@@ -62,12 +62,7 @@ public:
   {
     return !state;
   }
-  bool ExitFailed () const
-  {
-    return (WIFSIGNALED (exit_status)
-	    || (WIFEXITED (exit_status) && WEXITSTATUS (exit_status)));
-  }
-  void ReportExit (Logger &) const;
+  int ReportExit (Logger &) const;
 
   friend std::ostream &operator<< (std::ostream &, Job const &);
 };
@@ -180,20 +175,28 @@ int Job::Reap (int status)
   return r;
 }
 
-void Job::ReportExit (Logger &log) const
+int Job::ReportExit (Logger &log) const
 {
+  int s = -1;
+  
   if (WIFSIGNALED (exit_status))
     {
       int sig = WTERMSIG (exit_status);
       log.Result (Logger::ERROR) << *this << " terminated with signal " << sig;
+      s = Logger::ERROR;
     }
   else if (WIFEXITED (exit_status))
     {
-      int code = WEXITSTATUS (exit_status);
-      log.Result (Logger::ERROR) << *this << " exited with status " << code;
+      if (int code = WEXITSTATUS (exit_status))
+	{
+	  log.Result (Logger::ERROR) << *this << " exited with status " << code;
+	  s = Logger::ERROR;
+	}
     }
   else
     Unreachable ();
+
+  return s;
 }
 
 std::ostream &operator<< (std::ostream &s, Job const &job)

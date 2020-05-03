@@ -194,11 +194,11 @@ int main (int argc, char *argv[])
       limits[ix] = ix == PL_CPU || ix == PL_HWM ? 60 : 1;
       if (auto limit = syms.Get (vars[ix]))
 	{
-	  Lexer lexer (limit);
+	  Lexer lexer (*limit);
 
 	  if (!lexer.Integer () || lexer.Peek ())
 	    logger.Result (Logger::ERROR)
-	      << "limit '" << vars[ix] << "=" << limit << "' invalid";
+	      << "limit '" << vars[ix] << "=" << *limit << "' invalid";
 	  else
 	    limits[ix] = lexer.GetToken ()->GetInteger ();
 	}

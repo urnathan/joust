@@ -464,7 +464,7 @@ make check
 
 The `configure` script supports a number of options, you can disable
 checking, and backtrace for instance.  When building you can override
-`CXXFLAGS` f needs be -- I often used `make CXXFLAGS=-g3` if I need to
+`CXXFLAGS` if needs be -- I often used `make CXXFLAGS=-g3` if I need to
 debug it.
 
 The Makefile will automatically enable parallelism, trying to keep
@@ -476,4 +476,4 @@ desired parallelism.
 
 I've not yet written install rules, sorry.
 
-[^1] or 'Journal Of Utterly Stupid Tests'
+[^1]: or 'Journal Of Utterly Stupid Tests'

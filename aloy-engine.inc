@@ -59,9 +59,9 @@ public:
 	     int argc, char const *const argv[]);
   void Fini (std::ostream * = nullptr);
   void Stop (int sig);
-  bool Process (int timeout);
+  bool Process ();
   void Retire ();
-  void Fini (Job const &);
+  void Fini (Job const &, bool is_generator = false);
   void Spawn ();
   std::string Progress ();
 
@@ -82,10 +82,6 @@ private:
   void ReadMake ();
   void WriteMake ();
   void QueueMake (int token);
-
-private:
-  void Init (Job *);
-  void Fini (Job *);
 
   friend std::ostream &operator<< (std::ostream &, Engine const &);
 };
@@ -220,7 +216,7 @@ void Engine::Init (char const *tester, char const *genner,
   ev.events = EPOLLIN;
   ev.data.u64 = unsigned (FD::SIGNAL);
   while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
-    Assert (errno == EINTR);
+    Assert (errno == EINTR || errno == EAGAIN);
 
   if (genner)
     {
@@ -234,28 +230,22 @@ void Engine::Init (char const *tester, char const *genner,
       // Create pending job queue
       for (auto iter = generator.Command ().begin ();
 	   iter != generator.Command ().end (); ++iter)
-	jobs.emplace_back (std::move (*iter));
+	{
+	  jobs.emplace_back (std::move (*iter));
+	  pending++;
+	}
       generator.Command ().clear ();
     }
 }
 
 void Engine::Fini (std::ostream *summary)
 {
-  
-  if (!generator.Buffer (1).empty () || generator.ExitFailed ())
-    {
-      Log () << '\n';
-      Log () << "# Generator Errors";
-      Log () << std::string_view (generator.Buffer (1).data (),
-				  generator.Buffer (1).size ());
-
-      generator.ReportExit (*this);
-    }
+  Fini (generator, true);
 
   if (summary)
-    *summary << "# Summary of " << retired << " tests \n" << *this;
+    *summary << "# Summary of " << retired << " test programs \n" << *this;
   Sum () << '\n';
-  *this << "# Summary of " << retired << " tests \n" << *this;
+  *this << "# Summary of " << retired << " test programs \n" << *this;
 
   Flush ();
 
@@ -399,7 +389,7 @@ void Engine::WantMake ()
 	{
 	  if (make_want)
 	    while (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_in, nullptr) < 0)
-	      Assert (errno == EINTR);
+	      Assert (errno == EINTR || errno == EAGAIN);
 	}
       else
 	{
@@ -409,7 +399,7 @@ void Engine::WantMake ()
 	      ev.events = EPOLLIN;
 	      ev.data.u64 = unsigned (FD::MAKE_IN);
 	      while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, make_in, &ev) < 0)
-		Assert (errno == EINTR);
+		Assert (errno == EINTR || errno == EAGAIN);
 	    }
 	}
       make_want = want;
@@ -435,7 +425,7 @@ void Engine::ReadMake ()
   ssize_t got = read (make_in, buffer, want);
   if (got < 0)
     {
-      if (errno != EINTR)
+      if (errno != EINTR && errno != EAGAIN)
 	StopMake (errno);
     }
   else
@@ -454,7 +444,7 @@ void Engine::QueueMake (int token)
       ev.events = EPOLLOUT;
       ev.data.u64 = unsigned (FD::MAKE_OUT);
       while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, make_out, &ev) < 0)
-	Assert (errno == EINTR);
+	Assert (errno == EINTR || errno == EAGAIN);
     }
   used_tokens.push_back (char (token));
 }
@@ -467,7 +457,7 @@ void Engine::WriteMake ()
   ssize_t wrote = write (make_out, used_tokens.data (), used_tokens.size ());
   if (wrote < 0)
     {
-      if (errno != EINTR)
+      if (errno != EINTR && errno != EAGAIN)
 	StopMake (errno);
       wrote = 0;
     }
@@ -476,13 +466,13 @@ void Engine::WriteMake ()
     {
       used_tokens.clear ();
       while (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_out, nullptr) < 0)
-	Assert (errno == EINTR);
+	Assert (errno == EINTR || errno == EAGAIN);
     }
   else
     used_tokens.erase (0, wrote);
 }
 
-bool Engine::Process (int timeout)
+bool Engine::Process ()
 {
   constexpr int max_events = 20;
   int count;
@@ -490,11 +480,11 @@ bool Engine::Process (int timeout)
   do
     {
       epoll_event events[max_events];
-      count = epoll_wait (poll_fd, events, max_events, timeout);
+      count = epoll_wait (poll_fd, events, max_events, -1);
       if (count < 0)
 	{
 	  count = 0;
-	  Assert (errno == EINTR);
+	  Assert (errno == EINTR || errno == EAGAIN);
 	}
 
       for (int ix = 0; ix != count; ix++)
@@ -530,43 +520,57 @@ bool Engine::Process (int timeout)
   return !count;
 }
 
-void Engine::Fini (Job const &job)
+void Engine::Fini (Job const &job, bool is_generator)
 {
-  Log () << "# Test:" << retired << " " << job << '\n';
-  Log () << "ALOY:";
-  for (auto iter = command.begin (); iter != command.end (); ++iter)
-    Log () << *iter << ' ';
-  Log () << job << '\n';
+  if (is_generator)
+    Log () << "# Test generator: " << job << '\n';
+  else
+    {
+      Log () << "# Test:" << retired << " " << job << '\n';
+      Log () << "ALOY:";
+      for (auto iter = command.begin (); iter != command.end (); ++iter)
+	Log () << *iter << ' ';
+      Log () << job << '\n';
+    }
 
   auto &log_text = job.Buffer (1);
   Log () << std::string_view (log_text.data (), log_text.size ());
 
-  unsigned bad_count = 0;
-  std::string_view bad_line;
-  auto &sum_text = job.Buffer (0);
-  for (auto sol = sum_text.data (), end = sol + sum_text.size (); sol != end;)
+  if (!is_generator)
     {
-      auto eol = std::find (sol, end, '\n');
-      auto line = std::string_view (sol, eol);
-
-      Status st = DecodeStatus (line);
-      if (st == STATUS_HWM)
+      unsigned bad_count = 0;
+      std::string_view bad_line;
+      auto &sum_text = job.Buffer (0);
+      for (auto sol = sum_text.data (), end = sol + sum_text.size ();
+	   sol != end;)
 	{
-	  bad_count++;
-	  if (!bad_line.size ())
-	    bad_line = line;
-	}
-      else
-	counts[st]++;
-      Sum () << line << '\n';
-      sol = eol + (eol != end);
-    }
-  if (bad_count)
-    Result (Logger::ERROR) << job << ": unexpected summary line '"
-			   << bad_line << '\'';
+	  auto eol = std::find (sol, end, '\n');
+	  auto line = std::string_view (sol, eol);
 
-  if (job.ExitFailed ())
-    job.ReportExit (*this);
+	  Status st = DecodeStatus (line);
+	  if (st == STATUS_HWM)
+	    {
+	      bad_count++;
+	      if (!bad_line.size ())
+		bad_line = line;
+	    }
+	  else
+	    counts[st]++;
+	  Sum () << line << '\n';
+	  sol = eol + (eol != end);
+	}
+      if (bad_count)
+	{
+	  Result (Logger::ERROR) << job << ": unexpected summary line '"
+				 << bad_line << '\'';
+	  counts[Logger::ERROR]++;
+	}
+    }
+
+  // We can't trust the job itself to have reported its failure
+  int exit = job.ReportExit (*this);
+  if (exit >= 0)
+    counts[exit]++;
 
   Log () << '\n';
 }

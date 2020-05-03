@@ -27,5 +27,6 @@ and we're done
 # ERR-LABEL: Test:5 and
 # ERR-LABEL: Test:6 we're
 # ERR-LABEL: Test:7 done
-# ERR-LABEL: Summary of 8 tests
+# ERR-LABEL: Test generator
+# ERR-LABEL: Summary of 8 test programs
 # ERR: PASS 0

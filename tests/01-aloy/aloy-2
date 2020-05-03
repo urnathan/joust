@@ -1,0 +1,21 @@
+# Test Aloy reports tester failure
+# we feed this file into a sub aloy which invokes the the shell on this file
+# stdout and stderr are then checked via ezio
+
+# RUN: aloy -t $SHELL -o - $srcdir$src |
+# RUN: ezio -p COM -p OUT $src | ezio -p COM -p ERR $src
+
+exit 1
+
+and we're done
+
+# COM: Test run:
+# COM-NEXT: ^$
+# ERR-NEXT: # Test:0 $srcdir$src
+# ERR-NEXT: ALOY:zsh $srcdir$src
+# COM-NEXT: ERROR: $srcdir$src exited with status 1
+# ERR: # Test generator:
+# COM: # Summary of
+# COM-NEXT: PASS 0
+# COM-NEXT: ERROR 1
+# COM-NEXT: $EOF
