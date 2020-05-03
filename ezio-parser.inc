@@ -148,8 +148,19 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	  return Parent::ProcessLine (variant, pattern);
 	found:;
 	}
-      
-      if (auto *p = Pattern::Parse (this, Pattern::Kind (code), pattern))
+
+      auto pat = pattern;
+      // Strip leading and trailing whitespace
+      while (!pat.empty ())
+	{
+	  if (pat.front () == ' ' || pat.front () == '\t')
+	    pat.remove_prefix (1);
+	  else if (pat.back () == ' ' || pat.back () == '\t')
+	    pat.remove_suffix (1);
+	  else
+	    break;
+	}
+      if (auto *p = Pattern::Parse (this, Pattern::Kind (code), pat))
 	e.Add (p);
 
       xfail = false;

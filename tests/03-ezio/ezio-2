@@ -23,6 +23,6 @@ OUT-NEVER: FAIL:
 OUT-OPTION: !matchSol
 OUT: PASS: {:.*}:MATCH {:.*} captures on
 OUT: PASS: {:.*}:NEXT {:.*} frobs on
-OUT: PASS: {:.*}:MATCH {:.*} word
-OUT: PASS: {:.*}:NEXT {:.*} frob
-OUT: FAIL: {:.*}:NEXT {:.*} frob
+OUT: PASS: {:.*}:MATCH word
+OUT: PASS: {:.*}:NEXT frob
+OUT: FAIL: {:.*}:NEXT frob

@@ -453,10 +453,6 @@ bool Pattern::Canonicalize ()
       switch (token->GetKind ())
 	{
 	case Token::WHITESPACE:
-	  if (token == atoms.begin () || token + 1 == atoms.end ())
-	    // drop leading and trailing whitespace
-	    continue;
-
 	  if (matchSpace)
 	    // Spacing mush match exactly
 	    acc.append (std::move (token->GetString ()));
