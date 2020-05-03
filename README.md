@@ -223,11 +223,40 @@ several fails).
 
 Patterns are literal matches, with the following extensions:
 
-* Leading and trailing whitespace is elided.  If you must match such space, use a regexp escpe.
+* Leading and trailing whitespace is elided.  If you must match such
+  space, use a regexp escpe.
 
-* A leadeing `^` will anchor a particlar pattern at the start of line (regardless of `matchSol`).
+* A leading `^` will anchor a particlar pattern at the start of line
+  (regardless of `matchSol`).
 
-* A trailing `$` will anchor at the end of line.
+* A trailing `$` will anchor at the end of line.  (The options are
+  useful if you need to anchor a whole set of lines.)
+
+* Whitespace matches any sequence of whitespace.
+
+* Variable expansions are denoted by `$VAR` or `${VAR}`.  These are
+  matched literally.
+
+* To match a literal `$` use `${}`.
+
+* Captures are denoted by `{VAR:REGEXP}`, which if the match is
+  successful set the variable to the text the regexp matched.  Posix
+  extended regexps are used.
+
+* Plain regexps are simply captures without a variable: `{:REGEXP}`.
+
+* The regexp can contain a variable expansion, which is matched
+  literally (not asa regexp itself).  The above `$VAR` or `${VAR}`
+  syntax does that.  As before `${}` will obtain a literal `$`, but
+  you might need to escape that with `\`, because of its meaning in a
+  REGEXP.
+
+* Patterns can contain variables whose value has not yet been
+  determined.  These patterns will not match at that point.  If Ezio
+  can determine the variable will never have a value set until too
+  late, an error is given.  This is particularly signficant with DAG
+  matching, where later patterns of the DAG contain expansion captured
+  from earlier patterns.
 
 ## DRAKE: Dynamic Response And Keyboard Emulation
 
@@ -257,6 +286,17 @@ certain arguments.  The following variables will be automatically created:
 
 ### Input and Output
 
+## Future
 
+* Kratos offloading to a remote execution system.  Add $wrapper variable or
+something?
+
+* Kratos copying files to/from remote system.  Add $cpto $cp from
+variables along with RUN-AUX: or similar.
+
+* Kratos iteration over a set of flags.  Add RUN-ITERATE: along with
+ability to defer some toplevel variable expansion to runtime.
+RUN-REQUIRE inside a loop would continue to the next iteration of
+the loop.
 
 [^1] or 'Journal Of Utterly Stupid Tests'
