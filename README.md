@@ -104,7 +104,7 @@ contains the following fragment:
 // FATAL-NEXT: Version
 // FATAL-END:
 
-// Check that the ABI is optimial for passing Ref<T>'s the same as T &.
+// Check that the ABI is optimal for passing Ref<T>'s the same as T &.
 // RUN: $OBJCOPY -Obinary -jidentity1 $subdir$stem.o $tmp.1
 // RUN: $OBJCOPY -Obinary -jidentity2 $subdir$stem.o $tmp.2
 // RUN: cmp -s $tmp.1 $tmp.2
@@ -231,10 +231,10 @@ variable.)
 
 System resources can be constrained by use of variables:
 
-* $cpulimit:  Maximum cpu time, in minutes (1 minute).
+* $cpulimit:  Maximum cpu time, in seconds (1 minute).
 * $memlimit:  Maxiumum memory use, in GB (1 GB).
 * $filelimit:  Maximum filesize, in GB (1 GB).
-* $timelimit:  Maximum wall clock time, in minutes (unlimited).
+* $timelimit:  Maximum wall clock time, in seconds (1 minute).
 
 ## Ezio: Expect Zero Irregularities Observed
 
@@ -342,7 +342,7 @@ Patterns are literal matches, with the following extensions:
 You can use libjoust directly, to write unit tests.
 
 ```c++
-#include "logger.hh"
+#include "logger.hh"  // Yeah, I like .hh, bite me.
 
 int main ()
 {

@@ -190,16 +190,17 @@ int main (int argc, char *argv[])
       static char const *const vars[PL_HWM + 1]
 	= {"cpulimit", "memlimit", "filelimit", "timelimit"};
 
-      limits[ix] = 0;
+      // 1 minute or 1 GB
+      limits[ix] = ix == PL_CPU || ix == PL_HWM ? 60 : 1;
       if (auto limit = syms.Get (vars[ix]))
 	{
-	  char *eptr;
-	  unsigned v = strtoul (limit->c_str (), &eptr, 10);
-	  if (*eptr)
+	  Lexer lexer (limit);
+
+	  if (!lexer.Integer () || lexer.Peek ())
 	    logger.Result (Logger::ERROR)
 	      << "limit '" << vars[ix] << "=" << limit << "' invalid";
 	  else
-	    limits[ix] = v;
+	    limits[ix] = lexer.GetToken ()->GetInteger ();
 	}
     }
 
