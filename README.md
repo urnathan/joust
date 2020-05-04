@@ -45,7 +45,7 @@ and then matches them against the specified file or stdin.
 ## Example
 
 I use Make to build, along with separating the build directory tree
-from the source tree -- so the source directories are unaltered by the
+from the source tree &mdash; so the source directories are unaltered by the
 build.  A project may consist of multiple source directories, but
 tests will be somewhere under `tests` subdirectories within this heirarchy.
 
@@ -184,12 +184,19 @@ The first exits with a zero exit code, and the second exits with a
 non-zero code.
 
 The actual command to run is subject to `$` expansion, which is
-similar, but not the same, as shell expansion.  In particular shell
-quoting and substitution is different.  Arguments are space-separated,
-use `{...}` braces to inhibit that -- the braces are dropped.
-Variable expansion uses `$var` or `${var}`, spaces in the variable
-expansion begin new arguments, unless the expansion itself is within
-braces.  Variables are those specified via a definition file or on the
+similar, but not the same, as shell expansion.
+
+* Shell quoting and substitution is different.  Arguments are
+space-separated, use `{...}` braces to inhibit that &mdash; the braces are
+dropped.
+
+* Unlike shell, but like `Make`, variable expansion is recursive.
+
+* Like shell, variable expansion uses `$var` or `${var}`.  Spaces in
+the variable expansion begin new arguments, unless the expansion
+itself is within braces.
+
+* Variables are those specified via a definition file or on the
 command line.
 
 The program's stdin can be sourced from a file and its stdout can be
@@ -212,7 +219,7 @@ wanted.  Or the outputs can be piped to checking programs.  Often
 `ezio` is used to check the output is as expected.  Use `|` to
 indicate this.  If a line ends with `|` you do not also need a `\` to
 continue to the next `RUN:` line.  Unlike the shell, which stream is
-piped depends on ordering -- there's no explicit numbering of pipes.
+piped depends on ordering &mdash; there's no explicit numbering of pipes.
 There can be one or two checkers.  The last checker receives stderr,
 and the one before that (if any) gets stdout.  For example:
 
@@ -282,7 +289,7 @@ several fails).
 * CHECK-NEVER: A negative match that applies to the entire file.  As
   with NONE, lines that fail any positive match are expected to not
   match these either.  Only the first negative match that matches is
-  checked -- a NONE and a NEVER that check the same pattern will not
+  checked &mdash; a NONE and a NEVER that check the same pattern will not
   trigger twice.
 
 * CHECK-OPTION: Set options for the following patterns.  Options are:
@@ -291,7 +298,7 @@ several fails).
   * matchEol: The pattern is anchored to the end of the line.
   * matchLine: The pattern is anchored at both start & end.
   * matchSpace: Whitespace must match exactly.
-  * xfail: The pattern is xfailed -- expected to fail.
+  * xfail: The pattern is xfailed &mdash; expected to fail.
 
   Options are space or `,` separated.  They may be preceded by `!` to
   turn the option off.  `matchLine` is equivalent to specifying both
@@ -406,7 +413,7 @@ use `-i FILE` to provide a file to read.  If `FILE` is `-`, it
 signifies `stdin` anyway.
 
 Aloy, Kratos & Ezio report their results to `stdout` and `stderr`.
-`stdout` provides summary results -- just pass/fail of each tests.
+`stdout` provides summary results &mdash; just pass/fail of each tests.
 `stderr` provides logging, which along with the pas/fail information
 shows informative test output so you can see why it failed, and
 information about how to reexecute just that test, either inside the
@@ -464,7 +471,7 @@ make check
 
 The `configure` script supports a number of options, you can disable
 checking, and backtrace for instance.  When building you can override
-`CXXFLAGS` if needs be -- I often used `make CXXFLAGS=-g3` if I need to
+`CXXFLAGS` if needs be &mdash; I often used `make CXXFLAGS=-g3` if I need to
 debug it.
 
 The Makefile will automatically enable parallelism, trying to keep
