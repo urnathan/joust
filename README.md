@@ -1,4 +1,4 @@
-# JOUST: Journal Of User-Scripted Tests[^1]
+# JOUST: Journal Of User-Scripted Tests<a href="#1"><sup>1</sup></a>
 
 Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 
@@ -130,7 +130,7 @@ provide some scripts for its use.  Typical invocation is:
 
 * `-C DIR`:  Change to `DIR` before doing anything else.
 * `-j COUNT`:  Fixed job limit
-* `-o STEM`  Output file stem, defaults to '-' (stdout/stderr)
+* `-o STEM`  Output file stem, defaults to `-` (stdout/stderr)
 * `-g GEN`:  Generator program, defaults to `kratos`
 * `-t TESTER` Tester program, defaults to `kratos`
 
@@ -160,7 +160,7 @@ sequentially.
 * `-C DIR`:  Change to `DIR` before doing anything else.
 * `-D VAR=VALUE`: Define variable
 * `-d FILE`:  Specify file of variable definitions
-* `-o STEM`  Output file stem, defaults to '-' (stdout/stderr)
+* `-o STEM`  Output file stem, defaults to `-` (stdout/stderr)
 * `-p PREFIX`: Command line prefix, defaults `RUN`, repeatable
 
 The environment variable `$JOUST` can be set to specify another file
@@ -253,8 +253,8 @@ patterns from it, and then matches the patterns against a test file.
 * `-C DIR`:  Change to `DIR` before doing anything else.
 * `-D VAR=VALUE`: Define variable
 * `-d FILE`:  Specify file of variable definitions
-* `-i INPUT`  Input file, defaults to '-' (stdin)
-* `-o STEM`  Output file stem, defaults to '-' (stdout/stderr)
+* `-i INPUT`  Input file, defaults to `-` (stdin)
+* `-o STEM`  Output file stem, defaults to `-` (stdout/stderr)
 * `-p PREFIX`: Command line prefix, defaults `CHECK`, repeatable
 
 There are several kinds of check patterns.  Some are positive matches
@@ -483,4 +483,4 @@ desired parallelism.
 
 I've not yet written install rules, sorry.
 
-[^1]: or 'Journal Of Utterly Stupid Tests'
+<a name="1">1</a>: or 'Journal Of Utterly Stupid Tests'
