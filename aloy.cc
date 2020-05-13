@@ -157,7 +157,7 @@ int main (int argc, char *argv[])
       write (1, text.data (), text.size ());
     }
 
-  engine.Fini (show_progress ? &std::cout : nullptr);
+  engine.Fini (flags.out ? &std::cout : nullptr);
 
   sum.close ();
   log.close ();
