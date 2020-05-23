@@ -67,19 +67,27 @@ bool Parser::ProcessLine (std::string_view const &variant,
       for (; kind != Pipeline::PIPELINE_HWM; ++kind)
 	if (variant == Pipeline::kinds[kind])
 	  goto found;
+
       return Parent::ProcessLine (variant, pattern);
     found:;
+      if (kind == Pipeline::END)
+	return true;
     }
 
   Lexer lexer (pattern);
 
-  if (kind == Pipeline::END)
-    // We're done
-    return true;
-
   do
     {
-      bool redirectable = false;
+      enum Redirecting
+	{
+	  R_REDIRECTABLE = -1,
+	  R_NONE,
+	  R_IN,
+	  R_OUT
+	};
+
+      Redirecting redirecting = R_NONE;
+
       if (state != CONTINUED)
 	{
 	  unsigned exit = 0;
@@ -97,7 +105,8 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	  if (kind == Pipeline::RUN
 	      || kind == Pipeline::SIGNAL)
 	    {
-	      redirectable = true;
+	      if (state == IDLE)
+		redirecting = R_REDIRECTABLE;
 	      if (lexer.Integer ())
 		{
 		  if (state != IDLE)
@@ -163,6 +172,18 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	{
 	  char c = lexer.Peek ();
 
+	  if (redirecting < R_NONE)
+	    {
+	      if (c == '<' || c == '>')
+		{
+		  redirecting = c == '<' ? R_IN : R_OUT;
+		  goto advance;
+		}
+	      if (c == ' ' || c == '\t')
+		goto advance;
+	      redirecting = R_NONE;
+	    }
+
 	  if (escape && c)
 	    {
 	      escape = false;
@@ -179,7 +200,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	  else if (c == '{')
 	    {
 	      if (word.empty ())
-		redirectable = false;
+		redirecting = R_NONE;
 	      if (depth++)
 		goto append;
 	      goto advance;
@@ -196,39 +217,40 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	    {
 	      std::vector<std::string const *> stack;
 	      RecursivelyExpand (cmd.words, lexer, depth, word, stack);
-	      if (!cmd.words.empty ())
-		redirectable = false;
 	    }
 	  else if (!c || c == ' ' || c == '\t')
 	    {
 	      if (c && depth)
 		goto append;
+	      
 	      if (word.size ())
 		{
-		  if (redirectable)
+		  if (redirecting)
 		    {
-		      int dir = -1;
-		      if (word[0] == '<')
-			dir = 0;
-		      if (word[0] == '>')
-			dir = 1;
-		      if (dir >= 0)
+		      Assert (redirecting > R_NONE);
+
+		      auto &srcsink = pipes.back ().srcsink[redirecting - R_IN];
+
+		      if (cmd.words.size ())
 			{
-			  auto &srcsink = pipes.back ().srcsink[dir];
-			  
-			  if (!srcsink.empty ())
-			    Error () << "redirection already specified";
-			  else if (pipes.back ().commands.size () > 1)
-			    Error () << "redirection only permitted"
-			      " at start of pipeline";
-			  else
-			    srcsink = std::move (word.substr (1));
+			  Error () << "redirection expanded to multiple words";
+			  redirecting = R_NONE;
+			}
+		      else if (!srcsink.empty ())
+			{
+			  Error () << "redirection already specified";
+			  redirecting = R_REDIRECTABLE;
 			  goto clear_word;
 			}
 		      else
-			redirectable = false;
+			{
+			  srcsink = word;
+			  redirecting = R_REDIRECTABLE;
+			  goto clear_word;
+			}
 		    }
 
+		
 		  if (kind != Pipeline::REQUIRE)
 		    {
 		      if (!c && word == "\\")
@@ -252,6 +274,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 		      word.clear ();
 		    }
 		}
+
 	      if (!c)
 		break;
 	      goto advance;

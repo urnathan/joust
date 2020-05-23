@@ -28,6 +28,7 @@ public:
 private:
   std::vector<Command> commands;
   std::string srcsink[2];
+  int srcstring = -1;
   Kind kind = RUN;
   unsigned expected_exit : 8 = 0;
   bool expect_inverted : 1 = false;
