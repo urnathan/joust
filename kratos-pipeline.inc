@@ -77,6 +77,8 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
   if (!pipe.srcsink[1].empty ())
     s << iter->File () << ':' << iter->Line ()
       << outs[fd++] << "> " << pipe.srcsink[1] << '\n';
+  else if (pipe.commands.size () != 3)
+    fd++;
 
   while (++iter != pipe.commands.end ())
     s << iter->File () << ':' << iter->Line ()
