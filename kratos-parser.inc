@@ -9,8 +9,9 @@ class Parser : public Scanner
 private:
   enum State : signed char
   {
-    IDLE = -3,		// not started
+    IDLE,		// not started
     REDIRECT_IN,	// read from file
+    REDIRECT_HERE,	// here document
     REDIRECT_OUT,	// write stdout to file
     ACTIVE_LWM,		// writing command
   };
@@ -20,6 +21,7 @@ private:
   Symbols &syms;
   std::string src;
   State state = IDLE;
+  bool here = false;
 
 public:
   Parser (char const *file_, std::vector<Pipeline> &p, Symbols &s)
@@ -86,15 +88,22 @@ bool Parser::ProcessLine (std::string_view const &variant,
     {
       char c = lexer.Peek ();
 
-      if (word.empty () && !depth && !escape)
+      if (word.empty () && !depth && !escape && state != REDIRECT_HERE)
 	{
 	  // Lex separator
 	  State next_state = IDLE;
 	  bool inverted = false;
 	  int exit = 0;
 
-	  if (c == '<')
-	    next_state = REDIRECT_IN;
+	  if (c == '<' && state == IDLE)
+	    {
+	      next_state = REDIRECT_IN;
+	      if (lexer.Peek (1) == '<')
+		{
+		  next_state = REDIRECT_HERE;
+		  lexer.Advance ();
+		}
+	    }
 	  else if (c == '>')
 	    next_state = REDIRECT_OUT;
 	  else if (c == '|')
@@ -102,8 +111,8 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	      next_state = State (ACTIVE_LWM + 1);
 	      if (lexer.Peek (1) == '&')
 		{
-		  lexer.Advance ();
 		  next_state = State (ACTIVE_LWM + 2);
+		  lexer.Advance ();
 		}
 	    }
 	  else if (bol)
@@ -180,7 +189,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 
 		default:
 		  Assert (state >= ACTIVE_LWM);
-		  if (pipes.back ().commands[state].Empty ())
+		  if (pipes.back ().commands[state - ACTIVE_LWM].Empty ())
 		    Error () << "no "
 			     << (state == ACTIVE_LWM ? "command" : "filter")
 			     << " specified";
@@ -193,6 +202,12 @@ bool Parser::ProcessLine (std::string_view const &variant,
 
 	      switch (next_state)
 		{
+		case REDIRECT_HERE:
+		  if (here)
+		    break;
+		  here = true;
+		  [[fallthrough]];
+
 		case REDIRECT_IN:
 		  if (!src.empty ())
 		    Error () << "input redirection already specified";
@@ -206,7 +221,8 @@ bool Parser::ProcessLine (std::string_view const &variant,
 		  Assert (next_state > ACTIVE_LWM);
 		  [[fallthrough]];
 		case REDIRECT_OUT:
-		  next_cmd_index = next_state == REDIRECT_OUT ? 1 : next_state;
+		  next_cmd_index = (next_state == REDIRECT_OUT
+				    ? 1 : next_state - ACTIVE_LWM);
 		  if (pipes.empty ())
 		    Error () << "no command to filter";
 		  else if (pipes.back ().commands.size () > 1
@@ -224,8 +240,9 @@ bool Parser::ProcessLine (std::string_view const &variant,
 		{
 		  pipes.emplace_back (Pipeline::Kind (kind), inverted, exit);
 		  auto &last = pipes.back ();
-		  last.src = std::move (src);
+		  last.SetIn (std::move (src), here);
 		  src.clear ();
+		  here = false;
 		}
 
 	      if (next_cmd_index > 0
@@ -240,12 +257,12 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	      if (next_state == REDIRECT_OUT)
 		{
 		  state = State (ACTIVE_LWM + 1);
-		  pipes.back ().commands[state].RedirectType (Command::R_FILE);
+		  pipes.back ().commands[1].RedirectType (Command::R_FILE);
 		}
 	      continue;
 	    }
 
-	  if (c == '\\' && !lexer.Peek (1))
+	  if (c == '\\' && !lexer.Peek (1) && state != REDIRECT_HERE)
 	    {
 	      // Continued line
 	      lexer.Advance ();
@@ -255,7 +272,8 @@ bool Parser::ProcessLine (std::string_view const &variant,
 
       bol = false;
 
-      if (!c || (!depth && !escape && (c == ' ' || c == '\t')))
+      if (!c || (!depth && !escape &&
+		 state != REDIRECT_HERE && (c == ' ' || c == '\t')))
 	{
 	  // end of word
 	  if (word.size ())
@@ -266,10 +284,15 @@ bool Parser::ProcessLine (std::string_view const &variant,
 		    Error () << "extra after input redirection";
 		  src = std::move (word);
 		}
+	      else if (state == REDIRECT_HERE)
+		{
+		  src.append (std::move (word));
+		  src.push_back ('\n');
+		}
 	      else
 		{
 		  Assert (state >= ACTIVE_LWM);
-		  pipes.back ().commands[state].words.emplace_back
+		  pipes.back ().commands[state - ACTIVE_LWM].words.emplace_back
 		    (std::move (word));
 		}
 	      word.clear ();
@@ -281,7 +304,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	      if (depth
 		  || (state == REDIRECT_IN && src.empty ())
 		  || (state >= ACTIVE_LWM
-		      && pipes.back ().commands[state].Empty ())
+		      && pipes.back ().commands[state - ACTIVE_LWM].Empty ())
 		  || state == IDLE)
 		Error () << "unexpected end of line";
 
@@ -315,15 +338,17 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	  // Commit to a state.
 	  pipes.emplace_back (Pipeline::Kind (kind), false, 0);
 	  auto &last = pipes.back ();
-	  last.src = std::move (src);
+	  last.SetIn (std::move (src), here);
 	  src.clear ();
+	  here = false;
 	  state = ACTIVE_LWM;
 	}
 
       if (state >= ACTIVE_LWM
 	  && word.empty ()
-	  && pipes.back ().commands[state].Empty ())
-	pipes.back ().commands[state].FileLine (GetFile (), GetLine ());
+	  && pipes.back ().commands[state - ACTIVE_LWM].Empty ())
+	pipes.back ().commands[state - ACTIVE_LWM].FileLine
+	  (GetFile (), GetLine ());
       
       if (escape)
 	{
@@ -358,7 +383,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	  std::vector<std::string> *accum = nullptr;
 	  if (state >= ACTIVE_LWM)
 	    {
-	      auto &cmd = pipes.back ().commands[state];
+	      auto &cmd = pipes.back ().commands[state - ACTIVE_LWM];
 	      if (cmd.RedirectType () != Command::R_FILE)
 		accum = &cmd.words;
 	    }

@@ -7,15 +7,15 @@
 # OUT1: :MATCH command not found
 # ERR1-NEXT: ^$
 # ERR1-NEXT: $src:{:[0-9]+} RUN:! zsh -c NOT
-# ERR1-NEXT: $src:{:[0-9]+} err|  ezio -p INNER1 $src
+# ERR1-NEXT: $src:{:[0-9]+} err|& ezio -p INNER1 $src
 
 # TEST1:! zsh -c NOT |& ezio -p INNER1 $src
 # INNER1: command not found
 
 # ERR2-NEXT: ^$
 # ERR2-NEXT: $src:{:[0-9]+} RUN:! zsh -c NOT
-# ERR2-NEXT: $src:{:[0-9]+} out|  ezio -p OINNER1 $src
-# ERR2-NEXT: $src:{:[0-9]+} err|  ezio -p INNER1 $src
+# ERR2-NEXT: $src:{:[0-9]+} out| ezio -p OINNER1 $src
+# ERR2-NEXT: $src:{:[0-9]+} err|& ezio -p INNER1 $src
 
 # TEST2:! zsh -c NOT | ezio -p OINNER1 $src |& ezio -p INNER1 $src
 # OINNER1: $EOF

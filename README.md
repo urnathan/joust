@@ -9,7 +9,7 @@ Joust is a testsuite infrastructure consisting of a few components.
 These either interact directly, or via user scripts.  Typically you'll
 create a file of variable assignments, point at it with the Joust
 environment variable, then invoke `aloy` giving it the name of a
-tester to invoke and a generator program.  Aloy will read from the
+tester to invoke and a generator program.  Aloy reads from the
 generator's stdout, with each word being a test program to run.
 
 I accidentally wrote this when I realized the test harness I was
@@ -25,7 +25,7 @@ A testsuite runner that takes a list of test files and command to run.
 The command is run for each test file.  Results are provided in
 summary and log files.  Aloy can run sub jobs in parallel, either
 communicating with a GNUmake jobserver, or using a specified job
-limit.  Usually the command to run will be kratos.
+limit.  Usually the command to run is kratos.
 
 * Kratos: Kapture Run And Test Output Safely
 
@@ -47,7 +47,7 @@ and then matches them against the specified file or stdin.
 I use Make to build, along with separating the build directory tree
 from the source tree &mdash; so the source directories are unaltered by the
 build.  A project may consist of multiple source directories, but
-tests will be somewhere under `tests` subdirectories within this heirarchy.
+tests are somewhere under `tests` subdirectories within this heirarchy.
 
 Here is a `Makefile` snippet to invoke the testsuite:
 
@@ -144,9 +144,9 @@ The number of concurrent jobs to run can be specified with `-j`, or
 implicitly using a GNUmake jobserver specified via the `MAKEFLAGS`
 environment variable.  You may need to prefix the Makerule with `+`,
 so that Make knows the rule invokes a jobserver-aware program.
-Otherwise, although `MAKEFLAGS` is set, the jobserver will be
-unuseable.  Aloy will inform you of this happening.  Specifying `-j`
-overrides any `MAKEFILE` variable.
+Otherwise, although `MAKEFLAGS` is set, the jobserver is unuseable.
+Aloy informs you of this happening.  Specifying `-j` overrides any
+`MAKEFILE` variable.
 
 ## Kratos: Kapture Run And Test Output Safely
 
@@ -199,14 +199,21 @@ itself is within braces.
 * Variables are those specified via a definition file or on the
 command line.
 
-The program's stdin can be sourced from a file and its stdout can be
-written to one.  Input must be on a separate line.
+The program's stdin can be sourced from a file or HERE document and
+its stdout can be written to one.  Input must be on a separate line.
 
-`<$srcdir$src`
-`$srcdir$src`  
-`$srcdir$src >$tmp-1`
+`;; 1 RUN: <$srcdir$src`
+`;; 2 RUN: $srcdir$src`  
+`;; 3 RUN: $srcdir$src >$tmp-1`
+`;; 4 RUN: <<line 1`
+`;; 5 RUN: <<line 2`
+`;; 6 RUN: $srcdir$src`  
 
-The first will read from `$srcdir$src` and the last will write to `$tmp-1`.
+Lines 1 & 2 reads from `$srcdir$src`, line 3 writes to `$tmp-1`, lines
+4 & 5 are a here document passed to line 6.  Here documents are
+written via a pipe.
+
+Here
 
 Commands may be continued to the next `RUN:` line by ending with a
 single `\`.  This cannot appear in the middle of a word though.
@@ -288,7 +295,7 @@ several fails).
 * CHECK-NEVER: A negative match that applies to the entire file.  As
   with NONE, lines that fail any positive match are expected to not
   match these either.  Only the first negative match that matches is
-  checked &mdash; a NONE and a NEVER that check the same pattern will not
+  checked &mdash; a NONE and a NEVER that check the same pattern do not
   trigger twice.
 
 * CHECK-OPTION: Set options for the following patterns.  Options are:
@@ -309,10 +316,10 @@ Patterns are literal matches, with the following extensions:
 * Leading and trailing whitespace is elided.  If you must match such
   space, use a regexp escpe.
 
-* A leading `^` will anchor a particlar pattern at the start of line
+* A leading `^` anchors a particlar pattern at the start of line
   (regardless of `matchSol`).
 
-* A trailing `$` will anchor at the end of line.  (The options are
+* A trailing `$` anchors at the end of line.  (The options are
   useful if you need to anchor a whole set of lines.)
 
 * Whitespace matches any sequence of whitespace.
@@ -330,13 +337,13 @@ Patterns are literal matches, with the following extensions:
 
 * The regexp can contain a variable expansion, which is matched
   literally (not asa regexp itself).  The above `$VAR` or `${VAR}`
-  syntax does that.  As before `${}` will obtain a literal `$`, but
+  syntax does that.  As before `${}` obtains a literal `$`, but
   you might need to escape that with `\`, because of its meaning in a
   REGEXP.
 
 * Patterns can contain variables whose value has not yet been
-  determined.  These patterns will not match at that point.  If Ezio
-  can determine the variable will never have a value set until too
+  determined.  These patterns do not match at that point.  If Ezio
+  can determine the variable can never have a value set until too
   late, an error is given.  This is particularly signficant with DAG
   matching, where later patterns of the DAG contain expansion captured
   from earlier patterns.
@@ -387,12 +394,12 @@ Variables can be specfied in:
 They are initialized in that order, and the first initializer wins.
 These are unrelated to environment variables.  (Although environment
 variables can influence tests, because they are visible to the
-programs being tested.)  Typically setup code will create a file of
+programs being tested.)  Typically setup code creates a file of
 values and initialize `$JOUST` to point at it.
 
 All the programs expect a `$srcdir` variable to be specified pointing
-at the source directory.  They will automatically prepend it to
-certain arguments.  The following variables will be automatically created:
+at the source directory.  They automatically prepend it to certain
+arguments.  The following variables are automatically created:
 
 * `$src`: The source being tested.
 
@@ -407,7 +414,7 @@ certain arguments.  The following variables will be automatically created:
 
 ### Input and Output
 
-Ezio, by default, will read the file to check from `stdin`.  You can
+Ezio, by default, reads the file to check from `stdin`.  You can
 use `-i FILE` to provide a file to read.  If `FILE` is `-`, it
 signifies `stdin` anyway.
 
@@ -422,8 +429,8 @@ option.  Summary resuls go to `STEM.sum` and logging output goes to
 `STEM.log`.  Usually you'll give Aloy a `-o mytests` option.
 
 Note that if output is going to `stdout` and `stderr`, and they refer
-to the same file, output will be generally be undecipherably
-duplicated.  Use the shell to redirect to separate files (`>sum 2>log`).
+to the same file, output is generally undecipherably duplicated.  Use
+the shell to redirect to separate files (`>sum 2>log`).
 
 ## Future
 
@@ -447,7 +454,7 @@ library.  You'll see there's an `nms` symlink in the top directory.
 You can install NMS in a sibling directory, or replace the symlink
 with the NMS project itself.  The former is easier and how I build it.
 
-You will need a C++20 compiler, as I use some features of C++20.  The
+You need a C++20 compiler, as I use some features of C++20.  The
 configure script allows you to point at special build tools with
 `--with-tools=TOOLDIR`.  I used this to point at a prerelease C++20
 toolchain.
@@ -473,7 +480,7 @@ checking, and backtrace for instance.  When building you can override
 `CXXFLAGS` if needs be &mdash; I often used `make CXXFLAGS=-g3` if I need to
 debug it.
 
-The Makefile will automatically enable parallelism, trying to keep
+The Makefile  automatically enables parallelism, trying to keep
 each available CPU busy.  You can override this by adding
 `PARALLELISM=` on the command line.  Set it to empty, or to the
 desired parallelism.

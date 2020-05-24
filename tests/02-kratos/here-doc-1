@@ -1,0 +1,26 @@
+RUN: kratos -p INNER1 $src | ezio -p COMMON1 -p OUT1 $src
+RUN: |& ezio -p COMMON1 -p ERR1 $src
+
+RUN: kratos -p INNER2 $src | ezio -p COMMON2 -p OUT2 $src
+RUN: |& ezio -p COMMON2 -p ERR2 $src
+
+RUN-END:
+
+INNER1: <<here 1
+INNER1: <<here 2
+INNER1: cat
+
+OUT1-NEXT: here 1
+OUT1-NEXT: here 2
+ERR1: {:$src:[0-9]+} in<<here 1
+ERR1-NEXT: {:$src:[0-9]+} in<<here 2
+ERR1-NEXT: {:$src:[0-9]+} RUN: cat
+COMMON1-NEXT:PASS: {:$src:[0-9]+}:RUN cat
+COMMON1-NEXT:$EOF
+
+INNER2: <<here 3
+INNER2: true
+ERR2: {:$src:[0-9]+} in<<here 3
+ERR2-NEXT: {:$src:[0-9]+} RUN: true
+COMMON2-NEXT:PASS: {:$src:[0-9]+}:RUN true
+COMMON2-NEXT:$EOF
