@@ -1,6 +1,6 @@
 # test kratos recognizes run lines with exit codes etc
 
-# RUN: echo bob | ezio -p BOBOUT $src | ezio -p BOBERR $src
+# RUN: echo bob | ezio -p BOBOUT $src |& ezio -p BOBERR $src
 # RUN:1 $SHELL -c false
 # RUN:! $SHELL -c false
 # RUN:!0 $SHELL -c false

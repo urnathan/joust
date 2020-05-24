@@ -27,7 +27,7 @@ public:
 
 private:
   std::vector<Command> commands;
-  std::string srcsink[2];
+  std::string src;
   int srcstring = -1;
   Kind kind = RUN;
   unsigned expected_exit : 8 = 0;
@@ -39,6 +39,7 @@ public:
   Pipeline (Kind k, bool inverted, unsigned exit = 0)
     : kind (k), expected_exit (exit), expect_inverted (inverted)
   {
+    commands.emplace_back ();
   }
 
 public:
@@ -62,9 +63,9 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
 {
   auto iter = pipe.commands.begin ();
 
-  if (!pipe.srcsink[0].empty ())
+  if (!pipe.src.empty ())
     s << iter->File () << ':' << iter->Line ()
-      << " in< " << pipe.srcsink[0] << '\n';
+      << " in< " << pipe.src << '\n';
   
   s << iter->File () << ':' << iter->Line () << " "
     << Pipeline::kinds[pipe.kind] << ':';
@@ -75,73 +76,88 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
 
   unsigned fd = 0;
   static char const *const outs[] = {" out", " err"};
-  if (!pipe.srcsink[1].empty ())
-    s << iter->File () << ':' << iter->Line ()
-      << outs[fd++] << "> " << pipe.srcsink[1] << '\n';
-  else if (pipe.commands.size () != 3)
-    fd++;
-
-  while (++iter != pipe.commands.end ())
-    s << iter->File () << ':' << iter->Line ()
-      << outs[fd++] << "| " << *iter << '\n';
+  for (; ++iter != pipe.commands.end (); fd++)
+    if (!iter->Empty ())
+      {
+	s << iter->File () << ':' << iter->Line () << outs[fd];
+	if (iter->RedirectType () == Command::R_FILE)
+	  s << "> ";
+	else
+	  s << "| ";
+	s << *iter << '\n';
+      }
 
   return s;
 }
 
 int Pipeline::Execute (Logger &logger, unsigned const *limits)
 {
-  Assert (commands.size () >= 1 && commands.size () <= 3);
+  Assert (commands.size () == 1 || commands.size () == 3);
 
   std::cerr << *this;
 
-  int fds[2] {1, 2}; // sinks of cmd[0]
   {
     auto &cmd = commands.front ();
 
-    char const *in = srcsink[0].c_str ();
+    if (cmd.words.empty ())
+      {
+	cmd.Error () << "no command to execute";
+	return EINVAL;
+      }
+
+    char const *in = src.c_str ();
     if (!*in)
       in = "/dev/null";
-    cmd.stdin = open (in, O_RDONLY | O_CLOEXEC);
-    if (cmd.stdin < 0)
+    int fd = open (in, O_RDONLY | O_CLOEXEC);
+    if (fd < 0)
       {
 	int err = errno;
 	cmd.Error () << "cannot read '" << in << "': " << strerror (err);
       }
-
-    if (!srcsink[1].empty ())
-      {
-	// stdout is to a file
-	fds[0] = open (srcsink[1].c_str (),
-		       O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
-		       S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP
-		       | S_IROTH | S_IWOTH);
-	if (fds[0] < 0)
-	  {
-	    int err = errno;
-	    cmd.Error () << "cannot write '" << srcsink[1] << "': "
-			 << strerror (err);
-	    fds[0] = 1;
-	  }
-      }
-
-    // Pipes between commands.  The final command (if any) gets stderr,
-    // the one before that (if any) gets stdout
-    for (unsigned ix = 1; commands.size () - ix; ix++)
-      {
-	// pipe ends: 0-read from, 1-write to
-	int pipe[2];
-	if (pipe2 (pipe, O_CLOEXEC) < 0)
-	  {
-	    int err = errno;
-	    cmd.Error () << "cannot create pipe: " << strerror (err);
-	  }
-	else
-	  {
-	    fds[2 - ix] = pipe[1];
-	    commands[commands.size () - ix].stdin = pipe[0];
-	  }
-      }
+    else
+      cmd.stdin = fd;
   }
+
+  // Determine sinks of cmd[0]
+  int fds[2] {1, 2};
+  for (unsigned ix = 1; ix != commands.size (); ix++)
+    {
+      auto &filt = commands[ix];
+
+      if (filt.RedirectType () == Command::R_FILE)
+	{
+	  // To a file
+	  Assert (filt.words.size () == 1);
+
+	  char const *out = filt.words.front ().c_str ();
+	  int fd = open (out, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
+			 S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP
+			 | S_IROTH | S_IWOTH);
+	  if (fd < 0)
+	    {
+	      int err = errno;
+	      filt.Error () << "cannot write '" << out
+			    << "': " << strerror (err);
+	    }
+	  else
+	    fds[ix - 1] = fd;
+	}
+      else
+	{
+	  // pipe ends: 0-read from, 1-write to
+	  int pipe[2];
+	  if (pipe2 (pipe, O_CLOEXEC) < 0)
+	    {
+	      int err = errno;
+	      filt.Error () << "cannot create pipe: " << strerror (err);
+	      }
+	  else
+	    {
+	      fds[ix - 1] = pipe[1];
+	      filt.stdin = pipe[0];
+	    }
+	}
+    }
 
   int poll_fd = epoll_create1 (EPOLL_CLOEXEC);
   Assert (poll_fd >= 0);
@@ -163,37 +179,59 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
   while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
     Assert (errno == EINTR);
 
-  // We must buffer the 4 streams from the 2 filters, otherwise the
-  // output can be randomly intermixed, and that'll be terribly
-  // confusing at best.
+  // We must buffer the (up to) 4 streams from the 2 filters,
+  // otherwise the output can be randomly intermixed, and that'll be
+  // terribly confusing at best.
   ReadBuffer streams[4];
   unsigned num_streams = 0;
   unsigned subtasks = 0;
   {
-    auto iter = commands.begin ();
-    if (iter->Execute (fds[0], fds[1], limits))
+    if (commands.front ().Execute (fds[0], fds[1], limits))
       subtasks++;
-    while (++iter != commands.end ())
+
+    for (unsigned ix = 1; ix != commands.size (); ix++)
       {
+	auto &filt = commands[ix];
+
 	// pipe ends: 0-read from, 1-write to
 	int pipe[2][2] = {{-1,-1}, {-1,-1}};
-	if (pipe2 (pipe[0], O_CLOEXEC) < 0
-	    || pipe2 (pipe[1], O_CLOEXEC) < 0)
+
+	if (filt.stdin < 0)
+	  continue;
+
+	if (filt.Empty ())
+	  // Expect no output
+	  pipe[0][0] = filt.stdin;
+	else
 	  {
-	    int err = errno;
-	    iter->Error () << "cannot create pipe: " << strerror (err);
+	    if (pipe2 (pipe[0], O_CLOEXEC) < 0
+		|| pipe2 (pipe[1], O_CLOEXEC) < 0)
+	      {
+		int err = errno;
+		filt.Error () << "cannot create pipe: " << strerror (err);
+		if (pipe[0][0] >= 0)
+		  {
+		    close (pipe[0][0]);
+		    close (pipe[0][1]);
+		  }
+		pipe[0][0] = pipe[0][1] = -1;
+	      }
+	    if (filt.Execute (pipe[0][1], pipe[1][1]))
+	      subtasks++;
 	  }
-	if (iter->Execute (pipe[0][1], pipe[1][1]))
-	  subtasks++;
-	for (unsigned ix = 0; ix != 2; ix++)
-	  {
-	    close (pipe[ix][1]);
-	    streams[num_streams++].Open (pipe[ix][0]);
-	    ev.events = EPOLLIN;
-	    ev.data.u64 = num_streams;
-	    if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe[ix][0], &ev) < 0)
-	      Unreachable ();
-	  }
+
+	for (unsigned io = 0; io != 2; io++)
+	  if (pipe[io][0] >= 0)
+	    {
+	      unsigned strix = ix * 2 - 2 + io;
+	      close (pipe[io][1]);
+	      streams[strix].Open (pipe[io][0]);
+	      num_streams++;
+	      ev.events = EPOLLIN;
+	      ev.data.u64 = strix + 1;
+	      if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe[io][0], &ev) < 0)
+		Unreachable ();
+	    }
       }
   }
 
@@ -206,6 +244,7 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
       timeout.it_value.tv_sec = 0;
     }
 
+  static char const *const io_streams[] = {" stdout:", " stderr:"};
   bool signalled = false;
   int exit_code = -1;
   while (subtasks || num_streams)
@@ -229,12 +268,17 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 	      {
 		if (done >= 0)
 		  {
-		    static char const *const io[] = {" stdout:", " stderr:"};
-		    auto &cmd = commands[1 + stream / 2];
-		    cmd.Error ()
-		      << "failed reading "
-		      << cmd.words.front () << io[stream & 1]
-		      << strerror (done);
+		    auto *cmd = &commands[1 + stream / 2];
+		    unsigned iostr = stream & 1;
+		    if (cmd->words.empty ())
+		      {
+			cmd = &commands[0];
+			iostr = stream >> 1;
+		      }
+
+		    cmd->Error () << "failed reading "
+				  << cmd->words.front () << io_streams[iostr]
+				  << strerror (done);
 		    Result (logger, Logger::ERROR);
 		  }
 		int fd = streams[stream].Close ();
@@ -333,21 +377,34 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
   close (sig_fd);
   sigprocmask (SIG_SETMASK, &sigold, nullptr);
 
-  auto iter = commands.begin ();
-  for (unsigned ix = 0; ix != 4; ix++)
+  for (unsigned ix = 1; ix != commands.size (); ix++)
     {
-      if (!(ix & 1))
-	++iter;
-      if (size_t size = streams[ix].size ())
+      auto &filt = commands[ix];
+      if (filt.stdin < 0)
+	continue;
+
+      for (unsigned io = 0; io != 2; io++)
 	{
-	  std::ostream *s = &std::cout;
-	  if (ix & 1)
+	  auto &stream = streams[ix * 2 - 2 + io];
+	  if (size_t size = stream.size ())
 	    {
-	      s = &std::cerr;
-	      *s << "# Checker " << iter->File () << ':' << iter->Line ()
-		 << *iter << '\n';
+	      std::ostream *s = &std::cout;
+	      if (filt.Empty ())
+		{
+		  s = &std::cerr;
+		  auto &cmd = commands[0];
+		  logger.Result (Logger::ERROR, cmd.File (), cmd.Line ())
+		    << "# Unexpected" << io_streams[ix - 1]
+		    << cmd;
+		}
+	      else if (io)
+		{
+		  s = &std::cerr;
+		  *s << "# Checker " << filt.File () << ':' << filt.Line ()
+		     << filt << '\n';
+		}
+	      *s << std::string_view (stream.data (), size);
 	    }
-	  *s << std::string_view (streams[ix].data (), size);
 	}
     }
 

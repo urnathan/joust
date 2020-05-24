@@ -1,7 +1,7 @@
-
-RUN: <$srcdir$src ezio $src |
-RUN: ezio -p OUT $src |
-RUN: ezio -p OUT -p ERR $src
+RUN: <$srcdir$src
+RUN: ezio $src
+RUN: | ezio -p OUT $src
+RUN: |& ezio -p OUT -p ERR $src
 
 1 $ 2
 2 $name 3

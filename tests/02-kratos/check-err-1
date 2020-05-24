@@ -1,11 +1,11 @@
 # test detect checker error
 
-# RUN:! kratos -p INNER $src | ezio -p OUT $src | ezio -p ERR -p OUT $src
+# RUN:! kratos -p INNER $src | ezio -p OUT $src |& ezio -p ERR -p OUT $src
 # RUN-END:
 
-# INNER: true |
-# INNER: false |
-# INNER: false
+# INNER: true 
+# INNER: | false
+# INNER: |& false
 # INNER-END:
 
 # ERR: $src:7: error: 'false' exited with code 1

@@ -1,19 +1,19 @@
-RUN:1 kratos -p TST $src | ezio -p OUT $src | ezio -p OUT -p ERR $src
+RUN:1 kratos -p TST $src | ezio -p OUT $src |& ezio -p OUT -p ERR $src
 RUN-END:
 
 TST: not*a*file
 
-TST: not*a*file |
-TST: cat
+TST: not*a*file
+TST: |& cat
 
-TST: not*a*file |
-TST: cat |
-TST: cat
+TST: not*a*file
+TST: | cat
+TST: |& cat
 
-TST: >out not*a*file
+TST: not*a*file >out
 
-TST: >out not*a*file |
-TST: cat
+TST: not*a*file >out
+TST: |& cat
 
 ERR: $src:4 RUN: 'not*a*file'
 ERR-NEXT: error: failed to spawn process

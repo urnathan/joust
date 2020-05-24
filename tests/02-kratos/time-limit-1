@@ -1,12 +1,11 @@
 # Test cpu limit
 
-# RUN:! kratos -Dtimelimit=1 -p INNER $src |
-# RUN: ezio -p OUT $src | ezio -p OUT -p ERR $src
+# RUN:! kratos -Dtimelimit=1 -p INNER $src
+# RUN: | ezio -p OUT $src |& ezio -p OUT -p ERR $src
 # RUN-END:
 
 # INNER: $SHELL $srcdir$src
 # INNER-END:
-
 
 # ERR: $src:{:[0-9]+} RUN:  zsh $srcdir$src
 # ERR-NEXT: $src:{:[0-9]+}: error: TIMEOUT after 1 seconds

@@ -1,11 +1,8 @@
-// Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
-// Not For Distribution
-
-// RUN:1 $subdir$stem | ezio -p NEW $src
+// RUN:1 $subdir$stem |& ezio -p NEW $src
 // NEW: fatal: out of memory
 // NEW-END:
 
-// RUN-SIGNAL:ABRT $subdir$stem -m | ezio -p MAP $src
+// RUN-SIGNAL:ABRT $subdir$stem -m |& ezio -p MAP $src
 // MAP: Segmentation fault
 // MAP-END:
 

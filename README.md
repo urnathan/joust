@@ -200,13 +200,13 @@ itself is within braces.
 command line.
 
 The program's stdin can be sourced from a file and its stdout can be
-written to one.  Unlike the shell, these indirections _must_ be first
-in the line, otherwise they will not be recognized.
+written to one.  Input must be on a separate line.
 
-`<$srcdir$src $srcdir$src`  
-`>$tmp-1 $srcdir$src`
+`<$srcdir$src`
+`$srcdir$src`  
+`$srcdir$src >$tmp-1`
 
-The first will read from `$srcdir$src` and the second will write to `$tmp-1`.
+The first will read from `$srcdir$src` and the last will write to `$tmp-1`.
 
 Commands may be continued to the next `RUN:` line by ending with a
 single `\`.  This cannot appear in the middle of a word though.
@@ -216,23 +216,22 @@ Regardless of the kind of command started, all continuations must use
 By default the program's stdout and stderr are buffered and forwarded
 to kratos's stdout and stderr.  So they can be self-checking if
 wanted.  Or the outputs can be piped to checking programs.  Often
-`ezio` is used to check the output is as expected.  Use `|` to
-indicate this.  If a line ends with `|` you do not also need a `\` to
-continue to the next `RUN:` line.  Unlike the shell, which stream is
-piped depends on ordering &mdash; there's no explicit numbering of pipes.
-There can be one or two checkers.  The last checker receives stderr,
-and the one before that (if any) gets stdout.  For example:
+`ezio` is used to check the output is as expected.  Use `|` to pipe
+stdout and `|&` to pipe stderr.  You may add these in either order.
+There can be one or two checkers.  If you only have one checker, the
+other stream is checked to have no output.  For example:
 
-`// 1 RUN: prog $srcdir$src |`  
-`// 2 RUN: ezio $src`  
-`// 3 RUN: prog $srcdir$src | ezio -p OUT $src | ezio $src`  
-`// 4 RUN: >$tmp-1 prog $srcdir$src | ezio $src`  
-`// 5 RUN: <$tmp-1 ezio -p OUT $src`
+`// 1 RUN: prog $srcdir$src`
+`// 2 RUN: |& ezio $src`  
+`// 3 RUN: prog $srcdir$src | ezio -p OUT $src |& ezio $src`  
+`// 4 RUN: prog $srcdir$src >$tmp-1 |& ezio $src`  
+`// 5 RUN: <$tmp-1`
+`// 6 RUN: ezio -p OUT $src`
 
 Here lines 1 & 2 form a single pipeline, with `prog`'s stderr being
 fed to `ezio`. Line 3 is similar, but also pipe's `prog`'s stdout to
-the first invocation of `ezio`.  Lines 4 & 5 do the same checking, but
-via a temporary file `$tmp-1`.  That file could also be used by a
+the first invocation of `ezio`.  Lines 4, 5 & 6 do the same checking,
+but via a temporary file `$tmp-1`.  That file could also be used by a
 subsequent program under test.  (`$tmp` is an automatically defined
 variable.)
 

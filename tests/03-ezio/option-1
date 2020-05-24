@@ -1,7 +1,8 @@
 Test option handlng
 
-RUN: <$srcdir$src ezio -p TEST $src |
-RUN: ezio -p COM -p OUT $src | ezio -p COM -p ERR $src
+RUN: <$srcdir$src
+RUN: ezio -p TEST $src
+RUN: | ezio -p COM -p OUT $src |& ezio -p COM -p ERR $src
 RUN-END:
 
  begin NO

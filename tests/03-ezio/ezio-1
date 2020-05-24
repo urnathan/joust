@@ -1,14 +1,16 @@
 Yeah, let's use ezio to check itself!
-RUN: <$srcdir$src ezio $src |
-RUN: ezio -p OUT $src |
-RUN: ezio -p OUT -p ERR $src
+RUN: <$srcdir$src
+RUN: ezio $src
+RUN: | ezio -p OUT $src
+RUN: |& ezio -p OUT -p ERR $src
 RUN-END:
 
 # this is what the ezio we're checking checks
 CHECK: Yeah,
-CHECK-NEXT: RUN: {:.*} {ezio:e.io} {inp:[^ ]+} |
-CHECK: $ezio -p OUT $inp |
-CHECK-NEXT: $ezio -p OUT -p ERR $inp
+CHECK-NEXT: RUN: <{:.*}
+CHECK-NEXT: RUN: {ezio:e.io} {inp:[^ ]+}
+CHECK: | $ezio -p OUT $inp
+CHECK-NEXT: |& $ezio -p OUT -p ERR $inp
 CHECK-NONE: RUN
 CHECK-LABEL: RUN-END:
 CHECK-LABEL: CHECK: Yeah
@@ -31,18 +33,20 @@ OUT-NEXT: PASS: {:.*}:NEXT RUN:
 ERR-OPTION: matchSol
 ERR-NEXT: 3:
 ERR-OPTION: !matchEol
-OUT-NEXT: PASS: {:.*}:MATCH {:.}ezio -p
-ERR-OPTION: matchSol
-ERR-NEXT: 4:
-ERR-OPTION: !matchEol
-OUT-NEXT: PASS: {:.*}:NEXT {:.}ezio -p
+OUT-NEXT: PASS: {:.*}:NEXT RUN:
+ERR-NEXT: 4
+OUT-NEXT: PASS: {:.*}:MATCH | {:.}ezio -p
 ERR-OPTION: matchSol
 ERR-NEXT: 5:
+ERR-OPTION: !matchEol
+OUT-NEXT: PASS: {:.*}:NEXT |& {:.}ezio -p
+ERR-OPTION: matchSol
+ERR-NEXT: 6:
 ERR-OPTION: !matchEol
 OUT-NEXT: PASS: {:.*}:NONE RUN
 OUT-NEXT: PASS: {:.*}:LABEL RUN-END:
 ERR-OPTION: matchSol
-ERR-NEXT: 6:
-ERR-LABEL: 8:CHECK: Yeah,
+ERR-NEXT: 7:
+ERR-LABEL: 9:CHECK: Yeah,
 ERR-OPTION: !matchEol
 OUT-NEXT: PASS: {:.*}:LABEL CHECK: Yeah

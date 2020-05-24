@@ -1,0 +1,37 @@
+RUN: kratos -p INNER1 $src | ezio -p COMMON1 -p OUT1 $src
+RUN: |& ezio -p COMMON1 -p ERR1 $src
+
+RUN:! kratos -p INNER2 $src | ezio -p OUT2 $src
+RUN: |& ezio -p ERR2 $src
+
+RUN-END:
+
+INNER1: <$srcdir$src
+INNER1: cat
+
+INNER1-END:
+
+INNER2: < bob dob
+INNER2: cat
+
+INNER2: <bob
+INNER2-REQUIRE: true
+
+INNER2-END:
+
+ERR1: {:$src}:{:[0-9]+} in<
+ERR1-NEXT: RUN: cat
+
+OUT1-NEXT: RUN: kratos -p INNER1
+OUT1: INNER1: <
+OUT1-NEXT: INNER1: cat
+
+COMMON1-OPTION: matchSol
+COMMON1: PASS: {:$src}:{:[0-9]+}:RUN cat
+
+OUT2-NEXT: $EOF
+
+ERR2-NEXT: extra after input redirection
+ERR2-NEXT: cannot have redirected input
+ERR2-NEXT: failed to construct commands
+ERR2-NEXT: $EOF

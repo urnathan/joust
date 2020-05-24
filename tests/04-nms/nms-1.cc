@@ -1,15 +1,13 @@
-// Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
-// Not For Distribution
-
-// RUN:  >$tmp $subdir$stem
-// RUN: <$tmp ezio -p HELP $src
+// RUN: $subdir$stem >$tmp
+// RUN: <$tmp
+// RUN: ezio -p HELP $src
 // HELP: Usage: $stem [options]
 // HELP-NEXT: Inline
 // HELP-NEXT: Nested
 // HELP-NEXT: $EOF
 // HELP-END:
 
-// RUN-SIGNAL:ABRT $subdir$stem --inline | ezio -p INLINE $src
+// RUN-SIGNAL:ABRT $subdir$stem --inline |& ezio -p INLINE $src
 // INLINE-OPTION: matchSol
 // INLINE: $stem: burn it all down
 // INLINE-NEXT: 00-0x{:[0-9a-f]+} {:.*}/fatal.cc:{:[0-9]+} NMS::HCF (char const *,
@@ -22,7 +20,7 @@
 // INLINE-NEXT: $EOF
 // INLINE-END:
 
-// RUN-SIGNAL:ABRT $subdir$stem --nested | ezio -p NESTED $src
+// RUN-SIGNAL:ABRT $subdir$stem --nested |& ezio -p NESTED $src
 
 // NESTED-OPTION: matchSol
 // NESTED: $stem: go boom

@@ -6,25 +6,33 @@
 #define KRATOS_COMMAND
 class Command
 {
+public:
+  enum Redirect : char 
+  {
+    R_NORMAL,
+    R_FILE,
+  };
+
 private:
   std::vector<std::string> words;  // parsed line
   char const *file = nullptr;
   unsigned line = 0;
   int stdin = -1;
   pid_t pid = 0;
-
-public:
-  Command (char const *f, unsigned l)
-    :file (f), line (l)
-  {
-  }
+  Redirect redirect = R_NORMAL;
 
 public:
   auto Error ()
   {
     return Joust::Error (file, line);
   }
+
 public:
+  void FileLine (char const *f, unsigned l)
+  {
+    file = f;
+    line = l;
+  }
   auto File () const
   {
     return file;
@@ -32,6 +40,23 @@ public:
   auto Line () const
   {
     return line;
+  }
+
+public:
+  auto RedirectType () const
+  {
+    return redirect;
+  }
+  void RedirectType (Redirect r)
+  {
+    Assert (redirect == R_NORMAL);
+    redirect = r;
+  }
+
+public:
+  auto Empty () const
+  {
+    return words.empty ();
   }
 
 public:

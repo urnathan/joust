@@ -1,5 +1,5 @@
-RUN: ezio -i $srcdir/$src $src |
-RUN: ezio -p OUT -p COM $src | ezio -p COM -p ERR $src
+RUN: ezio -i $srcdir/$src $src
+RUN: | ezio -p OUT -p COM $src |& ezio -p COM -p ERR $src
 
 DAG checking in the expected order with captures
 

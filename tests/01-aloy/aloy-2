@@ -2,8 +2,8 @@
 # we feed this file into a sub aloy which invokes the the shell on this file
 # stdout and stderr are then checked via ezio
 
-# RUN: aloy -t $SHELL -o - $srcdir$src |
-# RUN: ezio -p COM -p OUT $src | ezio -p COM -p ERR $src
+# RUN: aloy -t $SHELL -o - $srcdir$src
+# RUN: | ezio -p COM -p OUT $src |& ezio -p COM -p ERR $src
 
 exit 1
 
