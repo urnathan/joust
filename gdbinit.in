@@ -2,5 +2,12 @@
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
-dir .:@srcdir@
-source nms/gdbinit
+dir @srcdir@
+# some default breakpoints, to catch the fatal exit
+set breakpoint pending on
+break SignalHandler
+break Fatal
+break HCF
+set complaints 0
+break exit
+set breakpoint pending off

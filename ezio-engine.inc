@@ -1,6 +1,6 @@
-// EZIO: Expect Zero Irregularities Observed	-*- mode:c++ -*-
+// Joust/EZIO: Expect Zero Irregularities Observed	-*- mode:c++ -*-
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
-// Not For Distribution
+// License: Affero GPL v3.0
 
 class Engine : public Logger
 {

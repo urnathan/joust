@@ -1,6 +1,6 @@
-// ALOY: Apply List, Observe Yield		-*- mode:c++ -*-
+// Joust/ALOY: Apply List, Observe Yield		-*- mode:c++ -*-
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
-// Not For Distribution
+// License: Affero GPL v3.0
 
 class Job
 {

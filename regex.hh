@@ -1,6 +1,6 @@
-// NMS		-*- mode:c++ -*-
+// Joust Test Suite			-*- mode:c++ -*-
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
-// Not For Distribution
+// License: Affero GPL v3.0
 
 #pragma once
 

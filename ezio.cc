@@ -1,6 +1,6 @@
-// EZIO: Expect Zero Irregularities Observed	-*- mode:c++ -*-
+// Joust/EZIO: Expect Zero Irregularities Observed	-*- mode:c++ -*-
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
-// Not For Distribution
+// License: Affero GPL v3.0
 
 // EZIO is a pattern matcher.  It looks for CHECK lines in the
 // provided source and then applies those to the text provided in

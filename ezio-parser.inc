@@ -1,6 +1,6 @@
-// EZIO: Expect Zero Irregularities Observed	-*- mode:c++ -*-
+// Joust/EZIO: Expect Zero Irregularities Observed	-*- mode:c++ -*-
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
-// Not For Distribution
+// License: Affero GPL v3.0
 
 #if !defined (EZIO_PARSER)
 #define EZIO_PARSER 1

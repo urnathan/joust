@@ -1,6 +1,6 @@
 # Joust Test Suite		-*- mode:Makefile -*-
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
-# Not For Distribution
+# License: Affero GPL v3.0
 
 TESTS := $(patsubst $(srcdir)/%.cc,%,\
 	$(wildcard $(srcdir)/tests/*/*.cc))

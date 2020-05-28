@@ -1,6 +1,6 @@
 # Joust: Journal Of User-Scripted Tests -*- mode:autoconf -*-
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
-# Not For Distribution
+# License: Affero GPL v3.0
 
 # NMS_SUBPROJ(NAME,[FOUND=],[NOT-FOUND=])
 AC_DEFUN([NMS_SUBPROJ],
