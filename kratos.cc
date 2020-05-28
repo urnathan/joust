@@ -14,7 +14,6 @@
 #include "spawn.hh"
 #include "symbols.hh"
 #include "token.hh"
-// NMS
 #include "fatal.hh"
 #include "option.hh"
 // C++
@@ -35,7 +34,6 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 
-using namespace NMS;
 using namespace Joust;
 
 // Not (yet) supported (because I don't have a need for it):

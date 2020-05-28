@@ -4,9 +4,9 @@
 
 AC_INIT([joust],[0.0],[nathan@acm.org])
 AC_CONFIG_SRCDIR(README.md)
-m4_include(nms/config.m4)
+m4_include(config.m4)
 
-AC_CONFIG_AUX_DIR(nms/build-aux)
+AC_CONFIG_AUX_DIR(build-aux)
 AC_SUBST(PACKAGE_VERSION)
 
 AC_CANONICAL_HOST

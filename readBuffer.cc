@@ -4,12 +4,10 @@
 
 // Joust
 #include "readBuffer.hh"
-// NMS
 #include "fatal.hh"
 // OS
 #include <unistd.h>
 
-using namespace NMS;
 namespace Joust {
 
 int ReadBuffer::Read ()

@@ -6,7 +6,7 @@
 // MAP: Segmentation fault
 // MAP-END:
 
-// NMS
+// Joust
 #include "fatal.hh"
 #include "option.hh"
 // C
@@ -14,7 +14,7 @@
 // OS
 #include <sys/mman.h>
 
-using namespace NMS;
+using namespace Joust;
 
 int main (int argc, char *argv[])
 {

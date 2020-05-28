@@ -12,7 +12,6 @@
 #include "logger.hh"
 #include "readBuffer.hh"
 #include "spawn.hh"
-// NMS
 #include "fatal.hh"
 #include "option.hh"
 // C++
@@ -37,7 +36,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-using namespace NMS;
 using namespace Joust;
 
 namespace {

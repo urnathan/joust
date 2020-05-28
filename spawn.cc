@@ -4,15 +4,12 @@
 
 // Joust
 #include "spawn.hh"
-// NMS
 #include "fatal.hh"
 // OS
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-
-using namespace NMS;
 
 namespace Joust {
 

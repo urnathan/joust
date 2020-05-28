@@ -2128,9 +2128,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-# Nathan's Utils		-*- mode:autoconf -*-
-# Copyright (C) 2019-2020 Nathan Sidwell, nathan@acm.org
-# License: Affero GPL v3.0
+# Joust: Journal Of User-Scripted Tests -*- mode:autoconf -*-
+# Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
+# Not For Distribution
 
 # NMS_SUBPROJ(NAME,[FOUND=],[NOT-FOUND=])
 
@@ -2157,28 +2157,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking subproject nms" >&5
-$as_echo_n "checking subproject nms... " >&6; }
-if test -d ${srcdir}/nms; then
-  if test -h ${srcdir}/nms; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: by reference" >&5
-$as_echo "by reference" >&6; }
-  else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: by value" >&5
-$as_echo "by value" >&6; }
-  fi
-
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: not present" >&5
-$as_echo "not present" >&6; }
-  as_fn_error $? "nms project is required, install by value (copy) or reference (symlink)" "$LINENO" 5
-fi
-
 
 
 
 ac_aux_dir=
-for ac_dir in nms/build-aux "$srcdir"/nms/build-aux; do
+for ac_dir in build-aux "$srcdir"/build-aux; do
   if test -f "$ac_dir/install-sh"; then
     ac_aux_dir=$ac_dir
     ac_install_sh="$ac_aux_dir/install-sh -c"
@@ -2194,7 +2177,7 @@ for ac_dir in nms/build-aux "$srcdir"/nms/build-aux; do
   fi
 done
 if test -z "$ac_aux_dir"; then
-  as_fn_error $? "cannot find install-sh, install.sh, or shtool in nms/build-aux \"$srcdir\"/nms/build-aux" "$LINENO" 5
+  as_fn_error $? "cannot find install-sh, install.sh, or shtool in build-aux \"$srcdir\"/build-aux" "$LINENO" 5
 fi
 
 # These three variables are undocumented and unsupported,
@@ -2895,9 +2878,17 @@ int ary[VARIADIC(X,Y,Z)];
 #error "C++20 constinit required"
 cpp_constinit is __cpp_constinit
 #endif
+#if  __cpp_if_constexpr < 201606
+#error "C++20 constexpr required"
+cpp_constexpr is __cpp_if_constexpr
+#endif
 #if  __cpp_concepts < 201907
 #error "C++20 concepts required"
 cpp_concepts is __cpp_concepts
+#endif
+#if __cpp_structured_bindings < 201606
+#error "C++20 structured bindings required"
+cpp_structured_bindings is __cpp_structured_bindings
 #endif
 #if __cpp_lib_int_pow2 < 202002
 #error "std::has_single_bit required"
@@ -3632,8 +3623,8 @@ fi
 
 
 
-SUBDIRS="nms"
-CONFIG_FILES="Makefile nms/gdbinit"
+SUBDIRS=""
+CONFIG_FILES="Makefile"
 
 configure_args=$ac_configure_args
 

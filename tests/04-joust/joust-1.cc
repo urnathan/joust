@@ -10,7 +10,7 @@
 // RUN-SIGNAL:ABRT $subdir$stem --inline |& ezio -p INLINE $src
 // INLINE-OPTION: matchSol
 // INLINE: $stem: burn it all down
-// INLINE-NEXT: 00-0x{:[0-9a-f]+} {:.*}/fatal.cc:{:[0-9]+} NMS::HCF (char const *,
+// INLINE-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} Joust::HCF (char const *,
 // INLINE-NEXT: 01-0x{:[0-9a-f]+} tests/$src:{:[0-9]+} {:(main)|(InvokeHCF)}
 // INLINE-NEXT: 01{:(.1)|(-0x[0-9a-f]+)} tests/$src:{:[0-9]+} main
 // INLINE-NEXT: Version
@@ -24,7 +24,7 @@
 
 // NESTED-OPTION: matchSol
 // NESTED: $stem: go boom
-// NESTED-NEXT: 00-0x{:[0-9a-f]+} {:.*}/fatal.cc:{:[0-9]+} NMS::HCF (char const *,
+// NESTED-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} Joust::HCF (char const *,
 // NESTED-NEXT: 01-0x{:[0-9a-f]+} tests/$src:{:[0-9]+} NestedHCF (int)
 // NESTED-NEXT: 02-0x{ret:[0-9a-f]+} tests/$src:{:[0-9]+} NestedHCF (int)
 // NESTED-NEXT: 03-0x{:$ret} tests/$src:{:[0-9]+} NestedHCF (int)
@@ -37,13 +37,13 @@
 // NESTED-NEXT: $EOF
 // NESTED-END:
 
-// NMS
+// Joust
 #include "fatal.hh"
 #include "option.hh"
 // C
 #include <stddef.h>
 
-using namespace NMS;
+using namespace Joust;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"

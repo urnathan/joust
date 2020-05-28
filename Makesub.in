@@ -2,20 +2,20 @@
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 # Not For Distribution
 
-CXXFLAGS/ += $(CXXFLAGS/nms/) -I $(srcdir)
+CXXFLAGS/ += -I $(srcdir)
 
 JOUSTPROGS := ezio kratos aloy
 
 all:: $(JOUSTPROGS)
 
-$(JOUSTPROGS): %: %.o libnms.a libjoust.a
-	$(CXX) $(LDFLAGS) $< -lnms -ljoust $(LIBS) -o $@
+$(JOUSTPROGS): %: %.o libjoust.a
+	$(CXX) $(LDFLAGS) $< -ljoust $(LIBS) -o $@
 
 clean::
 	rm -f $(JOUSTPROGS)
 	rm -f $(JOUSTPROGS:=.o) $(JOUSTPROGS:=.d)
 
-LIBJOUST.O := error.o lexer.o logger.o readBuffer.o regex.o \
+LIBJOUST.O := error.o fatal.o lexer.o logger.o option.o readBuffer.o regex.o \
 	scanner.o spawn.o symbols.o token.o
 
 libjoust.a: $(LIBJOUST.O)
@@ -26,6 +26,11 @@ clean::
 	rm -f libjoust.a
 
 CXXFLAGS/regex.cc = -fexceptions
+CXXFLAGS/fatal.cc = -DREVISION='"$(shell cat revision)"' \
+	-DSRCDIR='"$(srcdir)"' -DOBJDIR='"$(shell realpath .)"'
+
+fatal.o: Makefile revision
+
 
 doc: dox.cfg
 	cd $(<D); doxygen $(<F) >&dox.log

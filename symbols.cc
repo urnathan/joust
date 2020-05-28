@@ -4,15 +4,12 @@
 
 // Joust
 #include "symbols.hh"
-// NMS
 #include "fatal.hh"
 // OS
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-
-using namespace NMS;
 
 namespace Joust {
 
