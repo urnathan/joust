@@ -301,7 +301,8 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	  if (!c)
 	    {
 	      // End of line
-	      if (depth
+	      if (depth > (state == REDIRECT_HERE)
+		  || (depth == 1 && !escape)
 		  || (state == REDIRECT_IN && src.empty ())
 		  || (state >= ACTIVE_LWM
 		      && pipes.back ().commands[state - ACTIVE_LWM].Empty ())

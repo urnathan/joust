@@ -205,12 +205,13 @@ its stdout can be written to one.  Input must be on a separate line.
 `;; 1 RUN: <$srcdir$src`
 `;; 2 RUN: $srcdir$src`  
 `;; 3 RUN: $srcdir$src >$tmp-1`
-`;; 4 RUN: <<line 1`
+`;; 4 RUN: <<line 1 \`
 `;; 5 RUN: <<line 2`
 `;; 6 RUN: $srcdir$src`  
 
 Lines 1 & 2 reads from `$srcdir$src`, line 3 writes to `$tmp-1`, lines
-4 & 5 are a here document passed to line 6.  Here documents are
+4 & 5 are a here document passed to line 6. Notice that the trailing \
+is literal and does not continue the here line.  Here documents are
 written via a pipe.
 
 Here

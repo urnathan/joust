@@ -4,6 +4,9 @@ RUN: |& ezio -p COMMON1 -p ERR1 $src
 RUN: kratos -p INNER2 $src | ezio -p COMMON2 -p OUT2 $src
 RUN: |& ezio -p COMMON2 -p ERR2 $src
 
+RUN: kratos -p INNER3 $src | ezio -p COMMON3 -p OUT3 $src
+RUN: |& ezio -p COMMON3 -p ERR3 $src
+
 RUN-END:
 
 INNER1: <<here 1
@@ -24,3 +27,11 @@ ERR2: {:$src:[0-9]+} in<<here 3
 ERR2-NEXT: {:$src:[0-9]+} RUN: true
 COMMON2-NEXT:PASS: {:$src:[0-9]+}:RUN true
 COMMON2-NEXT:$EOF
+
+INNER3: <<here backslash \b \
+INNER3: cat
+OUT3-NEXT: ^here backslash \b \$
+ERR3: in<<here backslash \b \$
+ERR3-NEXT: {:$src:[0-9]+} RUN: cat
+COMMON3-NEXT:PASS: {:$src:[0-9]+}:RUN cat
+COMMON3-NEXT: $EOF
