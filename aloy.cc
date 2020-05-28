@@ -51,6 +51,8 @@ static void Title (FILE *stream)
 
 int main (int argc, char *argv[])
 {
+  SignalHandlers ();
+
   struct Flags 
   {
     bool help = false;

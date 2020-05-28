@@ -408,8 +408,8 @@ void OutOfMemory () noexcept
   Fatal ("out of memory");
 }
 
-// FIXME: Explicit enable
-[[gnu::constructor (101)]]
+} // namespace
+
 void SignalHandlers () noexcept
 {
   stack_t alt_stack;
@@ -439,8 +439,6 @@ void SignalHandlers () noexcept
   std::set_terminate (TerminateHandler);
   std::set_new_handler (OutOfMemory);
 }
-
-} // namespace
 
 // Set the program name from, typically, argv[0]
 void Progname (char const *prog)

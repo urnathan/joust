@@ -81,4 +81,5 @@ inline void Unreachable ()
 
 void BuildNote (FILE *stream) noexcept;
 void Fatal [[noreturn]] (char const *, ...) noexcept;
+void SignalHandlers () noexcept;
 }

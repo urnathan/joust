@@ -18,6 +18,8 @@ using namespace Joust;
 
 int main (int argc, char *argv[])
 {
+  SignalHandlers ();
+
   bool map = false;
   static constexpr Option const options[] =
     {

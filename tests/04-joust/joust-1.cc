@@ -63,6 +63,8 @@ static void NestedHCF [[gnu::noinline]] (int ix = 3)
 
 int main (int argc, char *argv[])
 {
+  SignalHandlers ();
+
   struct Flags 
   {
     bool do_inline = false;
