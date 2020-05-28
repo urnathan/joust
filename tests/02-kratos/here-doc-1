@@ -28,10 +28,15 @@ ERR2-NEXT: {:$src:[0-9]+} RUN: true
 COMMON2-NEXT:PASS: {:$src:[0-9]+}:RUN true
 COMMON2-NEXT:$EOF
 
+a here-line ending in \
 INNER3: <<here backslash \b \
+and one that is empty
+INNER3: <<
 INNER3: cat
 OUT3-NEXT: ^here backslash \b \$
+OUT3-NEXT: ^$
 ERR3: in<<here backslash \b \$
+ERR3-NEXT: in<<$
 ERR3-NEXT: {:$src:[0-9]+} RUN: cat
 COMMON3-NEXT:PASS: {:$src:[0-9]+}:RUN cat
 COMMON3-NEXT: $EOF

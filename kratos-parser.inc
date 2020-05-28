@@ -276,7 +276,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 		 state != REDIRECT_HERE && (c == ' ' || c == '\t')))
 	{
 	  // end of word
-	  if (word.size ())
+	  if (word.size () || state == REDIRECT_HERE)
 	    {
 	      if (state == REDIRECT_IN)
 		{
