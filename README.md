@@ -2,9 +2,6 @@
 
 Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 
-GNU Affero GPL v3.0
-(but not yet ready for public consumption)
-
 Joust is a testsuite infrastructure consisting of a few components.
 These either interact directly, or via user scripts.  Typically you'll
 create a file of variable assignments, point at it with the Joust

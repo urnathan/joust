@@ -3,9 +3,9 @@
 // License: Affero GPL v3.0
 
 #pragma once
-#define NMS_LOC_BUILTINS (__GNUC__ >= 10)
+#define JOUST_LOC_BUILTINS (__GNUC__ >= 10)
 // C++
-#if !NMS_LOC_BUILTINS
+#if !JOUST_LOC_BUILTINS
 #include <source_location>
 #endif
 // C
@@ -21,11 +21,11 @@ protected:
 
 public:
   constexpr Location (char const *file_
-#if NMS_LOC_BUILTINS
+#if JOUST_LOC_BUILTINS
 		      = __builtin_FILE ()
 #endif
 		      , unsigned line_
-#if NMS_LOC_BUILTINS
+#if JOUST_LOC_BUILTINS
 		      = __builtin_LINE ()
 #endif
 		      )
@@ -33,7 +33,7 @@ public:
   {
   }
 
-#if !NMS_LOC_BUILTINS
+#if !JOUST_LOC_BUILTINS
   constexpr Location (source_location loc == source_location::current ())
     :file (loc.file ()), line (loc.line ())
   {
@@ -58,12 +58,12 @@ void Progname (char const *argv0);
 void HCF [[noreturn]]
 (
  char const *msg
-#if NMS_CHECKING
+#if JOUST_CHECKING
  , Location const = Location ()
 #endif
  ) noexcept;
 
-#if NMS_CHECKING
+#if JOUST_CHECKING
 void AssertFailed [[noreturn]] (Location loc = Location ());
 void Unreachable [[noreturn]] (Location loc = Location ());
 

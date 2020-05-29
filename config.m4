@@ -2,8 +2,8 @@
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
-# NMS_SUBPROJ(NAME,[FOUND=],[NOT-FOUND=])
-AC_DEFUN([NMS_SUBPROJ],
+# JOUST_SUBPROJ(NAME,[FOUND=],[NOT-FOUND=])
+AC_DEFUN([JOUST_SUBPROJ],
 [AC_MSG_CHECKING([subproject $1])
 if test -d ${srcdir}/$1; then
   if test -h ${srcdir}/$1; then
@@ -17,10 +17,10 @@ else
   $3
 fi])
 
-AC_DEFUN([NMS_REQUIRED_SUBPROJ],
-[NMS_SUBPROJ([$1],,[AC_MSG_ERROR([$1 project is required, install by value (copy) or reference (symlink)])])])
+AC_DEFUN([JOUST_REQUIRED_SUBPROJ],
+[JOUST_SUBPROJ([$1],,[AC_MSG_ERROR([$1 project is required, install by value (copy) or reference (symlink)])])])
 
-AC_DEFUN([NMS_OPTIONAL_SUBPROJ],
+AC_DEFUN([JOUST_OPTIONAL_SUBPROJ],
 [AC_MSG_CHECKING([subproject $1])
 if test -d ${srcdir}/$1; then
   SUBPROJS+=" $1"
@@ -33,7 +33,7 @@ else
   AC_MSG_RESULT([not present])
 fi])
 
-AC_DEFUN([NMS_TOOLS],
+AC_DEFUN([JOUST_TOOLS],
 [AC_MSG_CHECKING([tools])
 AC_ARG_WITH([tools],
 AS_HELP_STRING([--with-tools=DIR],[tool directory]),
@@ -50,7 +50,7 @@ AC_MSG_RESULT($tools)
 PATH=$tools${tools+:}$PATH
 AC_SUBST(tools)])
 
-AC_DEFUN([NMS_CXX_COMPILER],
+AC_DEFUN([JOUST_CXX_COMPILER],
 [AC_ARG_WITH([compiler],
 AS_HELP_STRING([--with-compiler=NAME],[which compiler to use]),
 AC_MSG_CHECKING([C++ compiler])
@@ -63,7 +63,7 @@ else
   AC_MSG_RESULT([$CXX])
 fi)])
 
-AC_DEFUN([NMS_CXX_20],
+AC_DEFUN([JOUST_CXX_20],
 [AC_MSG_CHECKING([whether $CXX supports C++20])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 [#if __cplusplus <= 201703
@@ -113,7 +113,7 @@ AC_MSG_RESULT([yes 🙂]),
 AC_MSG_RESULT([no 🙁])
 AC_MSG_ERROR([C++20 support is too immature]))])
 
-AC_DEFUN([NMS_BUGURL],
+AC_DEFUN([JOUST_BUGURL],
 [AC_MSG_CHECKING([bugurl])
 AC_ARG_WITH(bugurl,
 AS_HELP_STRING([--with-bugurl=URL],[where to report bugs]),
@@ -127,7 +127,7 @@ fi,BUGURL="${PACKAGE_BUGREPORT}")
 AC_MSG_RESULT($BUGURL)
 AC_DEFINE_UNQUOTED(BUGURL,"$BUGURL",[Bug reporting location])])
 
-AC_DEFUN([NMS_DISTRIBUTION],
+AC_DEFUN([JOUST_DISTRIBUTION],
 [AC_ARG_ENABLE(distribution,
 AS_HELP_STRING([--enable-distribution],
 [enable distribution.  Inhibit components that prevent distribution]),,
@@ -141,7 +141,7 @@ esac
 AC_MSG_CHECKING([distribution])
 AC_MSG_RESULT([$nms_distribution])])
 
-AC_DEFUN([NMS_ENABLE_CHECKING],
+AC_DEFUN([JOUST_ENABLE_CHECKING],
 [AC_ARG_ENABLE(checking,
 AS_HELP_STRING([--enable-checking],
 [enable run-time checking]),,
@@ -154,10 +154,10 @@ esac
 AC_MSG_CHECKING([checking])
 AC_MSG_RESULT([${nms_checking:-no}])
 if test "$nms_checking" = yes ; then
-  AC_DEFINE([NMS_CHECKING], [1], [Enable checking])
+  AC_DEFINE([JOUST_CHECKING], [1], [Enable checking])
 fi])
 
-AC_DEFUN([NMS_WITH_BINUTILS],
+AC_DEFUN([JOUST_WITH_BINUTILS],
 [AC_MSG_CHECKING([binutils])
 AC_ARG_WITH(bfd,
 AS_HELP_STRING([--with-bfd=DIR], [location of libbfd]),
@@ -172,8 +172,8 @@ else
 fi,
 AC_MSG_RESULT(installed))])
 
-AC_DEFUN([NMS_ENABLE_BACKTRACE],
-[AC_REQUIRE([NMS_DISTRIBUTION])
+AC_DEFUN([JOUST_ENABLE_BACKTRACE],
+[AC_REQUIRE([JOUST_DISTRIBUTION])
 AC_ARG_ENABLE(backtrace,
 AS_HELP_STRING([--enable-backtrace],[provide backtrace on fatality.]),,
 [enable_backtrace="maybe"])
@@ -191,7 +191,7 @@ if test "${enable_backtrace:-maybe}" != no ; then
   if test "$ac_cv_func_backtrace" = yes ; then
     nms_backtrace=yes
     ldbacktrace=-rdynamic
-    AC_DEFINE([NMS_BACKTRACE], [1], [Enable backtrace])
+    AC_DEFINE([JOUST_BACKTRACE], [1], [Enable backtrace])
   elif test "$enable_backtrace" = yes ; then
     AC_MSG_ERROR([Backtrace unavailable])
   fi
@@ -200,7 +200,7 @@ fi
 AC_MSG_CHECKING([backtrace])
 AC_MSG_RESULT([${nms_backtrace:-no}])])
 
-AC_DEFUN([NMS_CONFIG_FILES],
+AC_DEFUN([JOUST_CONFIG_FILES],
 for dir in $SUBDIRS
 do
   CONFIG_FILES+=" $dir/Makesub"
@@ -212,10 +212,10 @@ do
 done
 AC_CONFIG_FILES([$CONFIG_FILES]))
 
-AC_DEFUN([NMS_PROJECT_ENABLE],
-[NMS_ENABLE_CHECKING
-NMS_WITH_BINUTILS
-NMS_ENABLE_BACKTRACE
+AC_DEFUN([JOUST_PROJECT_ENABLE],
+[JOUST_ENABLE_CHECKING
+JOUST_WITH_BINUTILS
+JOUST_ENABLE_BACKTRACE
 
 AC_CONFIG_HEADER(config.h)
 AC_CHECK_TOOL([AR],[ar])
