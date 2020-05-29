@@ -448,15 +448,9 @@ loop.
 
 ## Building Joust
 
-Building Joust is reasonably straight forwards.  The only(?) quirk is
-that it relies upon my utility project, NMS.  That provides Makefile &
-autoconf pieces along with an assert, backtrace and option processing
-library.  You'll see there's an `nms` symlink in the top directory.
-You can install NMS in a sibling directory, or replace the symlink
-with the NMS project itself.  The former is easier and how I build it.
-
-You need a C++20 compiler, as I use some features of C++20.  The
-configure script allows you to point at special build tools with
+Building Joust is reasonably straight forwards.  You need a C++20
+compiler, as I use some features of C++20.  The configure script
+allows you to point at special build tools with
 `--with-tools=TOOLDIR`.  I used this to point at a prerelease C++20
 toolchain.
 
@@ -468,10 +462,9 @@ Here's a recipe
 
 ```zsh
 mkdir src obj
-git clone git@github.com:urnathan/joust.git src/joust
-git clone git@github.com:urnathan/nms.git src/nms
+git clone git@github.com:urnathan/joust.git src
 cd obj
-../src/joust/configure
+../src/configure
 make
 make check
 ```

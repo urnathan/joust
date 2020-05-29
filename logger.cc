@@ -4,8 +4,6 @@
 
 // Joust
 #include "logger.hh"
-// NMS
-#include "fatal.hh"
 // C++
 #include <iostream>
 

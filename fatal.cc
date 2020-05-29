@@ -2,7 +2,7 @@
 // Copyright (C) 2019-2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-// NMS
+// Joust
 #include "fatal.hh"
 // C++
 #include <exception>
