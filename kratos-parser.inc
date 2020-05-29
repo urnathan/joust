@@ -272,8 +272,10 @@ bool Parser::ProcessLine (std::string_view const &variant,
 
       bol = false;
 
-      if (!c || (!depth && !escape &&
-		 state != REDIRECT_HERE && (c == ' ' || c == '\t')))
+      if (!c || ((c == ' ' || c == '\t')
+		 && !depth && !escape
+		 && state != REDIRECT_HERE
+		 && (c == ' ' || c == '\t')))
 	{
 	  // end of word
 	  if (word.size () || state == REDIRECT_HERE)
@@ -301,8 +303,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	  if (!c)
 	    {
 	      // End of line
-	      if (depth > (state == REDIRECT_HERE)
-		  || (depth == 1 && !escape)
+	      if (depth
 		  || (state == REDIRECT_IN && src.empty ())
 		  || (state >= ACTIVE_LWM
 		      && pipes.back ().commands[state - ACTIVE_LWM].Empty ())

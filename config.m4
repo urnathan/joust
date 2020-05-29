@@ -41,7 +41,7 @@ if test "$withval" = "yes" ; then
   AC_MSG_ERROR([tool location not specified])
 elif test "$withval" = "no" ; then
   :
-elif ! test -d "$withval/bin" ; then
+elif ! test -d "${withval%/bin}/bin" ; then
   AC_MSG_ERROR([tools not present])
 else
   tools=${withval%/bin}/bin
