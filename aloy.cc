@@ -8,8 +8,8 @@
 
 // Joust
 #include "error.hh"
+#include "joust-logger.hh"
 #include "lexer.hh"
-#include "logger.hh"
 #include "readBuffer.hh"
 #include "spawn.hh"
 #include "fatal.hh"

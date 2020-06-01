@@ -8,22 +8,28 @@ JOUSTPROGS := ezio kratos aloy
 
 all:: $(JOUSTPROGS)
 
-$(JOUSTPROGS): %: %.o libjoust.a
-	$(CXX) $(LDFLAGS) $< -ljoust $(LIBS) -o $@
+$(JOUSTPROGS): %: %.o libjousti.a libjoust.a
+	$(CXX) $(LDFLAGS) $<  -ljousti -ljoust $(LIBS) -o $@
 
 clean::
 	rm -f $(JOUSTPROGS)
 	rm -f $(JOUSTPROGS:=.o) $(JOUSTPROGS:=.d)
 
-LIBJOUST.O := error.o fatal.o lexer.o logger.o option.o readBuffer.o regex.o \
+LIBJOUSTI.O := error.o fatal.o lexer.o option.o readBuffer.o regex.o \
 	scanner.o spawn.o symbols.o token.o
+
+libjousti.a: $(LIBJOUSTI.O)
+	$(AR) -cr $@ $^
+
+LIBJOUST.O := joust-logger.o
 
 libjoust.a: $(LIBJOUST.O)
 	$(AR) -cr $@ $^
 
 clean::
 	rm -f $(LIBJOUST.O) $(LIBJOUST.O:.o=.d)
-	rm -f libjoust.a
+	rm -f $(LIBJOUSTI.O) $(LIBJOUSTI.O:.o=.d)
+	rm -f libjoust.a libjousti.a
 
 CXXFLAGS/regex.cc = -fexceptions
 CXXFLAGS/fatal.cc = -DREVISION='"$(shell cat revision)"' \
@@ -37,6 +43,11 @@ doc: dox.cfg
 
 clean::
 	rm -rf dox dox.log
+
+install::
+	$(INSTALL) $(JOUSTPROGS) $(bindir)
+	$(INSTALL) libjoust.a $(libdir)
+	$(INSTALL) joust-logger.hh $(includedir)
 
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 -include $(JOUSTPROGS:=.d)

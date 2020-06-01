@@ -4,8 +4,6 @@
 
 #pragma once
 
-// Joust
-#include "logger.hh"
 // C++
 #include <vector>
 

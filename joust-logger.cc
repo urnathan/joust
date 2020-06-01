@@ -3,9 +3,7 @@
 // License: Affero GPL v3.0
 
 // Joust
-#include "logger.hh"
-// C++
-#include <iostream>
+#include "joust-logger.hh"
 
 namespace Joust {
 

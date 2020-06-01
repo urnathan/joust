@@ -53,22 +53,23 @@ private:
   };
 
 public:  
-#define LOGGER_STATUSES				\
-  LOGGER_STATUS_FROB(PASS),			\
-    LOGGER_STATUS_FROB(FAIL),			\
-    LOGGER_STATUS_FROB(XPASS),			\
-    LOGGER_STATUS_FROB(XFAIL),			\
-    LOGGER_STATUS_FROB(ERROR),			\
-    LOGGER_STATUS_FROB(UNSUPPORTED)
-#define LOGGER_STATUS_FROB(STATUS) STATUS
-    enum Status { LOGGER_STATUSES, STATUS_HWM };
-#undef LOGGER_STATUS_FROB
+#define JOUST_STATUSES				\
+  JOUST_STATUS_FROB(PASS),			\
+    JOUST_STATUS_FROB(FAIL),			\
+    JOUST_STATUS_FROB(XPASS),			\
+    JOUST_STATUS_FROB(XFAIL),			\
+    JOUST_STATUS_FROB(ERROR),			\
+    JOUST_STATUS_FROB(UNSUPPORTED)
+#define JOUST_STATUS_FROB(STATUS) STATUS
+    enum Status { JOUST_STATUSES, STATUS_HWM };
+#undef JOUST_STATUS_FROB
 
 public:
   static constexpr std::string_view statuses[STATUS_HWM]
-#define LOGGER_STATUS_FROB(STATUS) std::string_view (#STATUS)
-    = { LOGGER_STATUSES };
-#undef LOGGER_STATUS_FROB
+#define JOUST_STATUS_FROB(STATUS) std::string_view (#STATUS)
+    = { JOUST_STATUSES };
+#undef JOUST_STATUS_FROB
+#undef JOUST_STATUSES
 
 private:
   std::ostream &sum;
