@@ -8,6 +8,14 @@
 #include <iostream>
 #include <string_view>
 
+#if __GNUC__ >= 10
+#define JOUST_FILE() __builtin_FILE ()
+#define JOUST_LINE() __builtin_LINE ()
+#else
+#define JOUST_FILE() nullptr
+#define JOUST_LINE() 0
+#endif
+
 namespace Joust {
 
 class Logger
@@ -111,8 +119,8 @@ protected:
   Status DecodeStatus (std::string_view const &);
 
 public:
-  Streamer Result (Status status);
-  Streamer Result (Status status, char const *file, unsigned line);
+  Streamer Result (Status status, char const *file = JOUST_FILE (),
+		   unsigned line = JOUST_LINE ());
 
 public:
   template<typename T> Logger const &operator << (T const &obj) const
@@ -123,5 +131,8 @@ public:
     return *this;
   }  
 };
+
+#undef JOUST_FILE
+#undef JOUST_LINE
 
 }

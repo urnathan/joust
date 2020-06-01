@@ -20,20 +20,14 @@ Logger::Status Logger::DecodeStatus (std::string_view const &line)
   return STATUS_HWM;
 }
 
-Logger::Streamer Logger::Result (Status status)
+Logger::Streamer Logger::Result (Status status, char const *file, unsigned line)
 {
   Streamer result (this);
 
   result << statuses[status] << ": ";
 
-  return result;
-}
-
-Logger::Streamer Logger::Result (Status status, char const *file, unsigned line)
-{
-  auto result = Result (status);
-
-  result << file << ':' << line << ':';
+  if (file)
+    result << file << ':' << line << ':';
 
   return result;
 }

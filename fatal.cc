@@ -370,11 +370,11 @@ void SignalHandler (int sig) noexcept
     binfo.FindLocation (return_addrs[2], false);
 #endif
 
-  HCF (stack_overflow ? "stack overflow" : strsignal (sig)
+  (HCF) (stack_overflow ? "stack overflow" : strsignal (sig)
 #if JOUST_CHECKING
-       , binfo
+	 , binfo
 #endif
-       );
+	 );
 }
 
 // An unexpected exception.  We don't try and locate the errant throw
@@ -383,24 +383,24 @@ void SignalHandler (int sig) noexcept
 
 void TerminateHandler () noexcept
 {
-  HCF (
+  (HCF) (
 #if JOUST_CHECKING
-       "uncaught exception", Location (nullptr, 0)
+	 "uncaught exception", Location (nullptr, 0)
 #else
-       nullptr
+	 nullptr
 #endif
-       );
+	 );
 }
 
 void UnexpectedHandler () noexcept
 {
-  HCF (
+  (HCF) (
 #if JOUST_CHECKING
-       "unexpected exception", Location (nullptr, 0)
+	 "unexpected exception", Location (nullptr, 0)
 #else
-       nullptr
+	 nullptr
 #endif
-       );
+	 );
 }
 
 void OutOfMemory () noexcept
@@ -453,17 +453,17 @@ void Progname (char const *prog)
 }
 
 #if JOUST_CHECKING
-void AssertFailed (Location loc)
+void (AssertFailed) (Location loc)
 {
-  HCF ("assertion failed", loc);
+  (HCF) ("assertion failed", loc);
 }
-void Unreachable (Location loc)
+void (Unreachable) (Location loc)
 {
-  HCF ("unreachable reached", loc);
+  (HCF) ("unreachable reached", loc);
 }
 #endif
 
-void HCF (char const *msg
+void (HCF) (char const *msg
 #if JOUST_CHECKING
 	    , Location const loc
 #endif

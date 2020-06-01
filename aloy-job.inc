@@ -2,6 +2,8 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
+#if !defined (ALOY_JOB)
+#define ALOY_JOB
 class Job
 {
   std::vector<std::string> command;
@@ -44,9 +46,9 @@ public:
   }
 
 public:
-  void Read (Logger &, unsigned subcode, int poll_fd);
+  void Read (Engine &, unsigned subcode, int poll_fd);
 
-  bool Spawn (Logger &, std::vector<std::string> const &preamble,
+  bool Spawn (Engine &, std::vector<std::string> const &preamble,
 	      int poll_fd, int token = -1);
   int Reap (int status);
   bool IsPid (pid_t p) const
@@ -62,12 +64,14 @@ public:
   {
     return !state;
   }
-  int ReportExit (Logger &) const;
+  void ReportExit (Engine &) const;
 
   friend std::ostream &operator<< (std::ostream &, Job const &);
 };
 
-void Job::Read (Logger &log, unsigned subcode, int poll_fd)
+#else
+
+void Job::Read (Engine &log, unsigned subcode, int poll_fd)
 {
   Assert (subcode < 2 && state > 0);
 
@@ -91,7 +95,7 @@ void Job::Read (Logger &log, unsigned subcode, int poll_fd)
 
 // Spawn a job, return true if we managed to spawn it.
 
-bool Job::Spawn (Logger &log, std::vector<std::string> const &preamble,
+bool Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
 		 int poll_fd, int token)
 {
   Assert (!state && buffers[0].empty () && buffers[0].empty ());
@@ -175,28 +179,22 @@ int Job::Reap (int status)
   return r;
 }
 
-int Job::ReportExit (Logger &log) const
+void Job::ReportExit (Engine &log) const
 {
-  int s = -1;
-  
   if (WIFSIGNALED (exit_status))
     {
       int sig = WTERMSIG (exit_status);
-      log.Result (Logger::ERROR) << *this << " terminated with signal " << sig;
-      s = Logger::ERROR;
+      log.Result (Logger::ERROR)
+	<< *this << " terminated with signal " << sig;
     }
   else if (WIFEXITED (exit_status))
     {
       if (int code = WEXITSTATUS (exit_status))
-	{
-	  log.Result (Logger::ERROR) << *this << " exited with status " << code;
-	  s = Logger::ERROR;
-	}
+	log.Result (Logger::ERROR)
+	  << *this << " exited with status " << code;
     }
   else
     Unreachable ();
-
-  return s;
 }
 
 std::ostream &operator<< (std::ostream &s, Job const &job)
@@ -205,3 +203,5 @@ std::ostream &operator<< (std::ostream &s, Job const &job)
 
   return s;
 }
+
+#endif

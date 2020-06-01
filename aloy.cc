@@ -39,6 +39,9 @@
 using namespace Joust;
 
 namespace {
+class Engine;
+#include "aloy-job.inc"
+#include "aloy-engine.inc"
 #include "aloy-job.inc"
 #include "aloy-engine.inc"
 }

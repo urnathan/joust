@@ -2,6 +2,8 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
+#if !defined (ALOY_ENGINE)
+#define ALOY_ENGINE
 class Engine : public Logger
 {
 public:
@@ -69,7 +71,7 @@ public:
   auto Result (Status status)
   {
     counts[status]++;
-    return Parent::Result (status);
+    return Parent::Result (status, nullptr, 0);
   }
 
 private:
@@ -85,6 +87,8 @@ private:
 
   friend std::ostream &operator<< (std::ostream &, Engine const &);
 };
+
+#else
 
 Engine::Engine (unsigned limit,
 		std::ostream &sum_, std::ostream &log_)
@@ -567,10 +571,7 @@ void Engine::Fini (Job const &job, bool is_generator)
 	}
     }
 
-  // We can't trust the job itself to have reported its failure
-  int exit = job.ReportExit (*this);
-  if (exit >= 0)
-    counts[exit]++;
+  job.ReportExit (*this);
 
   Log () << '\n';
 }
@@ -645,3 +646,4 @@ std::string Engine::Progress ()
     progress << " ...";
   return progress.str ();
 }
+#endif

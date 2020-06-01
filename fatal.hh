@@ -3,10 +3,13 @@
 // License: Affero GPL v3.0
 
 #pragma once
-#define JOUST_LOC_BUILTINS (__GNUC__ >= 10)
+
 // C++
-#if !JOUST_LOC_BUILTINS
+#if __GNUC__ >= 10
+#define JOUST_LOC_BUILTIN 1
+#elif __has_include (<source_location>)
 #include <source_location>
+#define JOUST_LOC_SOURCE 1
 #endif
 // C
 #include <cstdio>
@@ -21,11 +24,11 @@ protected:
 
 public:
   constexpr Location (char const *file_
-#if JOUST_LOC_BUILTINS
+#if JOUST_LOC_BUILTIN
 		      = __builtin_FILE ()
 #endif
 		      , unsigned line_
-#if JOUST_LOC_BUILTINS
+#if JOUST_LOC_BUILTIN
 		      = __builtin_LINE ()
 #endif
 		      )
@@ -33,7 +36,7 @@ public:
   {
   }
 
-#if !JOUST_LOC_BUILTINS
+#if !JOUST_LOC_BUILTIN && JOUST_LOC_SOURCE
   constexpr Location (source_location loc == source_location::current ())
     :file (loc.file ()), line (loc.line ())
   {
@@ -60,13 +63,21 @@ void HCF [[noreturn]]
  char const *msg
 #if JOUST_CHECKING
  , Location const = Location ()
+#if !JOUST_LOC_BUILTIN && !JOUST_LOC_SOURCE
+#define HCF(M) HCF ((M), Joust::Location (__FILE__, __LINE__))
+#endif
 #endif
  ) noexcept;
 
 #if JOUST_CHECKING
 void AssertFailed [[noreturn]] (Location loc = Location ());
 void Unreachable [[noreturn]] (Location loc = Location ());
+#if !JOUST_LOC_BUILTIN && !JOUST_LOC_SOURCE
+#define AssertFailed() AssertFailed (Joust::Location (__FILE__, __LINE__))
+#define Unreachable() Unreachable (Joust::Location (__FILE__, __LINE__))
+#endif
 
+// Oh for lazily evaluated function parameters
 #define Assert(EXPR, ...)						\
   (__builtin_expect (bool (EXPR __VA_OPT__ (, __VA_ARGS__)), true)	\
    ? (void)0 : AssertFailed ())
