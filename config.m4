@@ -133,13 +133,13 @@ AS_HELP_STRING([--enable-distribution],
 [enable distribution.  Inhibit components that prevent distribution]),,
 [enable_distribution="no"])
 case "$enable_distribution" in
-  ("yes") nms_distribution=yes
+  ("yes") joust_distribution=yes
          AC_MSG_ERROR([distribution is not permitted]) ;;
-  ("no") nms_distribution=no ;;
+  ("no") joust_distribution=no ;;
   (*) AC_MSG_ERROR([unknown distribution $enable_distribution]) ;;
 esac
 AC_MSG_CHECKING([distribution])
-AC_MSG_RESULT([$nms_distribution])])
+AC_MSG_RESULT([$joust_distribution])])
 
 AC_DEFUN([JOUST_ENABLE_CHECKING],
 [AC_ARG_ENABLE(checking,
@@ -147,13 +147,13 @@ AS_HELP_STRING([--enable-checking],
 [enable run-time checking]),,
 [enable_checking="yes"])
 case "$enable_checking" in
-  ("yes") nms_checking=yes ;;
-  ("no") nms_checking= ;;
+  ("yes") joust_checking=yes ;;
+  ("no") joust_checking= ;;
   (*) AC_MSG_ERROR([unknown check "$enable_check"]) ;;
 esac
 AC_MSG_CHECKING([checking])
-AC_MSG_RESULT([${nms_checking:-no}])
-if test "$nms_checking" = yes ; then
+AC_MSG_RESULT([${joust_checking:-no}])
+if test "$joust_checking" = yes ; then
   AC_DEFINE([JOUST_CHECKING], [1], [Enable checking])
 fi])
 
@@ -180,7 +180,7 @@ AS_HELP_STRING([--enable-backtrace],[provide backtrace on fatality.]),,
 if test "${enable_backtrace:-maybe}" != no ; then
   AC_CHECK_HEADERS(execinfo.h)
   AC_CHECK_FUNCS(backtrace)
-  if test "$nms_distribution" = no ; then
+  if test "$joust_distribution" = no ; then
     AC_DEFINE([HAVE_DECL_BASENAME], [1], [Needed for demangle.h])
     # libiberty prevents distribution because of licensing
     AC_CHECK_HEADERS([demangle.h libiberty/demangle.h],[break])
@@ -189,7 +189,7 @@ if test "${enable_backtrace:-maybe}" != no ; then
     AC_SEARCH_LIBS([bfd_openr],[bfd])
   fi
   if test "$ac_cv_func_backtrace" = yes ; then
-    nms_backtrace=yes
+    joust_backtrace=yes
     ldbacktrace=-rdynamic
     AC_DEFINE([JOUST_BACKTRACE], [1], [Enable backtrace])
   elif test "$enable_backtrace" = yes ; then
@@ -198,36 +198,4 @@ if test "${enable_backtrace:-maybe}" != no ; then
   AC_SUBST([ldbacktrace])
 fi
 AC_MSG_CHECKING([backtrace])
-AC_MSG_RESULT([${nms_backtrace:-no}])])
-
-AC_DEFUN([JOUST_CONFIG_FILES],
-for dir in $SUBDIRS
-do
-  CONFIG_FILES+=" $dir/Makesub"
-  test -f ${srcdir}/$dir/tests/Makesub.in && CONFIG_FILES+=" $dir/tests/Makesub"
-done
-for make in Makesub tests/Makesub
-do
-  test -f ${srcdir}/$make.in && CONFIG_FILES+=" $make"
-done
-AC_CONFIG_FILES([$CONFIG_FILES]))
-
-AC_DEFUN([JOUST_PROJECT_ENABLE],
-[JOUST_ENABLE_CHECKING
-JOUST_WITH_BINUTILS
-JOUST_ENABLE_BACKTRACE
-
-AC_CONFIG_HEADER(config.h)
-AC_CHECK_TOOL([AR],[ar])
-
-AH_VERBATIM([_GNU_SOURCE],[#define _GNU_SOURCE 1])
-AH_VERBATIM([_FORTIFY_SOURCE],[#undef _FORTIFY_SOURCE])
-
-SUBDIRS=""
-CONFIG_FILES="Makefile"
-
-AC_SUBST(configure_args,[$ac_configure_args])
-AC_SUBST(SUBPROJS)
-AC_SUBST(SUBDIRS)
-AC_SUBST(CONFIG_FILES)
-])
+AC_MSG_RESULT([${joust_backtrace:-no}])])

@@ -5,31 +5,27 @@
 CXXFLAGS/ += -I $(srcdir)
 
 JOUSTPROGS := ezio kratos aloy
+LIBJOUST.O := joust.o
+LIBJOUSTI.O := error.o fatal.o lexer.o option.o readBuffer.o regex.o \
+	scanner.o spawn.o symbols.o token.o
 
-all:: $(JOUSTPROGS)
+all:: $(JOUSTPROGS) libjoust.a
 
 $(JOUSTPROGS): %: %.o libjousti.a libjoust.a
 	$(CXX) $(LDFLAGS) $<  -ljousti -ljoust $(LIBS) -o $@
 
-clean::
-	rm -f $(JOUSTPROGS)
-	rm -f $(JOUSTPROGS:=.o) $(JOUSTPROGS:=.d)
-
-LIBJOUSTI.O := error.o fatal.o lexer.o option.o readBuffer.o regex.o \
-	scanner.o spawn.o symbols.o token.o
+libjoust.a: $(LIBJOUST.O)
+	$(AR) -cr $@ $^
 
 libjousti.a: $(LIBJOUSTI.O)
 	$(AR) -cr $@ $^
 
-LIBJOUST.O := joust-logger.o
-
-libjoust.a: $(LIBJOUST.O)
-	$(AR) -cr $@ $^
-
 clean::
+	rm -f $(JOUSTPROGS)
+	rm -f libjoust.a libjousti.a
+	rm -f $(JOUSTPROGS:=.o) $(JOUSTPROGS:=.d)
 	rm -f $(LIBJOUST.O) $(LIBJOUST.O:.o=.d)
 	rm -f $(LIBJOUSTI.O) $(LIBJOUSTI.O:.o=.d)
-	rm -f libjoust.a libjousti.a
 
 CXXFLAGS/regex.cc = -fexceptions
 CXXFLAGS/fatal.cc = -DREVISION='"$(shell cat revision)"' \
@@ -37,19 +33,13 @@ CXXFLAGS/fatal.cc = -DREVISION='"$(shell cat revision)"' \
 
 fatal.o: Makefile revision
 
-
-doc: dox.cfg
-	cd $(<D); doxygen $(<F) >&dox.log
-
-clean::
-	rm -rf dox dox.log
-
 install::
 	$(INSTALL) $(JOUSTPROGS) $(bindir)
 	$(INSTALL) libjoust.a $(libdir)
-	$(INSTALL) joust-logger.hh $(includedir)
+	$(INSTALL) joust.hh $(includedir)
 
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 -include $(JOUSTPROGS:=.d)
 -include $(LIBJOUST.O:.o=.d)
+-include $(LIBJOUSTI.O:.o=.d)
 endif

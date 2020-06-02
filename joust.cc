@@ -3,7 +3,9 @@
 // License: Affero GPL v3.0
 
 // Joust
-#include "joust-logger.hh"
+#include "joust.hh"
+// C
+#include <cstdlib>
 
 namespace Joust {
 
@@ -25,7 +27,30 @@ Logger::Streamer Logger::Result (Status status, char const *file, unsigned line)
   result << statuses[status] << ": ";
 
   if (file)
-    result << file << ':' << line << ':';
+    {
+      if (char const *srcdir = getenv ("srcdir"))
+	{
+	  // Strip off a leading $srcdir from the filename -- if it
+	  // came from __FILE__ it'll have that in it, which is
+	  // unnecessary
+	  for (size_t pos = 0; ; pos++)
+	    {
+	      if (char c = srcdir[pos])
+		{
+		  if (file[pos] != c)
+		    break;
+		}
+	      else
+		{
+		  if (file[pos] == '/')
+		    file += pos + 1;
+		  break;
+		}
+	    }
+	}
+
+      result << file << ':' << line << ':';
+    }
 
   return result;
 }

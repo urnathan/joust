@@ -2156,10 +2156,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-
-
-
-
 ac_aux_dir=
 for ac_dir in build-aux "$srcdir"/build-aux; do
   if test -f "$ac_dir/install-sh"; then
@@ -2272,7 +2268,7 @@ if test "${with_tools+set}" = set; then :
   as_fn_error $? "tool location not specified" "$LINENO" 5
 elif test "$withval" = "no" ; then
   :
-elif ! test -d "$withval/bin" ; then
+elif ! test -d "${withval%/bin}/bin" ; then
   as_fn_error $? "tools not present" "$LINENO" 5
 else
   tools=${withval%/bin}/bin
@@ -2944,15 +2940,56 @@ else
 fi
 
 case "$enable_distribution" in
-  ("yes") nms_distribution=yes
+  ("yes") joust_distribution=yes
          as_fn_error $? "distribution is not permitted" "$LINENO" 5 ;;
-  ("no") nms_distribution=no ;;
+  ("no") joust_distribution=no ;;
   (*) as_fn_error $? "unknown distribution $enable_distribution" "$LINENO" 5 ;;
 esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking distribution" >&5
 $as_echo_n "checking distribution... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $nms_distribution" >&5
-$as_echo "$nms_distribution" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $joust_distribution" >&5
+$as_echo "$joust_distribution" >&6; }
+# Check whether --enable-checking was given.
+if test "${enable_checking+set}" = set; then :
+  enableval=$enable_checking;
+else
+  enable_checking="yes"
+fi
+
+case "$enable_checking" in
+  ("yes") joust_checking=yes ;;
+  ("no") joust_checking= ;;
+  (*) as_fn_error $? "unknown check \"$enable_check\"" "$LINENO" 5 ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking" >&5
+$as_echo_n "checking checking... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${joust_checking:-no}" >&5
+$as_echo "${joust_checking:-no}" >&6; }
+if test "$joust_checking" = yes ; then
+
+$as_echo "#define JOUST_CHECKING 1" >>confdefs.h
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking binutils" >&5
+$as_echo_n "checking binutils... " >&6; }
+
+# Check whether --with-bfd was given.
+if test "${with_bfd+set}" = set; then :
+  withval=$with_bfd; if test "$withval" = "yes" ; then
+  as_fn_error $? "DIR not specified" "$LINENO" 5
+elif test "$withval" = "no" ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: installed" >&5
+$as_echo "installed" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${withval}" >&5
+$as_echo "${withval}" >&6; }
+  CPPFLAGS="${CPPFLAGS} -I${withval}/include"
+  LDFLAGS="${LDFLAGS} -L${withval}/lib"
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: installed" >&5
+$as_echo "installed" >&6; }
+fi
 
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -3347,48 +3384,6 @@ fi
 done
 
 
-# Check whether --enable-checking was given.
-if test "${enable_checking+set}" = set; then :
-  enableval=$enable_checking;
-else
-  enable_checking="yes"
-fi
-
-case "$enable_checking" in
-  ("yes") nms_checking=yes ;;
-  ("no") nms_checking= ;;
-  (*) as_fn_error $? "unknown check \"$enable_check\"" "$LINENO" 5 ;;
-esac
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking" >&5
-$as_echo_n "checking checking... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${nms_checking:-no}" >&5
-$as_echo "${nms_checking:-no}" >&6; }
-if test "$nms_checking" = yes ; then
-
-$as_echo "#define JOUST_CHECKING 1" >>confdefs.h
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking binutils" >&5
-$as_echo_n "checking binutils... " >&6; }
-
-# Check whether --with-bfd was given.
-if test "${with_bfd+set}" = set; then :
-  withval=$with_bfd; if test "$withval" = "yes" ; then
-  as_fn_error $? "DIR not specified" "$LINENO" 5
-elif test "$withval" = "no" ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: installed" >&5
-$as_echo "installed" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${withval}" >&5
-$as_echo "${withval}" >&6; }
-  CPPFLAGS="${CPPFLAGS} -I${withval}/include"
-  LDFLAGS="${LDFLAGS} -L${withval}/lib"
-fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: installed" >&5
-$as_echo "installed" >&6; }
-fi
-
 
 # Check whether --enable-backtrace was given.
 if test "${enable_backtrace+set}" = set; then :
@@ -3421,7 +3416,7 @@ _ACEOF
 fi
 done
 
-  if test "$nms_distribution" = no ; then
+  if test "$joust_distribution" = no ; then
 
 $as_echo "#define HAVE_DECL_BASENAME 1" >>confdefs.h
 
@@ -3510,7 +3505,7 @@ fi
 
   fi
   if test "$ac_cv_func_backtrace" = yes ; then
-    nms_backtrace=yes
+    joust_backtrace=yes
     ldbacktrace=-rdynamic
 
 $as_echo "#define JOUST_BACKTRACE 1" >>confdefs.h
@@ -3522,8 +3517,8 @@ $as_echo "#define JOUST_BACKTRACE 1" >>confdefs.h
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking backtrace" >&5
 $as_echo_n "checking backtrace... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${nms_backtrace:-no}" >&5
-$as_echo "${nms_backtrace:-no}" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${joust_backtrace:-no}" >&5
+$as_echo "${joust_backtrace:-no}" >&6; }
 
 ac_config_headers="$ac_config_headers config.h"
 
@@ -3620,30 +3615,21 @@ else
 fi
 
 
-
-
-
-SUBDIRS=""
-CONFIG_FILES="Makefile"
-
-configure_args=$ac_configure_args
-
-
-
-
-
-
-CONFIG_FILES+=" gdbinit"
-for dir in $SUBDIRS
-do
-  CONFIG_FILES+=" $dir/Makesub"
-  test -f ${srcdir}/$dir/tests/Makesub.in && CONFIG_FILES+=" $dir/tests/Makesub"
-done
+CONFIG_FILES="Makefile gdbinit"
 for make in Makesub tests/Makesub
 do
   test -f ${srcdir}/$make.in && CONFIG_FILES+=" $make"
 done
 ac_config_files="$ac_config_files $CONFIG_FILES"
+
+
+
+
+
+configure_args=$ac_configure_args
+
+
+
 
 
 cat >confcache <<\_ACEOF
@@ -4335,8 +4321,8 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "$CONFIG_FILES") CONFIG_FILES="$CONFIG_FILES $CONFIG_FILES" ;;
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
+    "$CONFIG_FILES") CONFIG_FILES="$CONFIG_FILES $CONFIG_FILES" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

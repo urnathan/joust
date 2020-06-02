@@ -5,6 +5,8 @@
 // Joust
 #include "readBuffer.hh"
 #include "fatal.hh"
+// C
+#include <cerrno>
 // OS
 #include <unistd.h>
 
