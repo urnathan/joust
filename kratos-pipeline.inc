@@ -350,9 +350,9 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 		  int err = errno;
 		  if (err != EINTR && err != EAGAIN)
 		    {
-		      commands[0].Error () << "failed writing here doc:"
-					   << commands[0].words.front ()
-					   << strerror (err);
+		      commands[0].Error () << "failed writing here doc at byte "
+					   << here_pos << " (" << limit
+					   << " remain): " << strerror (err);
 		      Result (logger, Logger::ERROR);
 		      here_pos = src.size ();
 		    }
@@ -430,7 +430,7 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 		      }
 		  }
 		  break;
-		
+
 		case SIGHUP:
 		case SIGINT:
 		case SIGQUIT:
@@ -447,6 +447,8 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 		  break;
 
 		case SIGPIPE:
+		  break;
+
 		default:
 		  Unreachable ();
 		}
