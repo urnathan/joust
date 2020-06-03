@@ -33,6 +33,7 @@ private:
     Streamer (Streamer &&s)
       : logger (s.logger)
     {
+      s.logger = nullptr;
     }
     ~Streamer ()
     {
@@ -41,7 +42,7 @@ private:
     }
 
   private:
-    Streamer &operator= (Streamer const &) = delete;
+    Streamer &operator= (Streamer &&) = delete;
 
   public:
     template<typename T> Streamer &operator << (T &&obj)
@@ -88,7 +89,7 @@ public:
 
 private:
   Logger (Logger const &) = delete;
-  Logger &operator= (Logger &) = delete;
+  Logger &operator= (Logger const &) = delete;
 
 public:
   std::ostream &Sum () const
@@ -112,9 +113,6 @@ public:
   {
     return Status ((pass ? PASS : FAIL) + (xfail ? XPASS - PASS : 0));
   }
-
-public:
-  bool AddStatus (std::string_view const &);
 
 protected:
   Status DecodeStatus (std::string_view const &);

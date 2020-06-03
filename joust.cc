@@ -28,7 +28,7 @@ Logger::Streamer Logger::Result (Status status, char const *file, unsigned line)
 
   if (file)
     {
-      if (char const *srcdir = getenv ("srcdir"))
+      if (char const *srcdir = getenv ("srcbuilddir"))
 	{
 	  // Strip off a leading $srcdir from the filename -- if it
 	  // came from __FILE__ it'll have that in it, which is
