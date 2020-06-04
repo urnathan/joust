@@ -34,9 +34,10 @@ CXXFLAGS/fatal.cc = -DREVISION='"$(shell cat revision)"' \
 fatal.o: Makefile revision
 
 install::
+	$(INSTALL) -d $(bindir) $(libdir) $(includedir)
 	$(INSTALL) $(JOUSTPROGS) $(bindir)
 	$(INSTALL) libjoust.a $(libdir)
-	$(INSTALL) joust.hh $(includedir)
+	$(INSTALL) $(srcdir)/joust.hh $(includedir)
 
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 -include $(JOUSTPROGS:=.d)

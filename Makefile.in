@@ -29,6 +29,8 @@ recurse:
 else
 
 srcdir := @srcdir@
+prefix := @prefix@
+exec_prefix := @exec_prefix@
 bindir := @bindir@
 libdir := @libdir@
 includedir := @includedir@
@@ -38,7 +40,7 @@ SHELL := zsh
 
 CXX := @CXX@
 AR := @AR@
-INSTALL := $(srcdir)/install-sh
+INSTALL := $(srcdir)/build-aux/install-sh
 
 # C++ compiler options
 CXXFLAGS := @CXXFLAGS@
