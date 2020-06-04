@@ -98,18 +98,23 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	  if (c == '<' && state == IDLE)
 	    {
 	      next_state = REDIRECT_IN;
-	      if (lexer.Peek (1) == '<')
+	      lexer.Advance ();
+	      if (lexer.Peek () == '<')
 		{
 		  next_state = REDIRECT_HERE;
 		  lexer.Advance ();
 		}
 	    }
 	  else if (c == '>')
-	    next_state = REDIRECT_OUT;
+	    {
+	      next_state = REDIRECT_OUT;
+	      lexer.Advance ();
+	    }
 	  else if (c == '|')
 	    {
 	      next_state = State (ACTIVE_LWM + 1);
-	      if (lexer.Peek (1) == '&')
+	      lexer.Advance ();
+	      if (lexer.Peek () == '&')
 		{
 		  next_state = State (ACTIVE_LWM + 2);
 		  lexer.Advance ();
@@ -175,8 +180,6 @@ bool Parser::ProcessLine (std::string_view const &variant,
 
 	  if (next_state != IDLE)
 	    {
-	      lexer.Advance ();
-
 	      switch (state)
 		{
 		case IDLE:

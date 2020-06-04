@@ -133,8 +133,7 @@ AS_HELP_STRING([--enable-distribution],
 [enable distribution.  Inhibit components that prevent distribution]),,
 [enable_distribution="no"])
 case "$enable_distribution" in
-  ("yes") joust_distribution=yes
-         AC_MSG_ERROR([distribution is not permitted]) ;;
+  ("yes") joust_distribution=yes ;;
   ("no") joust_distribution=no ;;
   (*) AC_MSG_ERROR([unknown distribution $enable_distribution]) ;;
 esac

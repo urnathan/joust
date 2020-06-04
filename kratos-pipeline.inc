@@ -516,7 +516,16 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 void Pipeline::Result (Logger &logger, Logger::Status status)
 {
   auto const &cmd = commands.front ();
+  auto l = logger.Result (status, cmd.file, cmd.line);
 
-  logger.Result (status, cmd.file, cmd.line)
-    << kinds[kind] << ' ' << cmd.words.front ();
+  l << kinds[kind];
+  if (expect_inverted || expected_exit)
+    {
+      l << ' ';
+      if (expect_inverted)
+	l << '!';
+      if (expected_exit)
+	l << int (expected_exit);
+    }	
+  l << ' ' << cmd.words.front ();
 }

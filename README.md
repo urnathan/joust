@@ -194,6 +194,11 @@ It doesn't matter what characters appear before `RUN` on the line
 The first exits with a zero exit code, and the second exits with a
 non-zero code.
 
+`REQUIRE` allows you to disable a following `RUN` or `SIGNAL` test.  A
+sequence of `REQUIRE`s all have to succeed, otherwise the test is
+skipped.  `REQUIRE`s only affect one test.  You can invert the sense
+of a `REQUIRE` with `!` in the same way a `RUN` can be inverted.
+
 The actual command to run is subject to `$` expansion, which is
 similar, but not the same, as shell expansion.
 

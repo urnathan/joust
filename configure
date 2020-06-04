@@ -2940,8 +2940,7 @@ else
 fi
 
 case "$enable_distribution" in
-  ("yes") joust_distribution=yes
-         as_fn_error $? "distribution is not permitted" "$LINENO" 5 ;;
+  ("yes") joust_distribution=yes ;;
   ("no") joust_distribution=no ;;
   (*) as_fn_error $? "unknown distribution $enable_distribution" "$LINENO" 5 ;;
 esac

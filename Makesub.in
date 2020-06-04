@@ -9,7 +9,7 @@ LIBJOUST.O := joust.o
 LIBJOUSTI.O := error.o fatal.o lexer.o option.o readBuffer.o regex.o \
 	scanner.o spawn.o symbols.o token.o
 
-all:: $(JOUSTPROGS) libjoust.a
+all:: $(JOUSTPROGS) libjousti.a libjoust.a
 
 $(JOUSTPROGS): %: %.o libjousti.a libjoust.a
 	$(CXX) $(LDFLAGS) $<  -ljousti -ljoust $(LIBS) -o $@

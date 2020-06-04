@@ -8,6 +8,7 @@
 #include <exception>
 #include <typeinfo>
 // C
+#include <cinttypes>
 #include <csignal>
 #include <cstdarg>
 #include <cstdint>
@@ -58,17 +59,17 @@ public:
   ~Binfo () noexcept;
 
 public:
+#if JOUST_BACKTRACE
   bool FindLocation (void *addr, bool is_return_address);
   bool InlineUnwind ();
-
-public:
   char *Demangle () noexcept;
+#endif
 };
 
 Binfo::Binfo () noexcept
+  :
 #if HAVE_BFD_H
-  : Parent (nullptr, 0),
-    theBfd (nullptr), syms (nullptr),
+  Parent (nullptr, 0), theBfd (nullptr), syms (nullptr),
 #endif
     fn (nullptr)
 {
@@ -128,8 +129,8 @@ Binfo::Binfo () noexcept
 	    }
 	}
     }
-}
 #endif
+}
 
 Binfo::~Binfo () noexcept
 {
@@ -145,7 +146,9 @@ Binfo::~Binfo () noexcept
 #endif
 }
 
-bool Binfo::FindLocation (void *addr, bool is_return_address) noexcept
+#if JOUST_BACKTRACE
+bool Binfo::FindLocation (void *addr [[maybe_unused]],
+			  bool is_return_address [[maybe_unused]]) noexcept
 {
   fn = nullptr;
   *static_cast <Parent *> (this) = Location (nullptr, 0);
@@ -182,7 +185,9 @@ bool Binfo::FindLocation (void *addr, bool is_return_address) noexcept
 #endif
   return File () != nullptr;
 }
+#endif
 
+#if JOUST_BACKTRACE
 bool Binfo::InlineUnwind ()
 {
 #if HAVE_BFD_H
@@ -192,6 +197,7 @@ bool Binfo::InlineUnwind ()
 
   return false;
 }
+#endif
 
 #if JOUST_BACKTRACE
 char const *StripObjDir (char const *file)
@@ -205,6 +211,7 @@ char const *StripObjDir (char const *file)
 }
 #endif
 
+#if JOUST_BACKTRACE
 char *Binfo::Demangle () noexcept
 {
   char *demangled = 0;
@@ -277,6 +284,7 @@ char *Binfo::Demangle () noexcept
 #endif // HAVE_DEMANGLE_H || HAVE_LIBIBERTY_DEMANGLE_H
   return demangled;
 }
+#endif
 
 // An unexpected signal.  Try and determine where the signal came
 // from, to report a file and line number.  The following frames will

@@ -209,15 +209,26 @@ int main (int argc, char *argv[])
       if (!skipping)
 	{
 	  logger.Log () << '\n';
-	  int e = pipe.Execute (logger, pipe.GetKind () != Pipeline::REQUIRE
+	  int e = pipe.Execute (logger, pipe.GetKind () < Pipeline::PIPE_HWM
 				? limits : nullptr);
-	  if (e && pipe.GetKind () == Pipeline::REQUIRE)
-	    skipping = true;
 	  if (e == EINTR)
 	    break;
+
+	  if (e && pipe.GetKind () == Pipeline::REQUIRE)
+	    skipping = true;
+
 	}
       else
-	pipe.Result (logger, Logger::UNSUPPORTED);
+	switch (pipe.GetKind ())
+	  {
+	  case Pipeline::REQUIRE:
+	    break;
+
+	  default:
+	    pipe.Result (logger, Logger::UNSUPPORTED);
+	    skipping = false;
+	    break;
+	  }
     }
 
   return Error::Errors ();
