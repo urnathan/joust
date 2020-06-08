@@ -27,19 +27,22 @@ JOUST_ENABLE_BACKTRACE
 
 AC_CONFIG_HEADER(config.h)
 AC_CHECK_TOOL([AR],[ar])
+AH_VERBATIM([_GNU_SOURCE],[#define _GNU_SOURCE 1])
+AH_VERBATIM([_FORTIFY_SOURCE],[#undef _FORTIFY_SOURCE])
+
+for generated in config.h.in configure ; do
+  if test $srcdir/configure.ac -nt $srcdir/$generated ; then
+    touch $srcdir/$generated
+  fi
+done
 
 CONFIG_FILES="Makefile gdbinit"
-for make in Makesub tests/Makesub
-do
+for make in Makesub tests/Makesub ; do
   test -f ${srcdir}/$make.in && CONFIG_FILES+=" $make"
 done
 AC_CONFIG_FILES([$CONFIG_FILES])
 
-AH_VERBATIM([_GNU_SOURCE],[#define _GNU_SOURCE 1])
-AH_VERBATIM([_FORTIFY_SOURCE],[#undef _FORTIFY_SOURCE])
-
 AC_SUBST(configure_args,[$ac_configure_args])
-AC_SUBST(SUBDIRS)
 AC_SUBST(CONFIG_FILES)
 
 AC_OUTPUT
