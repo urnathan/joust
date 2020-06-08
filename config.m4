@@ -154,7 +154,7 @@ if test "${enable_backtrace:-maybe}" != no ; then
     AC_CHECK_HEADERS([demangle.h libiberty/demangle.h],[break])
     # libbfd prevents distribution because of licensing
     AC_CHECK_HEADERS([bfd.h])
-    AC_SEARCH_LIBS([bfd_openr],[bfd])
+    AC_SEARCH_LIBS([bfd_openr],[bfd],[LIBS+="-lz -liberty -ldl"],,[-lz -liberty -ldl])
   fi
   if test "$ac_cv_func_backtrace" = yes ; then
     joust_backtrace=yes
