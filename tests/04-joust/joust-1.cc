@@ -109,7 +109,7 @@ int main (int argc, char *argv[])
 
   if (flags.is_demangled)
     {
-#if HAVE_DEMANGLE_H || HAVE_LIBIBETERY_DEMANGLE_H
+#if HAVE_DEMANGLE_H || HAVE_LIBIBERTY_DEMANGLE_H
       return 0;
 #else
       return 1;

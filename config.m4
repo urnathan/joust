@@ -2,22 +2,75 @@
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
-AC_DEFUN([JOUST_TOOLS],
-[AC_MSG_CHECKING([tools])
-AC_ARG_WITH([tools],
-AS_HELP_STRING([--with-tools=DIR],[tool directory]),
+AC_DEFUN([JOUST_TOOLBIN],
+[AC_MSG_CHECKING([tool binaries])
+AC_ARG_WITH([toolbin],
+AS_HELP_STRING([--with-toolbin=DIR],[tool bin directory]),
 if test "$withval" = "yes" ; then
-  AC_MSG_ERROR([tool location not specified])
+  AC_MSG_ERROR([tool bin location not specified])
 elif test "$withval" = "no" ; then
   :
 elif ! test -d "${withval%/bin}/bin" ; then
-  AC_MSG_ERROR([tools not present])
+  AC_MSG_ERROR([tool bin not present])
 else
-  tools=${withval%/bin}/bin
+  toolbin=${withval%/bin}/bin
 fi)
-AC_MSG_RESULT($tools)
-PATH=$tools${tools+:}$PATH
-AC_SUBST(tools)])
+AC_MSG_RESULT($toolbin)
+if test "$toolbin" ; then
+  PATH="$toolbin:$PATH"
+fi
+AC_SUBST(toolbin)])
+
+AC_DEFUN([JOUST_TOOLINC],
+[AC_MSG_CHECKING([tool include])
+AC_ARG_WITH([toolinc],
+AS_HELP_STRING([--with-toolinc=DIR],[tool include directory]),
+if test "$withval" = "yes" ; then
+  AC_MSG_ERROR([tool include location not specified])
+elif test "$withval" = "no" ; then
+  if test "${toolbin}" ; then
+    toolinc="${toolbin%/bin}/include"
+    if ! test -d "$toolinc" ; then
+      # was not found
+      toolinc=
+    fi
+  fi
+elif ! test -d "${withval}" ; then
+  AC_MSG_ERROR([tool include not present])
+else
+  toolinc=${withval}
+fi)
+AC_MSG_RESULT($toolinc)
+if test "$toolinc" ; then
+  CXX+=" -I $toolinc"
+fi])
+
+AC_DEFUN([JOUST_TOOLLIB],
+[AC_MSG_CHECKING([tool libraries])
+AC_ARG_WITH([toollib],
+AS_HELP_STRING([--with-toollib=DIR],[tool library directory]),
+if test "$withval" = "yes" ; then
+  AC_MSG_ERROR([tool library location not specified])
+elif test "$withval" = "no" ; then
+  if test "${toolbin}" ; then
+    toollib="${toolbin%/bin}/lib"
+    if os=$(CXX -print-multi-os-directory 2>/dev/null) ; then
+      toollib+="/${os}"
+    fi
+    if ! test -d "$toollib" ; then
+      # was not found
+      toollib=
+    fi
+  fi
+elif ! test -d "${withval}" ; then
+  AC_MSG_ERROR([tool library not present])
+else
+  toollib=${withval}
+fi)
+AC_MSG_RESULT($toollib)
+if test "$toollib" ; then
+  LDFLAGS+="-L $toollib"
+fi])
 
 AC_DEFUN([JOUST_CXX_COMPILER],
 [AC_ARG_WITH([compiler],

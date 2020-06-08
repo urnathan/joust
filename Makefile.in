@@ -3,9 +3,9 @@
 # License: Affero GPL v3.0
 
 ifeq (0,$(MAKELEVEL))
-ifneq (,@tools@)
-$(info Prepending @tools@ to PATH)
-PATH := @tools@:$(PATH)
+ifneq (,@toolbin@)
+$(info Prepending @toolbin@ to PATH)
+PATH := @toolbin@:$(PATH)
 export PATH
 endif
 
