@@ -58,13 +58,6 @@ TESTS := $(patsubst $(srcdir)/%.cc,%,\
 	$(wildcard $(srcdir)/tests/*/*.cc))
 
 TESTDIRS = $(shell cd $(srcdir)/${<D} ; echo *(/))
-ifneq (,$(filter joust,$(SUBPROJS)))
-# If Joust is itself a subproject, point PATH at it
-check: PATH := ../../joust:$(PATH)
-ifneq (./,$(dir $(firstword $(ALOY))))
-check: PATH := $(dir $(firstword $(ALOY)))):$(PATH)
-endif
-endif
 
 # The testsuite.  `+` tells Make to provide a jobserver
 check:: tests/myproj.defs $(TESTS)

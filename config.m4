@@ -2,37 +2,6 @@
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
-# JOUST_SUBPROJ(NAME,[FOUND=],[NOT-FOUND=])
-AC_DEFUN([JOUST_SUBPROJ],
-[AC_MSG_CHECKING([subproject $1])
-if test -d ${srcdir}/$1; then
-  if test -h ${srcdir}/$1; then
-    AC_MSG_RESULT([by reference])
-  else
-    AC_MSG_RESULT([by value])
-  fi
-  $2
-else
-  AC_MSG_RESULT([not present])
-  $3
-fi])
-
-AC_DEFUN([JOUST_REQUIRED_SUBPROJ],
-[JOUST_SUBPROJ([$1],,[AC_MSG_ERROR([$1 project is required, install by value (copy) or reference (symlink)])])])
-
-AC_DEFUN([JOUST_OPTIONAL_SUBPROJ],
-[AC_MSG_CHECKING([subproject $1])
-if test -d ${srcdir}/$1; then
-  SUBPROJS+=" $1"
-  if test -h ${srcdir}/$1; then
-    AC_MSG_RESULT([by reference])
-  else
-    AC_MSG_RESULT([by value])
-  fi
-else
-  AC_MSG_RESULT([not present])
-fi])
-
 AC_DEFUN([JOUST_TOOLS],
 [AC_MSG_CHECKING([tools])
 AC_ARG_WITH([tools],
