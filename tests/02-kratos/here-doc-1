@@ -1,3 +1,7 @@
+# swallow stdin
+cat >/dev/null
+exit 0
+
 RUN: kratos -p INNER1 $src | ezio -p COMMON1 -p OUT1 $src
 RUN: |& ezio -p COMMON1 -p ERR1 $src
 
@@ -22,10 +26,10 @@ COMMON1-NEXT:PASS: {:$src:[0-9]+}:RUN cat
 COMMON1-NEXT:$EOF
 
 INNER2: <<here 3
-INNER2: true
+INNER2: $SHELL $srcdir$src
 ERR2: {:$src:[0-9]+} in<<here 3
-ERR2-NEXT: {:$src:[0-9]+} RUN: true
-COMMON2-NEXT:PASS: {:$src:[0-9]+}:RUN true
+ERR2-NEXT: {:$src:[0-9]+} RUN: $SHELL $srcdir$src
+COMMON2-NEXT:PASS: {:$src:[0-9]+}:RUN $SHELL
 COMMON2-NEXT:$EOF
 
 a here-line ending in \
