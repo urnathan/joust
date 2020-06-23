@@ -28,7 +28,10 @@
 #if JOUST_BACKTRACE
 #include <execinfo.h>
 #endif
+#ifdef __linux__
+// Used for segv stack probing
 #include <ucontext.h>
+#endif
 #include <unistd.h>
 
 #if HAVE_BFD_H
@@ -297,6 +300,7 @@ char *Binfo::Demangle () noexcept
 [[gnu::optimize ("-fno-omit-frame-pointer")]]
 void SignalHandler (int sig) noexcept
 {
+#ifdef __linux__
   static volatile bool stack_overflow = false;
 
   if (sig == SIGSEGV)
@@ -335,6 +339,7 @@ void SignalHandler (int sig) noexcept
 #define UCTX_GET_SP(UCTX) ((UCTX)->uc_mcontext.gp_regs[1])
 #define UCTX_SET_PC(UCTX,PC) ((UCTX)->uc_mcontext.gp_regs[32] = (PC))
 #else
+	// Unknown layout
 	frame = 0;
 #define UCTX_GET_SP(UCTX) (void (UCTX),0)
 #define UCTX_SET_PC(UCTX,PC) (void (UCTX),void (PC))
@@ -370,6 +375,10 @@ void SignalHandler (int sig) noexcept
 #undef UCTX_SET_PC
 #undef UCTX_GET_SP
     }
+#else
+  // No probing
+  bool const stack_overflow = false;
+#endif
 
   Binfo binfo;
 #if HAVE_BFD_H && JOUST_BACKTRACE && JOUST_CHECKING
