@@ -1,5 +1,5 @@
-RUN: ezio -i $srcdir/$src $src
-RUN: | ezio -p COM -p OUT $src |& ezio -p COM -p ERR $src
+RUN: ezio -i $testdir//$test $test
+RUN: | ezio -p COM -p OUT $test |& ezio -p COM -p ERR $test
 
 LABEL checking
 

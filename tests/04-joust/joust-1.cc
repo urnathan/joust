@@ -1,7 +1,7 @@
 
 // RUN: $subdir$stem >$tmp
 // RUN: <$tmp
-// RUN: ezio -p HELP $src
+// RUN: ezio -p HELP $test
 // HELP: Usage: $stem [options]
 // HELP-NEXT: Inline
 // HELP-NEXT: Nested
@@ -12,35 +12,35 @@
 
 // RUN-REQUIRE: $subdir$stem --backtraced
 // RUN-REQUIRE: $subdir$stem --demangled
-// RUN-SIGNAL:ABRT $subdir$stem --inline |& ezio -p INLINE1 -p FATAL $src
+// RUN-SIGNAL:ABRT $subdir$stem --inline |& ezio -p INLINE1 -p FATAL $test
 // INLINE1-OPTION: matchSol
 // INLINE1: $stem: burn it all down
 // INLINE1-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} Joust::HCF (char const *,
-// INLINE1-NEXT: 01-0x{:[0-9a-f]+} tests/$src:{:[0-9]+} {:(main)|(InvokeHCF)}
-// INLINE1-NEXT: 01{:(.1)|(-0x[0-9a-f]+)} tests/$src:{:[0-9]+} main
+// INLINE1-NEXT: 01-0x{:[0-9a-f]+} tests/$test:{:[0-9]+} {:(main)|(InvokeHCF)}
+// INLINE1-NEXT: 01{:(.1)|(-0x[0-9a-f]+)} tests/$test:{:[0-9]+} main
 
 // RUN-REQUIRE: $subdir$stem --backtraced
 // RUN-REQUIRE:! $subdir$stem --demangled
-// RUN-SIGNAL:ABRT $subdir$stem --inline |& ezio -p INLINE2 -p FATAL $src
+// RUN-SIGNAL:ABRT $subdir$stem --inline |& ezio -p INLINE2 -p FATAL $test
 // INLINE2: ^$stem: burn it all down
 // INLINE2-NEXT: ^00-0x{:[0-9a-f]+} $subdir$stem({:[^)]*})
 // INLINE2: (main
 
 // RUN-REQUIRE: $subdir$stem --backtraced
 // RUN-REQUIRE: $subdir$stem --demangled
-// RUN-SIGNAL:ABRT $subdir$stem --nested |& ezio -p NESTED1 -p FATAL $src
+// RUN-SIGNAL:ABRT $subdir$stem --nested |& ezio -p NESTED1 -p FATAL $test
 // NESTED1-OPTION: matchSol
 // NESTED1: $stem: go boom
 // NESTED1-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} Joust::HCF (char const *,
-// NESTED1-NEXT: 01-0x{:[0-9a-f]+} tests/$src:{:[0-9]+} NestedHCF (int)
-// NESTED1-NEXT: 02-0x{ret:[0-9a-f]+} tests/$src:{:[0-9]+} NestedHCF (int)
-// NESTED1-NEXT: 03-0x{:$ret} tests/$src:{:[0-9]+} NestedHCF (int)
-// NESTED1-NEXT: 04-0x{:$ret} tests/$src:{:[0-9]+} NestedHCF (int)
-// NESTED1-NEXT: 05-0x{:[0-9a-f]+} tests/$src:{:[0-9]+} main
+// NESTED1-NEXT: 01-0x{:[0-9a-f]+} tests/$test:{:[0-9]+} NestedHCF (int)
+// NESTED1-NEXT: 02-0x{ret:[0-9a-f]+} tests/$test:{:[0-9]+} NestedHCF (int)
+// NESTED1-NEXT: 03-0x{:$ret} tests/$test:{:[0-9]+} NestedHCF (int)
+// NESTED1-NEXT: 04-0x{:$ret} tests/$test:{:[0-9]+} NestedHCF (int)
+// NESTED1-NEXT: 05-0x{:[0-9a-f]+} tests/$test:{:[0-9]+} main
 
 // RUN-REQUIRE: $subdir$stem --backtraced
 // RUN-REQUIRE:! $subdir$stem --demangled
-// RUN-SIGNAL:ABRT $subdir$stem --nested |& ezio -p NESTED2 -p FATAL $src
+// RUN-SIGNAL:ABRT $subdir$stem --nested |& ezio -p NESTED2 -p FATAL $test
 // NESTED2: ^$stem: go boom
 // NESTED2-NEXT: ^00-0x{:[0-9a-f]+} $subdir$stem({:[^)]*})
 

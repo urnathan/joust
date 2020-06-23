@@ -1,11 +1,11 @@
-RUN: kratos -p INNER1 $src | ezio -p COMMON1 -p OUT1 $src
-RUN: |& ezio -p COMMON1 -p ERR1 $src
+RUN: kratos -p INNER1 $test | ezio -p COMMON1 -p OUT1 $test
+RUN: |& ezio -p COMMON1 -p ERR1 $test
 
 RUN-END:
 
 INNER1: echo bob
 INNER1: |& cat
 
-COMMON1: ERROR: {:$src:[0-9]+}:# Unexpected stdout: echo bob
+COMMON1: ERROR: {:$test:[0-9]+}:# Unexpected stdout: echo bob
 ERR1-NEXT: ^bob$
-COMMON1-NEXT: PASS: {:$src:[0-9]+}:RUN echo
+COMMON1-NEXT: PASS: {:$test:[0-9]+}:RUN echo

@@ -1,8 +1,8 @@
 first
 
-RUN: ezio -i $srcdir$src $src
-RUN: | ezio -p OUT $src
-RUN: |& ezio -p OUT -p ERR $src
+RUN: ezio -i $testdir/$test $test
+RUN: | ezio -p OUT $test
+RUN: |& ezio -p OUT -p ERR $test
 RUN-END:
 
 CHECK-NEXT: first
@@ -12,11 +12,11 @@ CHECK-NEXT: $EOF
 CHECK-END:
 
 ERR: 1:first
-OUT: PASS: $src:{:[0-9]+}:NEXT  first
+OUT: PASS: $test:{:[0-9]+}:NEXT  first
 ERR: 2:
-OUT: PASS: $src:{:[0-9]+}:NEXT  {:\^\$}
+OUT: PASS: $test:{:[0-9]+}:NEXT  {:\^\$}
 ERR: ^{:[0-9]+}:last
-OUT: PASS: $src:{:[0-9]+}:LABEL  ^last
-OUT: PASS: $src:{:[0-9]+}:NEXT  ${}EOF
+OUT: PASS: $test:{:[0-9]+}:LABEL  ^last
+OUT: PASS: $test:{:[0-9]+}:NEXT  ${}EOF
 
 last

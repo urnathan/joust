@@ -35,29 +35,29 @@ bool Symbols::Define (std::string_view const &define)
 	      std::string_view (val, define.end ()));
 }
 
-// src=$srcdir$srcFile
-// stem=$(basename -s .* $srcFile)
-// subdir=$(dir $srcFile)
-// tmp=${src:/=-}.TMPNAM
+// test=$testFile
+// stem=$(basename -s .* $testFile)
+// subdir=$(dir $testFile)
+// tmp=${test:/=-}.TMPNAM
 std::string Symbols::Origin (char const *s)
 {
-  std::string_view srcFile (s);
+  std::string_view testFile (s);
 
-  Set ("src", srcFile);
+  Set ("test", testFile);
 
-  auto slash = srcFile.find_last_of ('/');
-  if (slash == srcFile.npos)
+  auto slash = testFile.find_last_of ('/');
+  if (slash == testFile.npos)
     slash = 0;
   else
     slash++;
-  Set ("subdir", srcFile.substr (0, slash));
+  Set ("subdir", testFile.substr (0, slash));
 
-  auto dot = srcFile.find_last_of ('.');
-  if (dot == srcFile.npos || dot < slash)
-    dot = srcFile.size ();
-  Set ("stem", srcFile.substr (slash, dot - slash));
+  auto dot = testFile.find_last_of ('.');
+  if (dot == testFile.npos || dot < slash)
+    dot = testFile.size ();
+  Set ("stem", testFile.substr (slash, dot - slash));
 
-  std::string tmp (srcFile);
+  std::string tmp (testFile);
   for (size_t pos = 0;;)
     {
       pos = tmp.find_first_of ('/', pos);
@@ -69,12 +69,16 @@ std::string Symbols::Origin (char const *s)
   Set ("tmp", tmp);
 
   std::string path;
-  std::string srcdir ("srcdir");
-  if (auto *sdir = Get (srcdir))
-    path.append (*sdir);
+  std::string testdir ("testdir");
+  if (auto *tdir = Get (testdir))
+    path.append (*tdir);
   else
-    Set (srcdir, "");
-  path.append (srcFile);
+    {
+      Set (testdir, ".");
+      path.append (".");
+    }
+  path.append ("/");
+  path.append (testFile);
 
   return path;
 }

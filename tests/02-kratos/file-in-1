@@ -1,12 +1,12 @@
-RUN: kratos -p INNER1 $src | ezio -p COMMON1 -p OUT1 $src
-RUN: |& ezio -p COMMON1 -p ERR1 $src
+RUN: kratos -p INNER1 $test | ezio -p COMMON1 -p OUT1 $test
+RUN: |& ezio -p COMMON1 -p ERR1 $test
 
-RUN:! kratos -p INNER2 $src | ezio -p OUT2 $src
-RUN: |& ezio -p ERR2 $src
+RUN:! kratos -p INNER2 $test | ezio -p OUT2 $test
+RUN: |& ezio -p ERR2 $test
 
 RUN-END:
 
-INNER1: <$srcdir$src
+INNER1: <$testdir/$test
 INNER1: cat
 
 INNER1-END:
@@ -19,7 +19,7 @@ INNER2-REQUIRE: true
 
 INNER2-END:
 
-ERR1: {:$src}:{:[0-9]+} in<
+ERR1: {:$test}:{:[0-9]+} in<
 ERR1-NEXT: RUN: cat
 
 OUT1-NEXT: RUN: kratos -p INNER1
@@ -27,7 +27,7 @@ OUT1: INNER1: <
 OUT1-NEXT: INNER1: cat
 
 COMMON1-OPTION: matchSol
-COMMON1: PASS: {:$src}:{:[0-9]+}:RUN cat
+COMMON1: PASS: {:$test}:{:[0-9]+}:RUN cat
 
 OUT2-NEXT: $EOF
 

@@ -1,15 +1,15 @@
 # Test cpu limit
 
-# RUN: kratos -Dcpulimit=1 -p INNER $src
-# RUN: | ezio -p OUT $src |& ezio -p OUT -p ERR $src
+# RUN: kratos -Dcpulimit=1 -p INNER $test
+# RUN: | ezio -p OUT $test |& ezio -p OUT -p ERR $test
 # RUN-END:
 
-# INNER: $SHELL $srcdir$src
+# INNER: $SHELL $testdir/$test
 # INNER-END:
 
-# ERR: $src:{:[0-9]+} RUN:  zsh $srcdir$src
+# ERR: $test:{:[0-9]+} RUN:  zsh $testdir/$test
 # ERR-NEXT: zsh exited with signal 9
-# OUT-NEXT: FAIL: $src:{:[0-9]+}:RUN zsh
+# OUT-NEXT: FAIL: $test:{:[0-9]+}:RUN zsh
 # OUT-NEXT: $EOF
 
 # eat cpu

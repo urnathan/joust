@@ -1,8 +1,8 @@
-// RUN:1 $subdir$stem |& ezio -p NEW $src
+// RUN:1 $subdir$stem |& ezio -p NEW $test
 // NEW: fatal: out of memory
 // NEW-END:
 
-// RUN-SIGNAL:ABRT $subdir$stem -m |& ezio -p MAP $src
+// RUN-SIGNAL:ABRT $subdir$stem -m |& ezio -p MAP $test
 // MAP: Segmentation fault
 // MAP-END:
 

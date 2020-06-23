@@ -1,4 +1,4 @@
-RUN:1 kratos -p TST $src | ezio -p OUT $src |& ezio -p OUT -p ERR $src
+RUN:1 kratos -p TST $test | ezio -p OUT $test |& ezio -p OUT -p ERR $test
 RUN-END:
 
 TST: not*a*file
@@ -15,18 +15,18 @@ TST: not*a*file >out
 TST: not*a*file >out
 TST: |& cat
 
-ERR: $src:4 RUN: 'not*a*file'
+ERR: $test:4 RUN: 'not*a*file'
 ERR-NEXT: error: failed to spawn process
-OUT: PASS: $src:{:[0-9]+}:RUN not*a*file
-ERR: $src:6 RUN: 'not*a*file'
+OUT: PASS: $test:{:[0-9]+}:RUN not*a*file
+ERR: $test:6 RUN: 'not*a*file'
 ERR: error: failed to spawn process
-OUT: PASS: $src:{:[0-9]+}:RUN not*a*file
-ERR: $src:9 RUN: 'not*a*file'
+OUT: PASS: $test:{:[0-9]+}:RUN not*a*file
+ERR: $test:9 RUN: 'not*a*file'
 ERR: error: failed to spawn process
-OUT: PASS: $src:{:[0-9]+}:RUN not*a*file
-ERR: $src:13 RUN: 'not*a*file'
+OUT: PASS: $test:{:[0-9]+}:RUN not*a*file
+ERR: $test:13 RUN: 'not*a*file'
 ERR: error: failed to spawn process
-OUT: PASS: $src:{:[0-9]+}:RUN not*a*file
-ERR: $src:15 RUN: 'not*a*file'
+OUT: PASS: $test:{:[0-9]+}:RUN not*a*file
+ERR: $test:15 RUN: 'not*a*file'
 ERR: error: failed to spawn process
-OUT: PASS: $src:{:[0-9]+}:RUN not*a*file
+OUT: PASS: $test:{:[0-9]+}:RUN not*a*file

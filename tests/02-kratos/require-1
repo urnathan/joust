@@ -1,23 +1,23 @@
 
-RUN: kratos -p INNER $src | ezio -p OUT $src |& ezio -p ERR $src
-OUT-NEXT:UNSUPPORTED: $src:{:[0-9]+}:REQUIRE false
-OUT-NEXT:UNSUPPORTED: $src:{:[0-9]+}:RUN false
-OUT-NEXT:PASS: $src:{:[0-9]+}:RUN true
-OUT-NEXT:PASS: $src:{:[0-9]+}:REQUIRE ! false
-OUT-NEXT:PASS: $src:{:[0-9]+}:RUN true
+RUN: kratos -p INNER $test | ezio -p OUT $test |& ezio -p ERR $test
+OUT-NEXT:UNSUPPORTED: $test:{:[0-9]+}:REQUIRE false
+OUT-NEXT:UNSUPPORTED: $test:{:[0-9]+}:RUN false
+OUT-NEXT:PASS: $test:{:[0-9]+}:RUN true
+OUT-NEXT:PASS: $test:{:[0-9]+}:REQUIRE ! false
+OUT-NEXT:PASS: $test:{:[0-9]+}:RUN true
 OUT-NEXT: $EOF
 
-ERR:$src:{:[0-9]+} REQUIRE: false
-ERR-NEXT:UNSUPPORTED: $src:{:[0-9]+}:REQUIRE false
-ERR-NEXT:UNSUPPORTED: $src:{:[0-9]+}:RUN false
+ERR:$test:{:[0-9]+} REQUIRE: false
+ERR-NEXT:UNSUPPORTED: $test:{:[0-9]+}:REQUIRE false
+ERR-NEXT:UNSUPPORTED: $test:{:[0-9]+}:RUN false
 
-ERR-LABEL:$src:{:[0-9]+} RUN: true
+ERR-LABEL:$test:{:[0-9]+} RUN: true
 
-ERR-LABEL:$src:{:[0-9]+} REQUIRE:! false
-ERR-NEXT:PASS: $src:{:[0-9]+}:REQUIRE ! false
+ERR-LABEL:$test:{:[0-9]+} REQUIRE:! false
+ERR-NEXT:PASS: $test:{:[0-9]+}:REQUIRE ! false
 
-ERR-LABEL:$src:{:[0-9]+} RUN: true
-ERR-NEXT:PASS: $src:{:[0-9]+}:RUN true
+ERR-LABEL:$test:{:[0-9]+} RUN: true
+ERR-NEXT:PASS: $test:{:[0-9]+}:RUN true
 ERR-NEXT: $EOF
 
 INNER-REQUIRE: false

@@ -2,14 +2,14 @@
 cat >/dev/null
 exit 0
 
-RUN: kratos -p INNER1 $src | ezio -p COMMON1 -p OUT1 $src
-RUN: |& ezio -p COMMON1 -p ERR1 $src
+RUN: kratos -p INNER1 $test | ezio -p COMMON1 -p OUT1 $test
+RUN: |& ezio -p COMMON1 -p ERR1 $test
 
-RUN: kratos -p INNER2 $src | ezio -p COMMON2 -p OUT2 $src
-RUN: |& ezio -p COMMON2 -p ERR2 $src
+RUN: kratos -p INNER2 $test | ezio -p COMMON2 -p OUT2 $test
+RUN: |& ezio -p COMMON2 -p ERR2 $test
 
-RUN: kratos -p INNER3 $src | ezio -p COMMON3 -p OUT3 $src
-RUN: |& ezio -p COMMON3 -p ERR3 $src
+RUN: kratos -p INNER3 $test | ezio -p COMMON3 -p OUT3 $test
+RUN: |& ezio -p COMMON3 -p ERR3 $test
 
 RUN-END:
 
@@ -19,17 +19,17 @@ INNER1: cat
 
 OUT1-NEXT: here 1
 OUT1-NEXT: here 2
-ERR1: {:$src:[0-9]+} in<<here 1
-ERR1-NEXT: {:$src:[0-9]+} in<<here 2
-ERR1-NEXT: {:$src:[0-9]+} RUN: cat
-COMMON1-NEXT:PASS: {:$src:[0-9]+}:RUN cat
+ERR1: {:$test:[0-9]+} in<<here 1
+ERR1-NEXT: {:$test:[0-9]+} in<<here 2
+ERR1-NEXT: {:$test:[0-9]+} RUN: cat
+COMMON1-NEXT:PASS: {:$test:[0-9]+}:RUN cat
 COMMON1-NEXT:$EOF
 
 INNER2: <<here 3
-INNER2: $SHELL $srcdir$src
-ERR2: {:$src:[0-9]+} in<<here 3
-ERR2-NEXT: {:$src:[0-9]+} RUN: $SHELL $srcdir$src
-COMMON2-NEXT:PASS: {:$src:[0-9]+}:RUN $SHELL
+INNER2: $SHELL $testdir/$test
+ERR2: {:$test:[0-9]+} in<<here 3
+ERR2-NEXT: {:$test:[0-9]+} RUN: $SHELL $testdir/$test
+COMMON2-NEXT:PASS: {:$test:[0-9]+}:RUN $SHELL
 COMMON2-NEXT:$EOF
 
 a here-line ending in \
@@ -41,6 +41,6 @@ OUT3-NEXT: ^here backslash \b \$
 OUT3-NEXT: ^$
 ERR3: in<<here backslash \b \$
 ERR3-NEXT: in<<$
-ERR3-NEXT: {:$src:[0-9]+} RUN: cat
-COMMON3-NEXT:PASS: {:$src:[0-9]+}:RUN cat
+ERR3-NEXT: {:$test:[0-9]+} RUN: cat
+COMMON3-NEXT:PASS: {:$test:[0-9]+}:RUN cat
 COMMON3-NEXT: $EOF

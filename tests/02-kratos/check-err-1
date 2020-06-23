@@ -1,6 +1,6 @@
 # test detect checker error
 
-# RUN:! kratos -p INNER $src | ezio -p OUT $src |& ezio -p ERR -p OUT $src
+# RUN:! kratos -p INNER $test | ezio -p OUT $test |& ezio -p ERR -p OUT $test
 # RUN-END:
 
 # INNER: true 
@@ -12,9 +12,9 @@
 # if I'd implemented the expression capture stuff, we could check
 # the second was not the first
 
-# ERR: $src:{:[78]}: error: 'false' exited with code 1
-# OUT-NEXT: ERROR: $src:6:RUN true
-# ERR-NEXT: $src:{:[78]}: error: 'false' exited with code 1
-# OUT-NEXT: ERROR: $src:6:RUN true
-# OUT-NEXT: PASS: $src:6:RUN true
+# ERR: $test:{:[78]}: error: 'false' exited with code 1
+# OUT-NEXT: ERROR: $test:6:RUN true
+# ERR-NEXT: $test:{:[78]}: error: 'false' exited with code 1
+# OUT-NEXT: ERROR: $test:6:RUN true
+# OUT-NEXT: PASS: $test:6:RUN true
 # OUT-NEXT: $EOF

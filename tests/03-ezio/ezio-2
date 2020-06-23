@@ -1,9 +1,9 @@
 Check capture & expansion
 
-RUN: <$srcdir$src
-RUN: ezio $src
-RUN: | ezio -p OUT $src
-RUN: |& ezio -p OUT -p ERR $src
+RUN: <$testdir/$test
+RUN: ezio $test
+RUN: | ezio -p OUT $test
+RUN: |& ezio -p OUT -p ERR $test
 RUN-END:
 
 2 captures on a line

@@ -2,9 +2,9 @@
 # we feed this file into a sub aloy which invokes the the shell on this file
 # stdout and stderr are then checked via ezio
 
-# RUN: aloy -t $SHELL -g cat -o - $srcdir$src -- $srcdir$src
-# RUN: | ezio -p OUT $src
-# RUN: |& ezio -p ERR $src
+# RUN: aloy -t $SHELL -g cat -o - $testdir/$test -- $testdir/$test
+# RUN: | ezio -p OUT $test
+# RUN: |& ezio -p ERR $test
 
 # we'll invoke the shell on each word here
 echo "$@" >&2

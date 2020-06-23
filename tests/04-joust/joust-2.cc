@@ -1,4 +1,4 @@
-// RUN: $subdir$stem | ezio -p OUT $src |& ezio -p ERR -p OUT $src
+// RUN: $subdir$stem | ezio -p OUT $test |& ezio -p ERR -p OUT $test
 // RUN-END:
 
 // OUT-NEXT: PASS: {file:[^:]+}:{line1:[0-9]+}:test1

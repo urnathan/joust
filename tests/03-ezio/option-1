@@ -1,8 +1,8 @@
 Test option handlng
 
-RUN: <$srcdir$src
-RUN: ezio -p TEST $src
-RUN: | ezio -p COM -p OUT $src |& ezio -p COM -p ERR $src
+RUN: <$testdir/$test
+RUN: ezio -p TEST $test
+RUN: | ezio -p COM -p OUT $test |& ezio -p COM -p ERR $test
 RUN-END:
 
  begin NO
@@ -40,27 +40,27 @@ TEST-NEXT: bob
 
 ERR: begin NO
 ERR-NEXT: begin YES
-COM-NEXT: PASS: $src:{:[0-9]+}:MATCH  begin
+COM-NEXT: PASS: $test:{:[0-9]+}:MATCH  begin
 ERR-NEXT: next YES
-COM-NEXT: PASS: $src:{:[0-9]+}:NEXT  next
+COM-NEXT: PASS: $test:{:[0-9]+}:NEXT  next
 ERR-NEXT: end b
-COM-NEXT: FAIL: $src:{:[0-9]+}:NEXT  end
+COM-NEXT: FAIL: $test:{:[0-9]+}:NEXT  end
 ERR-NEXT: end
-COM-NEXT: PASS: $src:{:[0-9]+}:NEXT  end
+COM-NEXT: PASS: $test:{:[0-9]+}:NEXT  end
 ERR-NEXT: the whole line
-COM-NEXT: FAIL: $src:{:[0-9]+}:NEXT  whole
+COM-NEXT: FAIL: $test:{:[0-9]+}:NEXT  whole
 ERR-NEXT: the whole line
-COM-NEXT: PASS: $src:{:[0-9]+}:NEXT  whole
+COM-NEXT: PASS: $test:{:[0-9]+}:NEXT  whole
 ERR-NEXT: the wholish line
-COM-NEXT: PASS: $src:{:[0-9]+}:NEXT  the wholish line
+COM-NEXT: PASS: $test:{:[0-9]+}:NEXT  the wholish line
 ERR-NEXT: the wholish line
-COM-NEXT: FAIL: $src:{:[0-9]+}:NEXT  the wholish line
+COM-NEXT: FAIL: $test:{:[0-9]+}:NEXT  the wholish line
 ERR-NEXT: the wholish line
-COM-NEXT: PASS: $src:{:[0-9]+}:NEXT  the  wholish  line
+COM-NEXT: PASS: $test:{:[0-9]+}:NEXT  the  wholish  line
 ERR-NEXT: bill
-COM-NEXT: XFAIL: $src:{:[0-9]+}:NEXT  bob
+COM-NEXT: XFAIL: $test:{:[0-9]+}:NEXT  bob
 ERR-NEXT: bob
-COM-NEXT: PASS: $src:{:[0-9]+}:NEXT  bob
+COM-NEXT: PASS: $test:{:[0-9]+}:NEXT  bob
 ERR-NEXT: bob
-COM-NEXT: XPASS: $src:{:[0-9]+}:NEXT  bob
+COM-NEXT: XPASS: $test:{:[0-9]+}:NEXT  bob
 OUT-NEXT: $EOF
