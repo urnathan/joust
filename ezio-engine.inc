@@ -360,11 +360,26 @@ void Engine::Process (char const *file)
 	  len += l;
 	  if (len == alloc)
 	    {
-	      // mremap is linux-specific.  Sue me.
-	      buffer = mremap (buffer, alloc, alloc + 0x10000, MREMAP_MAYMOVE);
-	      if (buffer == MAP_FAILED)
+	      void *ext;
+#ifdef __linux__
+	      // mremap is linux-specific.
+	      ext = mremap (buffer, alloc, alloc * 2, MREMAP_MAYMOVE);
+#else
+	      // Sadly we can't just try mapping exactly at the right
+	      // place, because that'll zap any existing mapping that
+	      // we don't know about (MAP_FIXED_NOREPLACE is also
+	      // linux-specific)
+	      ext = mmap (nullptr, alloc * 2, PROT_READ | PROT_WRITE,
+			  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#endif
+	      if (ext == MAP_FAILED)
 		goto fatal;
-	      alloc += 0x10000;
+#ifndef __linux__
+	      memcpy (ext, buffer, alloc);
+	      munmap (buffer, alloc);
+#endif
+	      buffer = ext;
+	      alloc *= 2;
  	    }
 	}
       while (l);
