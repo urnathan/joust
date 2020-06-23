@@ -23,7 +23,7 @@ std::tuple<pid_t, int> Spawn (int fd_in, int fd_out, int fd_err,
   int pipe_fds[2];
 
   // pipe ends: 0-read from, 1-write to
-  if (pipe2 (pipe_fds, O_CLOEXEC) < 0)
+  if (MakePipe (pipe_fds) < 0)
     err = errno;
   else
     {
@@ -108,5 +108,26 @@ std::tuple<pid_t, int> Spawn (int fd_in, int fd_out, int fd_err,
 
   return res;
 }
+
+#ifndef HAVE_PIPE2
+int MakePipe (int pipes[2])
+{
+  if (pipe (pipes) < 0)
+    // Failed to make the pipes
+    return -1;
+
+  // Initial F_GETFD value is zero
+  if (!fcntl (pipes[0], F_SETFD, FD_CLOEXEC)
+      && !fcntl (pipes[1], F_SETFD, FD_CLOEXEC))
+    // Succeeded in fcntling the ends
+    return 0;
+
+  int err = errno;
+  close (pipes[0]);
+  close (pipes[1]);
+  errno = err;
+  return -1;
+}
+#endif
 
 }

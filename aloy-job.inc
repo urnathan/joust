@@ -111,7 +111,7 @@ bool Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
   for (unsigned ix = 0; ix != 2; ix++)
     {
       int pipe[2];
-      if (pipe2 (pipe, O_CLOEXEC) < 0)
+      if (MakePipe (pipe) < 0)
 	{
 	  err = errno;
 	  goto fail;

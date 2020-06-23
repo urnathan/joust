@@ -361,7 +361,7 @@ void Engine::Process (char const *file)
 	  if (len == alloc)
 	    {
 	      void *ext;
-#ifdef __linux__
+#ifdef HAVE_MREMAP
 	      // mremap is linux-specific.
 	      ext = mremap (buffer, alloc, alloc * 2, MREMAP_MAYMOVE);
 #else
@@ -374,7 +374,7 @@ void Engine::Process (char const *file)
 #endif
 	      if (ext == MAP_FAILED)
 		goto fatal;
-#ifndef __linux__
+#ifndef HAVE_MREMAP
 	      memcpy (ext, buffer, alloc);
 	      munmap (buffer, alloc);
 #endif

@@ -28,7 +28,7 @@
 #if JOUST_BACKTRACE
 #include <execinfo.h>
 #endif
-#ifdef __linux__
+#ifdef HAVE_UCONTEXT_T
 // Used for segv stack probing
 #include <ucontext.h>
 #endif
@@ -300,7 +300,7 @@ char *Binfo::Demangle () noexcept
 [[gnu::optimize ("-fno-omit-frame-pointer")]]
 void SignalHandler (int sig) noexcept
 {
-#ifdef __linux__
+#ifdef HAVE_UCONTEXT_T
   static volatile bool stack_overflow = false;
 
   if (sig == SIGSEGV)

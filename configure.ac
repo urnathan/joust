@@ -31,6 +31,15 @@ AC_CHECK_TOOL([AR],[ar])
 AH_VERBATIM([_GNU_SOURCE],[#define _GNU_SOURCE 1])
 AH_VERBATIM([_FORTIFY_SOURCE],[#undef _FORTIFY_SOURCE])
 
+AC_CHECK_FUNCS([mremap])
+AC_CHECK_FUNCS([pipe2])
+AC_CHECK_FUNCS([epoll_create signalfd])
+if test "$ac_cv_func_epoll_create$ac_cv_func_signalfd" != yesyes ; then
+AC_CHECK_FUNC([pselect],,
+  [AC_MSG_ERROR([neither epoll/signalfd nor pselect found])])
+fi
+AC_CHECK_TYPES([ucontext_t],[],[],[#include <ucontext.h>])
+
 for generated in config.h.in configure ; do
   if test $srcdir/configure.ac -nt $srcdir/$generated ; then
     touch $srcdir/$generated

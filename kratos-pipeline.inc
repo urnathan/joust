@@ -132,7 +132,7 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
       {
 	int pipe[2];
 
-	if (pipe2 (pipe, O_CLOEXEC) < 0)
+	if (MakePipe (pipe) < 0)
 	  {
 	    int err = errno;
 	    cmd.Error () << "cannot create pipe: " << strerror (err);
@@ -187,7 +187,7 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 	{
 	  // pipe ends: 0-read from, 1-write to
 	  int pipe[2];
-	  if (pipe2 (pipe, O_CLOEXEC) < 0)
+	  if (MakePipe (pipe) < 0)
 	    {
 	      int err = errno;
 	      filt.Error () << "cannot create pipe: " << strerror (err);
@@ -252,8 +252,8 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 	  pipe[0][0] = filt.stdin;
 	else
 	  {
-	    if (pipe2 (pipe[0], O_CLOEXEC) < 0
-		|| pipe2 (pipe[1], O_CLOEXEC) < 0)
+	    if (MakePipe (pipe[0]) < 0
+		|| MakePipe (pipe[1]) < 0)
 	      {
 		int err = errno;
 		filt.Error () << "cannot create pipe: " << strerror (err);
