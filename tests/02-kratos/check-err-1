@@ -8,9 +8,13 @@
 # INNER: |& false
 # INNER-END:
 
-# ERR: $src:7: error: 'false' exited with code 1
+# the stdout and stderr output could be in either order
+# if I'd implemented the expression capture stuff, we could check
+# the second was not the first
+
+# ERR: $src:{:[78]}: error: 'false' exited with code 1
 # OUT-NEXT: ERROR: $src:6:RUN true
-# ERR-NEXT: $src:8: error: 'false' exited with code 1
+# ERR-NEXT: $src:{:[78]}: error: 'false' exited with code 1
 # OUT-NEXT: ERROR: $src:6:RUN true
 # OUT-NEXT: PASS: $src:6:RUN true
 # OUT-NEXT: $EOF

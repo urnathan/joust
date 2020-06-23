@@ -79,14 +79,14 @@ AC_MSG_CHECKING([C++ compiler])
 if test "$withval" = "yes" ; then
   AC_MSG_ERROR([NAME not specified])
 elif test "$withval" = "no" ; then
-  AC_MSG_ERROR([Gonna need a c++ compiler, dofus!])
+  AC_MSG_ERROR([Gonna need a c++ compiler!])
 else
   CXX="${withval}"
   AC_MSG_RESULT([$CXX])
 fi)])
 
 AC_DEFUN([JOUST_CXX_20],
-[AC_MSG_CHECKING([whether $CXX supports C++20])
+[AC_MSG_CHECKING([whether $CXX is for C++20])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 [#if __cplusplus <= 201703
 #error "C++20 is required"
@@ -134,6 +134,16 @@ cpp_lib_int_pow2 is __cpp_lib_int_pow2
 AC_MSG_RESULT([yes 🙂]),
 AC_MSG_RESULT([no 🙁])
 AC_MSG_ERROR([C++20 support is too immature]))])
+
+AC_DEFUN([JOUST_LINK_OPT],
+[AC_MSG_CHECKING([adding $1 to linker])
+ORIG_LDFLAGS="$LDFLAGS"
+LDFLAGS+="$1"
+AC_LINK_IFELSE([AC_LANG_PROGRAM([])],
+[AC_MSG_RESULT([ok])],
+[LDFLAGS="$ORIG_LDFLAGS"
+AC_MSG_RESULT([no])])
+unset ORIG_LDFLAGS])
 
 AC_DEFUN([JOUST_BUGURL],
 [AC_MSG_CHECKING([bugurl])

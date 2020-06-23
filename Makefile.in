@@ -43,10 +43,10 @@ INSTALL := $(srcdir)/build-aux/install-sh
 # C++ compiler options
 CXXFLAGS := @CXXFLAGS@
 CXXOPTS := $(CXXFLAGS)
-# Code generation
 ifeq ($(notdir $(firstword $(CXX))),g++)
+# It's GCC, or pretending to be it -- so it better smell like it!
+# Code generation
 CXXOPTS += -fno-enforce-eh-specs
-endif
 CXXOPTS += -fno-stack-protector -fno-threadsafe-statics
 CXXOPTS += -fno-exceptions -fno-rtti
 ifeq ($(filter -fdebug-prefix-map=%,$(CXXOPTS)),)
@@ -63,12 +63,15 @@ ifneq (,$(MLEN))
 CXXOPTS += -fmessage-length=$(MLEN)
 endif
 CXXOPTS += -fdiagnostics-color=always -fno-diagnostics-show-option
+else
+# Add different compiler's options here
+endif
+
 # Config
 CXXOPTS += $(filter-out -DHAVE_CONFIG_H,@DEFS@) -include config.h
 
 # Linker options
-LDFLAGS := @LDFLAGS@ -L .
-LDFLAGS += @ldbacktrace@ -Wl,--no-undefined
+LDFLAGS := @LDFLAGS@ -L . @ldbacktrace@
 LIBS := @LIBS@
 
 # Per-source & per-directory compile flags (warning: recursive)
