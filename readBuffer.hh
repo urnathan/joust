@@ -28,6 +28,11 @@ public:
   {
     return fd >= 0;
   }
+public:
+  int GetFD () const
+  {
+    return fd;
+  }
   void Open (int f)
   {
     fd = f;

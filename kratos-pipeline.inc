@@ -66,6 +66,9 @@ private:
   friend class Parser;
 };
 
+static constexpr unsigned char sigs[] =
+  {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGALRM, SIGTERM};
+
 std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
 {
   {
@@ -111,6 +114,23 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
 
   return s;
 }
+
+#ifndef USE_EPOLL
+// Signals we saw
+volatile unsigned sigs_seen;
+
+void NoteSignal (int signal)
+{
+  for (unsigned ix = sizeof (sigs); ix--;)
+    if (signal == sigs[ix])
+      {
+	sigs_seen = sigs_seen | (1 << ix);
+	break;
+      }
+}
+#endif
+
+// This mucks about with signals, so expects to be single threaded
 
 int Pipeline::Execute (Logger &logger, unsigned const *limits)
 {
@@ -200,32 +220,51 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 	}
     }
 
-  int poll_fd = epoll_create1 (EPOLL_CLOEXEC);
-  Assert (poll_fd >= 0);
-  epoll_event ev;
-
-  // Signal fd and block sigchild 
-  sigset_t sigmask, sigold;
+  // Signals to block
+  sigset_t sigmask, sigorig;
   sigemptyset (&sigmask);
-  static constexpr unsigned char sigs[] =
-    {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGALRM, SIGTERM, 0 };
-  for (unsigned ix = 0; sigs[ix]; ix++)
+  for (unsigned ix = sizeof (sigs); ix--;)
     sigaddset (&sigmask, sigs[ix]);
+#ifdef USE_EPOLL
+  while (sigprocmask (SIG_BLOCK, &sigmask, &sigorig) < 0)
+    Assert (errno == EINTR);
+
+  int poll_fd = epoll_create1 (EPOLL_CLOEXEC);
   int sig_fd = signalfd (-1, &sigmask, SFD_NONBLOCK | SFD_CLOEXEC);
-  Assert (sig_fd >= 0);
-  while (sigprocmask (SIG_BLOCK, &sigmask, &sigold) < 0)
+  Assert (poll_fd >= 0 && sig_fd >= 0);
+
+  {
+    epoll_event ev;
+    ev.events = EPOLLIN;
+    ev.data.u64 = 0;
+    while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
+      Assert (errno == EINTR);
+    if (here_fd >= 0)
+      {
+	ev.events = EPOLLOUT;
+	ev.data.u64 = 1;
+	while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, here_fd, &ev) < 0)
+	  Assert (errno == EINTR);
+      }
+  }
+#else
+  while (sigprocmask (SIG_UNBLOCK, &sigmask, &sigorig) < 0)
     Assert (errno == EINTR);
-  ev.events = EPOLLIN;
-  ev.data.u64 = 0;
-  while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
+  sigset_t sigselect;
+  while (sigprocmask (SIG_BLOCK, &sigmask, &sigselect) < 0)
     Assert (errno == EINTR);
-  if (here_fd >= 0)
+
+  // Install signal handlers
+  struct sigaction old_actions[sizeof (sigs)];
+  for (unsigned ix = sizeof (sigs); ix--;)
     {
-      ev.events = EPOLLOUT;
-      ev.data.u64 = 1;
-      while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, here_fd, &ev) < 0)
-	Assert (errno == EINTR);
+      struct sigaction action;
+      action.sa_handler = NoteSignal;
+      sigfillset (&action.sa_mask);
+      action.sa_flags = 0;
+      sigaction (sigs[ix], &action, &old_actions[ix]);
     }
+#endif
 
   // We must buffer the (up to) 4 streams from the 2 filters,
   // otherwise the output can be randomly intermixed, and that'll be
@@ -271,13 +310,18 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 	for (unsigned io = 0; io != 2; io++)
 	  if (pipe[io][0] >= 0)
 	    {
-	      unsigned strix = ix * 2 - 2 + io;
-	      streams[strix].Open (pipe[io][0]);
+	      unsigned strix = (ix - 1) * 2 + io;
+	      int pipe_fd = pipe[io][0];
+
+	      streams[strix].Open (pipe_fd);
 	      num_streams++;
+#ifdef USE_EPOLL
+	      epoll_event ev;
 	      ev.events = EPOLLIN;
 	      ev.data.u64 = strix | 4;
-	      if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe[io][0], &ev) < 0)
+	      if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe_fd, &ev) < 0)
 		Unreachable ();
+#endif
 	    }
       }
   }
@@ -297,10 +341,39 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
   int exit_code = -1;
   while (subtasks || num_streams || here_fd >= 0)
     {
+      unsigned seen_sig = 0;
+      int count;
+#ifdef USE_EPOLL
       constexpr int max_events = 20;
       epoll_event events[max_events];
 
-      int count = epoll_wait (poll_fd, events, max_events, -1);
+      count = epoll_wait (poll_fd, events, max_events, -1);
+#else
+      fd_set rd_set;
+      fd_set wr_set;
+      int hwm = 0;
+
+      FD_ZERO (&rd_set);
+      FD_ZERO (&wr_set);
+
+      if (here_fd >= 0)
+	{
+	  FD_SET (here_fd, &wr_set);
+	  hwm = here_fd + 1;
+	}
+      
+      for (unsigned ix = 4; ix--;)
+	if (streams[ix].IsOpen ())
+	  {
+	    int fd = streams[ix].GetFD ();
+	    FD_SET (fd, &rd_set);
+	    if (fd >= hwm)
+	      hwm = fd + 1;
+	  }
+      count = pselect (hwm, &rd_set, &wr_set, nullptr, nullptr, &sigselect);
+      seen_sig = sigs_seen;
+      sigs_seen = 0;
+#endif
       if (count < 0)
 	{
 	  count = 0;
@@ -308,158 +381,225 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 	}
 
       for (int ix = 0; ix != count; ix++)
-	switch (unsigned cookie = unsigned (events[ix].data.u32))
-	  {
-	  default:
+	{
+	  unsigned cookie;
+
+#ifdef USE_EPOLL
+	  cookie = unsigned (events[ix].data.u32);
+#else
+	  while (hwm--)
 	    {
-	      unsigned stream = cookie & 3;
-	      Assert (stream < 4 && num_streams);
-	      if (int done = streams[stream].Read ())
+	      if (FD_ISSET (hwm, &wr_set))
 		{
-		  if (done >= 0)
-		    {
-		      auto *cmd = &commands[1 + stream / 2];
-		      unsigned iostr = stream & 1;
-		      if (cmd->words.empty ())
-			{
-			  cmd = &commands[0];
-			  iostr = stream >> 1;
-			}
-
-		      cmd->Error () << "failed reading "
-				    << cmd->words.front () << io_streams[iostr]
-				    << strerror (done);
-		      Result (logger, Logger::ERROR);
-		    }
-		  int fd = streams[stream].Close ();
-
-		  epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
-		  close (fd);
-		  num_streams--;
+		  cookie = 1; // here_doc
+		  break;
 		}
-	    }
-	    break;
-
-	  case 1:
-	    {
-	      // Here doc
-	      size_t limit = src.size () - here_pos;
-	      ssize_t wrote = write (here_fd, src.data () + here_pos, limit);
-	      if (wrote < 0)
+	      else if (FD_ISSET (hwm, &rd_set))
 		{
-		  int err = errno;
-		  if (err != EINTR && err != EAGAIN)
-		    {
-		      commands[0].Error () << "failed writing here doc at byte "
-					   << here_pos << " (" << limit
-					   << " remain): " << strerror (err);
-		      Result (logger, Logger::ERROR);
-		      here_pos = src.size ();
-		    }
-		}
-	      else
-		here_pos += wrote;
-	      if (here_pos == src.size ())
-		{
-		  epoll_ctl (poll_fd, EPOLL_CTL_DEL, here_fd, nullptr);
-		  close (here_fd);
-		  here_fd = -1;
-		}
-	    }
-	    break;
-
-	  case 0:
-	    {
-	      // Signal
-	      signalfd_siginfo sig;
-	      ssize_t bytes = read (sig_fd, &sig, sizeof (sig));
-	      Assert (bytes == sizeof (sig));
-
-	      switch (sig.ssi_signo)
-		{
-		case SIGCHLD:
-		  // Get child status.  There could be multiple children
-		  // to deal with.
-		  {
-		    int status;
-		    while (pid_t child = waitpid (-1, &status, WNOHANG))
+		  for (unsigned stream = 4; stream--;)
+		    if (streams[stream].IsOpen ()
+			&& streams[stream].GetFD () == hwm)
 		      {
-			if (child == pid_t (-1))
-			  {
-			    Assert (!subtasks);
-			    break;
-			  }
-
-			for (auto iter = commands.begin ();
-			     iter != commands.end (); ++iter)
-			  if (child == iter->pid)
-			    {
-			      bool is_sig = false;
-			      int ex = 0;
-			      if (WIFEXITED (status))
-				ex = WEXITSTATUS (status);
-			      else if (WIFSIGNALED (status))
-				{
-				  ex = WTERMSIG (status);
-				  is_sig = true;
-				}
-			      else
-				goto found;
-
-			      iter->pid = -1;
-			      subtasks--;
-			      if (iter == commands.begin ())
-				{
-				  if (limits)
-				    setitimer (ITIMER_REAL, &timeout, nullptr);
-				  signalled = is_sig;
-				  exit_code = ex;
-				}
-			      else if (is_sig || ex)
-				{
-				  iter->Error ()
-				    << '\'' << iter->words.front ()
-				    << "' exited with "
-				    << (is_sig ? "signal " : "code ") << ex;
-				  Result (logger, Logger::ERROR);
-				}
-			      goto found;
-			    }
-			Unreachable ();
-		      found:;
+			cookie = stream | 4;
+			goto found_fd;
 		      }
-		  }
-		  break;
-
-		case SIGHUP:
-		case SIGINT:
-		case SIGQUIT:
-		case SIGTERM:
-		  stopped = true;
-		  commands.front ().Stop (sig.ssi_signo);
-		  break;
-
-		case SIGALRM:
-		  commands.front ().Stop (SIGTERM);
-		  commands.front ().Error ()
-		    << "TIMEOUT after " << limits[PL_HWM] << " seconds";
-		  Result (logger, Logger::ERROR);
-		  break;
-
-		case SIGPIPE:
-		  break;
-
-		default:
 		  Unreachable ();
 		}
 	    }
-	    break;
-	  }
+	found_fd:;
+	  Assert (hwm >= 0);
+#endif
+	  switch (cookie)
+	    {
+	    default:
+	      {
+		unsigned stream = cookie & 3;
+		Assert (stream < 4 && num_streams);
+		if (int done = streams[stream].Read ())
+		  {
+		    if (done >= 0)
+		      {
+			auto *cmd = &commands[1 + stream / 2];
+			unsigned iostr = stream & 1;
+			if (cmd->words.empty ())
+			  {
+			    cmd = &commands[0];
+			    iostr = stream >> 1;
+			  }
+
+			cmd->Error () << "failed reading "
+				      << cmd->words.front () << io_streams[iostr]
+				      << strerror (done);
+			Result (logger, Logger::ERROR);
+		      }
+		    int fd = streams[stream].Close ();
+#ifdef USE_EPOLL
+		    // FIXME: Do I need this?  won't the fd be removed
+		    // from epoll by the close?  This isn't the only
+		    // case of that
+		    epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
+#endif
+		    close (fd);
+		    num_streams--;
+		  }
+	      }
+	      break;
+
+	    case 1:
+	      {
+		// Here doc
+		size_t limit = src.size () - here_pos;
+		ssize_t wrote = write (here_fd, src.data () + here_pos, limit);
+		if (wrote < 0)
+		  {
+		    int err = errno;
+		    if (err != EINTR && err != EAGAIN)
+		      {
+			commands[0].Error ()
+			  << "failed writing here doc at byte "
+			  << here_pos << " (" << limit
+			  << " remain): " << strerror (err);
+			Result (logger, Logger::ERROR);
+			here_pos = src.size ();
+		      }
+		  }
+		else
+		  here_pos += wrote;
+		if (here_pos == src.size ())
+		  {
+#ifdef USE_EPOLL
+		    epoll_ctl (poll_fd, EPOLL_CTL_DEL, here_fd, nullptr);
+#endif
+		    close (here_fd);
+		    here_fd = -1;
+		  }
+	      }
+	      break;
+
+	    case 0:
+	      {
+		// Signal
+#ifdef USE_EPOLL
+		signalfd_siginfo sig;
+		ssize_t bytes = read (sig_fd, &sig, sizeof (sig));
+		Assert (bytes == sizeof (sig));
+		seen_sig = sig.ssi_signo;
+#endif
+		break;
+	      }
+	      break;
+	    }
+	}
+
+      if (seen_sig)
+	{
+	  int signo;
+#ifdef USE_EPOLL
+	  signo = seen_sig;
+#else
+	  unsigned ix = sizeof (sigs);
+
+	another_signal:
+	  while (!(seen_sig & (1 << --ix)))
+	    continue;
+	  seen_sig ^= 1 << ix;
+	  signo = sigs[ix];
+#endif
+
+	  switch (signo)
+	    {
+	    case SIGCHLD:
+	      // Get child status.  There could be multiple children
+	      // to deal with.
+	      {
+		int status;
+		while (pid_t child = waitpid (-1, &status, WNOHANG))
+		  {
+		    if (child == pid_t (-1))
+		      {
+			Assert (!subtasks);
+			break;
+		      }
+
+		    for (auto iter = commands.begin ();
+			 iter != commands.end (); ++iter)
+		      if (child == iter->pid)
+			{
+			  bool is_sig = false;
+			  int ex = 0;
+			  if (WIFEXITED (status))
+			    ex = WEXITSTATUS (status);
+			  else if (WIFSIGNALED (status))
+			    {
+			      ex = WTERMSIG (status);
+			      is_sig = true;
+			    }
+			  else
+			    goto found_pid;
+
+			  iter->pid = -1;
+			  subtasks--;
+			  if (iter == commands.begin ())
+			    {
+			      if (limits)
+				setitimer (ITIMER_REAL, &timeout, nullptr);
+			      signalled = is_sig;
+			      exit_code = ex;
+			    }
+			  else if (is_sig || ex)
+			    {
+			      iter->Error ()
+				<< '\'' << iter->words.front ()
+				<< "' exited with "
+				<< (is_sig ? "signal " : "code ") << ex;
+			      Result (logger, Logger::ERROR);
+			    }
+			  goto found_pid;
+			}
+		    Unreachable ();
+		  found_pid:;
+		  }
+	      }
+	      break;
+
+	    case SIGHUP:
+	    case SIGINT:
+	    case SIGQUIT:
+	    case SIGTERM:
+	      stopped = true;
+	      commands.front ().Stop (signo);
+	      break;
+
+	    case SIGALRM:
+	      commands.front ().Stop (SIGTERM);
+	      commands.front ().Error ()
+		<< "TIMEOUT after " << limits[PL_HWM] << " seconds";
+	      Result (logger, Logger::ERROR);
+	      break;
+
+	    case SIGPIPE:
+	      break;
+
+	    default:
+	      Unreachable ();
+	    }
+#ifndef USE_EPOLL
+	  if (seen_sig)
+	    goto another_signal;
+#endif
+	}
     }
 
+#ifdef USE_EPOLL
   close (poll_fd);
   close (sig_fd);
-  sigprocmask (SIG_SETMASK, &sigold, nullptr);
+#else
+  // Restore signal handlers
+  for (unsigned ix = sizeof (sigs); ix--;)
+    sigaction (sigs[ix], &old_actions[ix], nullptr);
+#endif
+  while (sigprocmask (SIG_SETMASK, &sigorig, nullptr) < 0)
+    Assert (errno == EINTR);
 
   for (unsigned ix = 1; ix != commands.size (); ix++)
     {

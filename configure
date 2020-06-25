@@ -3776,7 +3776,7 @@ _ACEOF
 fi
 done
 
-for ac_func in epoll_create signalfd
+for ac_func in epoll_create1 signalfd
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_cxx_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -3788,8 +3788,12 @@ _ACEOF
 fi
 done
 
-if test "$ac_cv_func_epoll_create$ac_cv_func_signalfd" != yesyes ; then
-ac_fn_cxx_check_func "$LINENO" "pselect" "ac_cv_func_pselect"
+
+if test "$ac_cv_func_epoll_create1$ac_cv_func_signalfd" = yesyes ; then
+  $as_echo "#define USE_EPOLL 1" >>confdefs.h
+
+else
+  ac_fn_cxx_check_func "$LINENO" "pselect" "ac_cv_func_pselect"
 if test "x$ac_cv_func_pselect" = xyes; then :
 
 else

@@ -28,9 +28,13 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
+#ifdef USE_EPOLL
 #include <sys/epoll.h>
-#include <sys/fcntl.h>
 #include <sys/signalfd.h>
+#else
+#include <sys/select.h>
+#endif
+#include <sys/fcntl.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 

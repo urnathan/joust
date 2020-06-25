@@ -32,8 +32,14 @@ private:
   int make_in = -1, make_out = -1;
 
 private:
+#ifdef USE_EPOLL
   int sig_fd = -1;
   int poll_fd = -1;
+#else
+  static int const poll_fd = -1;
+  sigset_t sigselect;
+  struct sigaction *old_actions = nullptr;
+#endif
 
 private:
   bool stopping = false;
@@ -61,7 +67,7 @@ public:
 	     int argc, char const *const argv[]);
   void Fini (std::ostream * = nullptr);
   void Stop (int sig);
-  bool Process ();
+  void Process ();
   void Retire ();
   void Fini (Job const &, bool is_generator = false);
   void Spawn ();
@@ -76,7 +82,7 @@ public:
 
 private:
   void ReadGenerator ();
-  void ReadSignal ();
+  void HandleSignal (int sig);
 
 private:
   void StopMake (int);
@@ -89,6 +95,9 @@ private:
 };
 
 #else
+
+static constexpr unsigned char sigs[] =
+  {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGTERM};
 
 Engine::Engine (unsigned limit,
 		std::ostream &sum_, std::ostream &log_)
@@ -175,6 +184,21 @@ std::ostream &operator<< (std::ostream &s, Engine const &self)
   return s;
 }
 
+#ifndef USE_EPOLL
+// Signals we saw
+volatile unsigned sigs_seen;
+
+void NoteSignal (int signal)
+{
+  for (unsigned ix = sizeof (sigs); ix--;)
+    if (signal == sigs[ix])
+      {
+	sigs_seen = sigs_seen | (1 << ix);
+	break;
+      }
+}
+#endif
+
 void Engine::Init (char const *tester, char const *genner,
 		   int argc, char const *const argv[])
 {
@@ -203,14 +227,14 @@ void Engine::Init (char const *tester, char const *genner,
   // Signal fd and block sigchild 
   sigset_t sigmask;
   sigemptyset (&sigmask);
-  static constexpr unsigned char sigs[] =
-    {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGTERM, 0 };
-  for (unsigned ix = 0; sigs[ix]; ix++)
+  for (unsigned ix = sizeof (sigs); ix--;)
     sigaddset (&sigmask, sigs[ix]);
+#ifdef USE_EPOLL
+  while (sigprocmask (SIG_BLOCK, &sigmask, nullptr) < 0)
+    Assert (errno == EINTR);
+
   sig_fd = signalfd (-1, &sigmask, SFD_NONBLOCK | SFD_CLOEXEC);
   Assert (sig_fd >= 0);
-  if (sigprocmask (SIG_BLOCK, &sigmask, nullptr) < 0)
-    Unreachable ();
 
   // Epoll fd
   poll_fd = epoll_create1 (EPOLL_CLOEXEC);
@@ -221,6 +245,22 @@ void Engine::Init (char const *tester, char const *genner,
   ev.data.u64 = unsigned (FD::SIGNAL);
   while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
     Assert (errno == EINTR || errno == EAGAIN);
+#else
+  while (sigprocmask (SIG_UNBLOCK, &sigmask, nullptr) < 0)
+    Assert (errno == EINTR);
+  while (sigprocmask (SIG_BLOCK, &sigmask, &sigselect) < 0)
+    Assert (errno == EINTR);
+  old_actions = new struct sigaction[sizeof (sigs)];
+  // Install signal handlers
+  for (unsigned ix = sizeof (sigs); ix--;)
+    {
+      struct sigaction action;
+      action.sa_handler = NoteSignal;
+      sigfillset (&action.sa_mask);
+      action.sa_flags = 0;
+      sigaction (sigs[ix], &action, &old_actions[ix]);
+    }
+#endif
 
   if (genner)
     {
@@ -253,10 +293,18 @@ void Engine::Fini (std::ostream *summary)
 
   Flush ();
 
+#ifdef USE_EPOLL
   close (poll_fd);
   poll_fd = -1;
   close (sig_fd);
   sig_fd = -1;
+#else
+  // Restore signal handlers
+  for (unsigned ix = sizeof (sigs); ix--;)
+    sigaction (sigs[ix], &old_actions[ix], nullptr);
+  delete[] old_actions;
+  old_actions = nullptr;
+#endif
 }
 
 void Engine::ReadGenerator ()
@@ -301,14 +349,9 @@ void Engine::ReadGenerator ()
   WantMake ();
 }
 
-void Engine::ReadSignal ()
+void Engine::HandleSignal (int sig)
 {
-  signalfd_siginfo sig;
-
-  ssize_t bytes = read (sig_fd, &sig, sizeof (sig));
-  Assert (bytes == sizeof (sig));
-
-  switch (sig.ssi_signo)
+  switch (sig)
     {
     case SIGCHLD:
       // Get child status.  There could be multiple children to deal with.
@@ -357,7 +400,7 @@ void Engine::ReadSignal ()
     case SIGINT:
     case SIGQUIT:
     case SIGTERM:
-      Stop (sig.ssi_signo);
+      Stop (sig);
       break;
       
     case SIGPIPE:
@@ -389,6 +432,7 @@ void Engine::WantMake ()
       else
 	want -= ready;
 
+#ifdef USE_EPOLL
       if (!want)
 	{
 	  if (make_want)
@@ -406,6 +450,7 @@ void Engine::WantMake ()
 		Assert (errno == EINTR || errno == EAGAIN);
 	    }
 	}
+#endif
       make_want = want;
     }
 }
@@ -413,8 +458,10 @@ void Engine::WantMake ()
 void Engine::StopMake (int err)
 {
   Assert (make_out >= 0 && make_in >= 0);
+#ifdef USE_EPOLL
   epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_out, nullptr);
   epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_in, nullptr);
+#endif
   make_out = make_in = -1;
   used_tokens.clear ();
   Result (Logger::ERROR) << " terminating jobserver:" << strerror (err);
@@ -442,6 +489,7 @@ void Engine::ReadMake ()
 // allow other processes a chance.
 void Engine::QueueMake (int token)
 {
+#ifdef USE_EPOLL
   if (used_tokens.empty ())
     {
       epoll_event ev;
@@ -450,6 +498,7 @@ void Engine::QueueMake (int token)
       while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, make_out, &ev) < 0)
 	Assert (errno == EINTR || errno == EAGAIN);
     }
+#endif
   used_tokens.push_back (char (token));
 }
 
@@ -469,59 +518,136 @@ void Engine::WriteMake ()
   if (size_t (wrote) == used_tokens.size ())
     {
       used_tokens.clear ();
+#ifdef USE_EPOLL
       while (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_out, nullptr) < 0)
 	Assert (errno == EINTR || errno == EAGAIN);
+#endif
     }
   else
     used_tokens.erase (0, wrote);
 }
 
-bool Engine::Process ()
+void Engine::Process ()
 {
+#ifdef USE_EPOLL
   constexpr int max_events = 20;
-  int count;
+  epoll_event events[max_events];
 
-  do
+  int count = epoll_wait (poll_fd, events, max_events, -1);
+  if (count < 0)
     {
-      epoll_event events[max_events];
-      count = epoll_wait (poll_fd, events, max_events, -1);
-      if (count < 0)
+      count = 0;
+      Assert (errno == EINTR || errno == EAGAIN);
+    }
+
+  for (int ix = 0; ix != count; ix++)
+    switch (uint64_t cookie = events[ix].data.u64)
+      {
+      case unsigned (FD::SIGNAL):
 	{
-	  count = 0;
-	  Assert (errno == EINTR || errno == EAGAIN);
+	  signalfd_siginfo sig;
+
+	  ssize_t bytes = read (sig_fd, &sig, sizeof (sig));
+	  Assert (bytes == sizeof (sig));
+	  HandleSignal (sig.ssi_signo);
+	}
+	break;
+
+      case unsigned (FD::MAKE_IN):
+	ReadMake ();
+	break;
+
+      case unsigned (FD::MAKE_OUT):
+	WriteMake ();
+	break;
+
+      default:
+	{
+	  Job *job = reinterpret_cast<Job *> (cookie ^ (cookie & 7));
+
+	  job->Read (*this, cookie & 7, poll_fd);
+
+	  if (!stopping
+	      && !(cookie & 7) && job == &generator)
+	    ReadGenerator ();
+	}
+	break;
+      }
+#else
+  fd_set rd_set, wr_set;
+  FD_ZERO (&rd_set);
+  FD_ZERO (&wr_set);
+  int hwm = 0;
+
+  if (make_want)
+    {
+      FD_SET (make_in, &rd_set);
+      if (hwm <= make_in)
+	hwm = make_in + 1;
+    }
+  if (!used_tokens.empty ())
+    {
+      FD_SET (make_out, &wr_set);
+      if (hwm <= make_out)
+	hwm = make_out + 1;
+    }
+  for (unsigned ix = 0; ix != 2; ix++)
+    if (generator.Buffer (ix).IsOpen ())
+      {
+	int fd = generator.Buffer (ix).GetFD ();
+	FD_SET (fd, &rd_set);
+	if (hwm <= fd)
+	  hwm = fd + 1;
+      }
+  for (auto iter = jobs.begin (); iter != jobs.end (); ++iter)
+    for (unsigned ix = 0; ix != 2; ix++)
+      if (iter->Buffer (ix).IsOpen ())
+	{
+	  int fd = iter->Buffer (ix).GetFD ();
+	  FD_SET (fd, &rd_set);
+	  if (hwm <= fd)
+	    hwm = fd + 1;
 	}
 
-      for (int ix = 0; ix != count; ix++)
-	switch (uint64_t cookie = events[ix].data.u64)
+  int count = pselect (hwm, &rd_set, &wr_set, nullptr, nullptr, &sigselect);
+  if (count < 0)
+    Assert (errno == EINTR);
+  else
+    {
+      if (make_want && FD_ISSET (make_in, &rd_set))
+	ReadMake ();
+      if (!used_tokens.empty () && FD_ISSET (make_out, &wr_set))
+	WriteMake ();
+      for (unsigned ix = 0; ix != 2; ix++)
+	if (generator.Buffer (ix).IsOpen ())
 	  {
-	  case unsigned (FD::SIGNAL):
-	    ReadSignal ();
-	    break;
+	    int fd = generator.Buffer (ix).GetFD ();
+	    if (FD_ISSET (fd, &rd_set))
+	      {
+		generator.Read (*this, ix, poll_fd);
 
-	  case unsigned (FD::MAKE_IN):
-	    ReadMake ();
-	    break;
-
-	  case unsigned (FD::MAKE_OUT):
-	    WriteMake ();
-	    break;
-
-	  default:
+		if (!stopping && !ix)
+		  ReadGenerator ();
+	      }
+      }
+      for (auto iter = jobs.begin (); iter != jobs.end (); ++iter)
+	for (unsigned ix = 0; ix != 2; ix++)
+	  if (iter->Buffer (ix).IsOpen ())
 	    {
-	      Job *job = reinterpret_cast<Job *> (cookie ^ (cookie & 7));
-
-	      job->Read (*this, cookie & 7, poll_fd);
-
-	      if (!stopping
-		  && !(cookie & 7) && job == &generator)
-		ReadGenerator ();
+	      int fd = iter->Buffer (ix).GetFD ();
+	      if (FD_ISSET (fd, &rd_set))
+		iter->Read (*this, ix, poll_fd);
 	    }
-	    break;
-	  }
     }
-  while (count == max_events);
 
-  return !count;
+  if (int seen_sig = sigs_seen)
+    {
+      sigs_seen = 0;
+      for (unsigned ix = sizeof (sigs); ix--;)
+	if (seen_sig & (1 << ix))
+	  HandleSignal (sigs[ix]);
+    }
+#endif
 }
 
 void Engine::Fini (Job const &job, bool is_generator)

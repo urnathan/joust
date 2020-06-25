@@ -33,10 +33,13 @@ AH_VERBATIM([_FORTIFY_SOURCE],[#undef _FORTIFY_SOURCE])
 
 AC_CHECK_FUNCS([mremap])
 AC_CHECK_FUNCS([pipe2])
-AC_CHECK_FUNCS([epoll_create signalfd])
-if test "$ac_cv_func_epoll_create$ac_cv_func_signalfd" != yesyes ; then
-AC_CHECK_FUNC([pselect],,
-  [AC_MSG_ERROR([neither epoll/signalfd nor pselect found])])
+AC_CHECK_FUNCS([epoll_create1 signalfd])
+AH_TEMPLATE([USE_EPOLL],[Use epoll/signalfd rather than pselect])
+if test "$ac_cv_func_epoll_create1$ac_cv_func_signalfd" = yesyes ; then
+  AC_DEFINE([USE_EPOLL])
+else
+  AC_CHECK_FUNC([pselect],,
+    [AC_MSG_ERROR([neither epoll/signalfd nor pselect found])])
 fi
 AC_CHECK_TYPES([ucontext_t],[],[],[#include <ucontext.h>])
 

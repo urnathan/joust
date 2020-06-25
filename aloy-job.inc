@@ -71,7 +71,7 @@ public:
 
 #else
 
-void Job::Read (Engine &log, unsigned subcode, int poll_fd)
+void Job::Read (Engine &log, unsigned subcode, int poll_fd [[maybe_unused]])
 {
   Assert (subcode < 2 && state > 0);
 
@@ -86,8 +86,9 @@ void Job::Read (Engine &log, unsigned subcode, int poll_fd)
 	}
 
       int fd = buffers[subcode].Close ();
-
+#ifdef USE_EPOLL
       epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
+#endif
       close (fd);
       state--;
     }
@@ -96,7 +97,7 @@ void Job::Read (Engine &log, unsigned subcode, int poll_fd)
 // Spawn a job, return true if we managed to spawn it.
 
 bool Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
-		 int poll_fd, int token)
+		 int poll_fd [[maybe_unused]], int token)
 {
   Assert (!state && buffers[0].empty () && buffers[0].empty ());
 
@@ -119,11 +120,13 @@ bool Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
       job_fds[ix] = pipe[1];
       buffers[ix].Open (pipe[0]);
 
+#ifdef USE_EPOLL
       epoll_event ev;
       ev.events = EPOLLIN;
       ev.data.u64 = reinterpret_cast<uint64_t> (this) | ix;
       while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe[0], &ev) < 0)
 	Assert (errno == EINTR);
+#endif
     }
 
   null_fd = open ("/dev/null", O_RDONLY | O_CLOEXEC);
@@ -157,7 +160,9 @@ bool Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
 	{
 	  close (job_fds[ix]);
 	  int fd = buffers[ix].Close ();
+#ifdef EPOLL_CTL
 	  epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
+#endif
 	  close (fd);
 	}
     }
