@@ -288,7 +288,8 @@ void Engine::Fini (std::ostream *summary)
 
   if (summary)
     *summary << "# Summary of " << retired << " test programs \n" << *this;
-  Sum () << '\n';
+  if (retired)
+    Sum () << '\n';
   *this << "# Summary of " << retired << " test programs \n" << *this;
 
   Flush ();

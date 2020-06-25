@@ -204,7 +204,8 @@ void Job::ReportExit (Engine &log) const
 
 std::ostream &operator<< (std::ostream &s, Job const &job)
 {
-  s << job.command[0];
+  if (!job.command.empty ())
+    s << job.command[0];
 
   return s;
 }
