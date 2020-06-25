@@ -434,9 +434,6 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
 		      }
 		    int fd = streams[stream].Close ();
 #ifdef USE_EPOLL
-		    // FIXME: Do I need this?  won't the fd be removed
-		    // from epoll by the close?  This isn't the only
-		    // case of that
 		    epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
 #endif
 		    close (fd);
