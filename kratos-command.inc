@@ -68,7 +68,7 @@ public:
   }
 
 private:
-  void Shellify ();
+  void Shellify (Symbols const &);
 
   friend std::ostream &operator<<  (std::ostream &, Command const &);
 
@@ -78,7 +78,7 @@ private:
 
 #else
 
-void Command::Shellify ()
+void Command::Shellify (Symbols const &syms)
 {
   bool active = false;
   size_t len = 0;
@@ -112,12 +112,17 @@ void Command::Shellify ()
 	}
 
       words.clear ();
-      char const *shell = getenv ("SHELL");
-      if (!shell || !*shell)
-	shell = "zsh";
-      words.push_back (shell);
-      words.push_back ("-c");
-      words.push_back (std::move (concat));
+      if (auto sh = syms.Get ("SHELL"))
+	words.emplace_back (*sh);
+      else
+	{
+	  char const *shell = getenv ("SHELL");
+	  if (!shell || !*shell)
+	    shell = "zsh";
+	  words.emplace_back (shell);
+	}
+      words.emplace_back ("-c");
+      words.emplace_back (std::move (concat));
     }
 }
 

@@ -326,7 +326,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 			}
 
 		      Assert (last.commands.size () == 1);
-		      last.commands[0].Shellify ();
+		      last.commands[0].Shellify (syms);
 		      last.commands.emplace_back ();
 		      last.commands.emplace_back ();
 		    }
