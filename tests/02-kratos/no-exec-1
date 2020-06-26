@@ -16,17 +16,17 @@ TST: not*a*file >out
 TST: |& cat
 
 ERR: $test:4 RUN: 'not*a*file'
-ERR-NEXT: error: failed to spawn process
+ERR-NEXT: error: failed to spawn
 OUT: PASS: $test:{:[0-9]+}:RUN not*a*file
 ERR: $test:6 RUN: 'not*a*file'
-ERR: error: failed to spawn process
+ERR: error: failed to spawn
 OUT: PASS: $test:{:[0-9]+}:RUN not*a*file
 ERR: $test:9 RUN: 'not*a*file'
-ERR: error: failed to spawn process
+ERR: error: failed to spawn
 OUT: PASS: $test:{:[0-9]+}:RUN not*a*file
 ERR: $test:13 RUN: 'not*a*file'
-ERR: error: failed to spawn process
+ERR: error: failed to spawn
 OUT: PASS: $test:{:[0-9]+}:RUN not*a*file
 ERR: $test:15 RUN: 'not*a*file'
-ERR: error: failed to spawn process
+ERR: error: failed to spawn
 OUT: PASS: $test:{:[0-9]+}:RUN not*a*file

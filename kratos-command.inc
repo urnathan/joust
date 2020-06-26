@@ -132,7 +132,7 @@ bool Command::Execute (int fd_out, int fd_err, unsigned const *limits)
 
   pid = std::get<0> (spawn);
   if (int err = std::get<1> (spawn))
-    Error () << "failed to spawn process '" << words[0]
+    Error () << "failed to spawn '" << words[0]
 	     << "': " << strerror (err);
 
   return std::get<0> (spawn);
