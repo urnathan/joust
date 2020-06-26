@@ -142,9 +142,9 @@ bool Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
 
  fail:
   if (err)
-    log.Result (Logger::ERROR)
-      << "failed spawning " << *this << ":" << strerror (err);
-  
+    log.Result (Logger::ERROR) << "failed spawning " << preamble[0]
+			       << ":" << strerror (err);
+
   if (pid)
     {
       state = 3;

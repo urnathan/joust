@@ -1,0 +1,19 @@
+# test Aloy runs w/o a generator
+
+# RUN: aloy -t nope -o - $testdir/$test
+# RUN: | ezio -p OUT $test
+# RUN: |& ezio -p ERR $test
+
+# OUT: Test run:
+# OUT: ERROR: failed spawning nope:
+# OUT: # Summary of
+# OUT-NEXT: PASS 0
+# OUT-NEXT: ERROR 1
+
+# ERR: Test run:
+# ERR: ERROR: failed spawning nope:
+# ERR: Test:0 $testdir/$test
+# ERR-NEXT: ALOY:nope $testdir/$test
+# ERR: # Summary of
+# ERR-NEXT: PASS 0
+# ERR-NEXT: ERROR 1

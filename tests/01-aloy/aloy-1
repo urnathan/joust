@@ -4,7 +4,11 @@
 
 # RUN: aloy -t $SHELL -g cat -o - $testdir/$test -- $testdir/$test
 # RUN: | ezio -p OUT $test
-# RUN: |& ezio -p ERR $test
+# RUN: |& ezio -p ERR1 $test
+
+# RUN: aloy -t $SHELL -o - $testdir/$test
+# RUN: | ezio -p OUT $test
+# RUN: |& ezio -p ERR2 $test
 
 # we'll invoke the shell on each word here
 echo "$@" >&2
@@ -16,17 +20,21 @@ and we're done
 # OUT: # Summary of
 # OUT: PASS 0
 
-# ERR: Test run:
-# ERR-LABEL: Test:0 echo
-# ERR-NEXT: ALOY:{:.*}zsh {:.*}/aloy-1 echo
-# ERR-NEXT: echo
-# ERR-LABEL: Test:1 "$@"
-# ERR-LABEL: Test:2 >&2
-# ERR-LABEL: Test:3 exit
-# ERR-LABEL: Test:4 0
-# ERR-LABEL: Test:5 and
-# ERR-LABEL: Test:6 we're
-# ERR-LABEL: Test:7 done
-# ERR-LABEL: Test generator
-# ERR-LABEL: Summary of 8 test programs
-# ERR: PASS 0
+# ERR1: Test run:
+# ERR1-LABEL: Test:0 echo
+# ERR1-NEXT: ALOY:{:.*}zsh {:.*}/aloy-1 echo
+# ERR1-NEXT: echo
+# ERR1-LABEL: Test:1 "$@"
+# ERR1-LABEL: Test:2 >&2
+# ERR1-LABEL: Test:3 exit
+# ERR1-LABEL: Test:4 0
+# ERR1-LABEL: Test:5 and
+# ERR1-LABEL: Test:6 we're
+# ERR1-LABEL: Test:7 done
+# ERR1-LABEL: Test generator
+# ERR1-LABEL: Summary of 8 test programs
+# ERR1: PASS 0
+
+# ERR2: Test run:
+# ERR2-LABEL: Test:0 $testdir/$test
+# ERR2: PASS 0
