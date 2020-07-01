@@ -194,7 +194,7 @@ int main (int argc, char *argv[])
       static char const *const vars[PL_HWM + 1]
 	= {"cpulimit", "memlimit", "filelimit", "timelimit"};
 
-      // 1 minute or 1 GB
+      // Default to 1 minute or 1 GB
       limits[ix] = ix == PL_CPU || ix == PL_HWM ? 60 : 1;
       if (auto limit = syms.Get (vars[ix]))
 	{
