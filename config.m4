@@ -1,12 +1,30 @@
-# Joust: Journal Of User-Scripted Tests -*- mode:autoconf -*-
+# Nathan's Common Config -*- mode:autoconf -*-
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
-AC_DEFUN([JOUST_TOOL_BIN],
-[AC_MSG_CHECKING([tool binaries])
+AC_DEFUN([NMS_NOT_IN_SOURCE],
+[if test -e configure ; then
+AC_MSG_ERROR([Do not build in the source tree.  Reasons])
+fi])
+
+AC_DEFUN([NMS_TOOLS],
+[AC_MSG_CHECKING([tools])
+AC_ARG_WITH([tools],
+AS_HELP_STRING([--with-tools=DIR],[tool directory]),
+[if test "$withval" = "yes" ; then
+  AC_MSG_ERROR([tool location not specified])
+elif test "$withval" = "no" ; then
+  :
+elif ! test -d "${withval%/bin}" ; then
+  AC_MSG_ERROR([tools not present])
+else
+  tools=${withval%/bin}
+fi])
+AC_MSG_RESULT($tools)
+AC_MSG_CHECKING([tool binaries])
 AC_ARG_WITH([toolbin],
 AS_HELP_STRING([--with-toolbin=DIR],[tool bin directory]),
-if test "$withval" = "yes" ; then
+[if test "$withval" = "yes" ; then
   AC_MSG_ERROR([tool bin location not specified])
 elif test "$withval" = "no" ; then
   :
@@ -14,65 +32,30 @@ elif ! test -d "${withval%/bin}/bin" ; then
   AC_MSG_ERROR([tool bin not present])
 else
   toolbin=${withval%/bin}/bin
-fi)
+fi],
+[if test -d $tools/bin ; then
+  toolbin=$tools/bin
+fi])
 AC_MSG_RESULT($toolbin)
 if test "$toolbin" ; then
   PATH="$toolbin:$PATH"
 fi
 AC_SUBST(toolbin)])
 
-AC_DEFUN([JOUST_TOOL_INC],
-[AC_MSG_CHECKING([tool include])
-AC_ARG_WITH([toolinc],
-AS_HELP_STRING([--with-toolinc=DIR],[tool include directory]),
-if test "$withval" = "yes" ; then
-  AC_MSG_ERROR([tool include location not specified])
-elif test "$withval" = "no" ; then
-  if test "${toolbin}" ; then
-    toolinc="${toolbin%/bin}/include"
-    if ! test -d "$toolinc" ; then
-      # was not found
-      toolinc=
-    fi
+AC_DEFUN([NMS_TOOL_DIRS],
+[if test "$tools" && test -d "$tools/include" ; then
+  CXX+=" -I $tools/include"
+fi
+if test "$tools" && test -d "$tools/lib" ; then
+  toollib="$tools/lib"
+  if os=$(CXX -print-multi-os-directory 2>/dev/null) ; then
+    toollib+="/${os}"
   fi
-elif ! test -d "${withval}" ; then
-  AC_MSG_ERROR([tool include not present])
-else
-  toolinc=${withval}
-fi)
-AC_MSG_RESULT($toolinc)
-if test "$toolinc" ; then
-  CXX+=" -I $toolinc"
+  LDFLAGS+=" -L $toollib"
+  unset toollib
 fi])
 
-AC_DEFUN([JOUST_TOOL_LIB],
-[AC_MSG_CHECKING([tool libraries])
-AC_ARG_WITH([toollib],
-AS_HELP_STRING([--with-toollib=DIR],[tool library directory]),
-if test "$withval" = "yes" ; then
-  AC_MSG_ERROR([tool library location not specified])
-elif test "$withval" = "no" ; then
-  if test "${toolbin}" ; then
-    toollib="${toolbin%/bin}/lib"
-    if os=$(CXX -print-multi-os-directory 2>/dev/null) ; then
-      toollib+="/${os}"
-    fi
-    if ! test -d "$toollib" ; then
-      # was not found
-      toollib=
-    fi
-  fi
-elif ! test -d "${withval}" ; then
-  AC_MSG_ERROR([tool library not present])
-else
-  toollib=${withval}
-fi)
-AC_MSG_RESULT($toollib)
-if test "$toollib" ; then
-  LDFLAGS+="-L $toollib"
-fi])
-
-AC_DEFUN([JOUST_NUM_CPUS],
+AC_DEFUN([NMS_NUM_CPUS],
 [AC_MSG_CHECKING([number of CPUs])
 case $build in
      (*-*-darwin*) NUM_CPUS=$(sysctl -n hw.ncpu 2>/dev/null) ;;
@@ -83,7 +66,7 @@ AC_MSG_RESULT([${NUM_CPUS:-unknown}])
 test "$NUM_CPUS" = 1 && NUM_CPUS=
 AC_SUBST(NUM_CPUS)])
 
-AC_DEFUN([JOUST_MAINTAINER_MODE],
+AC_DEFUN([NMS_MAINTAINER_MODE],
 [AC_ARG_ENABLE([maintainer-mode],
 AS_HELP_STRING([--enable-maintainer-mode],
 [enable maintainer mode.  Add rules to rebuild configurey bits]),,
@@ -98,20 +81,47 @@ AC_MSG_RESULT([$maintainer_mode])
 test "$maintainer_mode" = yes && MAINTAINER=yes
 AC_SUBST(MAINTAINER)])
 
-AC_DEFUN([JOUST_CXX_COMPILER],
+AC_DEFUN([NMS_CXX_COMPILER],
 [AC_ARG_WITH([compiler],
 AS_HELP_STRING([--with-compiler=NAME],[which compiler to use]),
 AC_MSG_CHECKING([C++ compiler])
 if test "$withval" = "yes" ; then
   AC_MSG_ERROR([NAME not specified])
 elif test "$withval" = "no" ; then
-  AC_MSG_ERROR([Gonna need a c++ compiler!])
+  AC_MSG_ERROR([Gonna need a C++ compiler!])
 else
   CXX="${withval}"
   AC_MSG_RESULT([$CXX])
 fi)])
 
-AC_DEFUN([JOUST_CXX_20],
+AC_DEFUN([NMS_CXX_11],
+[AC_MSG_CHECKING([whether $CXX is for C++11])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+[#if __cplusplus != 201103
+#error "C++11 is required"
+#endif
+]])],
+[AC_MSG_RESULT([yes])],
+[CXX_ORIG="$CXX"
+CXX+=" -std=c++11"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+[#if __cplusplus != 201103
+#error "C++11 is required"
+#endif
+]])],
+AC_MSG_RESULT([adding -std=c++11]),
+[CXX="$CXX_ORIG"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+[#if __cplusplus > 201103
+#error "C++11 is required"
+#endif
+]])],
+AC_MSG_RESULT([> C++11]),
+AC_MSG_RESULT([no])
+AC_MSG_ERROR([C++11 is required])]))
+unset CXX_ORIG])])
+
+AC_DEFUN([NMS_CXX_20],
 [AC_MSG_CHECKING([whether $CXX is for C++20])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 [#if __cplusplus <= 201703
@@ -161,17 +171,17 @@ AC_MSG_RESULT([yes 🙂]),
 AC_MSG_RESULT([no 🙁])
 AC_MSG_ERROR([C++20 support is too immature]))])
 
-AC_DEFUN([JOUST_LINK_OPT],
+AC_DEFUN([NMS_LINK_OPT],
 [AC_MSG_CHECKING([adding $1 to linker])
 ORIG_LDFLAGS="$LDFLAGS"
-LDFLAGS+="$1"
+LDFLAGS+=" $1"
 AC_LINK_IFELSE([AC_LANG_PROGRAM([])],
 [AC_MSG_RESULT([ok])],
 [LDFLAGS="$ORIG_LDFLAGS"
 AC_MSG_RESULT([no])])
 unset ORIG_LDFLAGS])
 
-AC_DEFUN([JOUST_BUGURL],
+AC_DEFUN([NMS_BUGURL],
 [AC_MSG_CHECKING([bugurl])
 AC_ARG_WITH(bugurl,
 AS_HELP_STRING([--with-bugurl=URL],[where to report bugs]),
@@ -185,36 +195,36 @@ fi,BUGURL="${PACKAGE_BUGREPORT}")
 AC_MSG_RESULT($BUGURL)
 AC_DEFINE_UNQUOTED(BUGURL,"$BUGURL",[Bug reporting location])])
 
-AC_DEFUN([JOUST_DISTRIBUTION],
+AC_DEFUN([NMS_DISTRIBUTION],
 [AC_ARG_ENABLE(distribution,
 AS_HELP_STRING([--enable-distribution],
 [enable distribution.  Inhibit components that prevent distribution]),,
 [enable_distribution="no"])
 case "$enable_distribution" in
-  ("yes") joust_distribution=yes ;;
-  ("no") joust_distribution=no ;;
+  ("yes") nms_distribution=yes ;;
+  ("no") nms_distribution=no ;;
   (*) AC_MSG_ERROR([unknown distribution $enable_distribution]) ;;
 esac
 AC_MSG_CHECKING([distribution])
-AC_MSG_RESULT([$joust_distribution])])
+AC_MSG_RESULT([$nms_distribution])])
 
-AC_DEFUN([JOUST_ENABLE_CHECKING],
+AC_DEFUN([NMS_ENABLE_CHECKING],
 [AC_ARG_ENABLE(checking,
 AS_HELP_STRING([--enable-checking],
 [enable run-time checking]),,
 [enable_checking="yes"])
 case "$enable_checking" in
-  ("yes") joust_checking=yes ;;
-  ("no") joust_checking= ;;
+  ("yes") nms_checking=yes ;;
+  ("no") nms_checking= ;;
   (*) AC_MSG_ERROR([unknown check "$enable_check"]) ;;
 esac
 AC_MSG_CHECKING([checking])
-AC_MSG_RESULT([${joust_checking:-no}])
-if test "$joust_checking" = yes ; then
-  AC_DEFINE([JOUST_CHECKING], [1], [Enable checking])
+AC_MSG_RESULT([${nms_checking:-no}])
+if test "$nms_checking" = yes ; then
+  AC_DEFINE_UNQUOTED([NMS_CHECKING], [0${nms_checking:+1}], [Enable checking])
 fi])
 
-AC_DEFUN([JOUST_WITH_BINUTILS],
+AC_DEFUN([NMS_WITH_BINUTILS],
 [AC_MSG_CHECKING([binutils])
 AC_ARG_WITH(bfd,
 AS_HELP_STRING([--with-bfd=DIR], [location of libbfd]),
@@ -224,20 +234,20 @@ elif test "$withval" = "no" ; then
   AC_MSG_RESULT(installed)
 else
   AC_MSG_RESULT(${withval})
-  CPPFLAGS="${CPPFLAGS} -I${withval}/include"
-  LDFLAGS="${LDFLAGS} -L${withval}/lib"
+  CPPFLAGS+=" -I${withval}/include"
+  LDFLAGS+=" -L${withval}/lib"
 fi,
 AC_MSG_RESULT(installed))])
 
-AC_DEFUN([JOUST_ENABLE_BACKTRACE],
-[AC_REQUIRE([JOUST_DISTRIBUTION])
+AC_DEFUN([NMS_ENABLE_BACKTRACE],
+[AC_REQUIRE([NMS_DISTRIBUTION])
 AC_ARG_ENABLE(backtrace,
 AS_HELP_STRING([--enable-backtrace],[provide backtrace on fatality.]),,
 [enable_backtrace="maybe"])
 if test "${enable_backtrace:-maybe}" != no ; then
   AC_CHECK_HEADERS(execinfo.h)
   AC_CHECK_FUNCS(backtrace)
-  if test "$joust_distribution" = no ; then
+  if test "$nms_distribution" = no ; then
     AC_DEFINE([HAVE_DECL_BASENAME], [1], [Needed for demangle.h])
     # libiberty prevents distribution because of licensing
     AC_CHECK_HEADERS([demangle.h libiberty/demangle.h],[break])
@@ -246,13 +256,13 @@ if test "${enable_backtrace:-maybe}" != no ; then
     AC_SEARCH_LIBS([bfd_openr],[bfd],[LIBS+="-lz -liberty -ldl"],,[-lz -liberty -ldl])
   fi
   if test "$ac_cv_func_backtrace" = yes ; then
-    joust_backtrace=yes
+    nms_backtrace=yes
     ldbacktrace=-rdynamic
-    AC_DEFINE([JOUST_BACKTRACE], [1], [Enable backtrace])
+    AC_DEFINE([NMS_BACKTRACE], [1], [Enable backtrace])
   elif test "$enable_backtrace" = yes ; then
     AC_MSG_ERROR([Backtrace unavailable])
   fi
   AC_SUBST([ldbacktrace])
 fi
 AC_MSG_CHECKING([backtrace])
-AC_MSG_RESULT([${joust_backtrace:-no}])])
+AC_MSG_RESULT([${nms_backtrace:-no}])])

@@ -61,7 +61,7 @@ void Progname (char const *argv0);
 void HCF [[noreturn]]
 (
  char const *msg
-#if JOUST_CHECKING
+#if NMS_CHECKING
  , Location const = Location ()
 #if !JOUST_LOC_BUILTIN && !JOUST_LOC_SOURCE
 #define HCF(M) HCF ((M), Joust::Location (__FILE__, __LINE__))
@@ -69,7 +69,7 @@ void HCF [[noreturn]]
 #endif
  ) noexcept;
 
-#if JOUST_CHECKING
+#if NMS_CHECKING
 void AssertFailed [[noreturn]] (Location loc = Location ());
 void Unreachable [[noreturn]] (Location loc = Location ());
 #if !JOUST_LOC_BUILTIN && !JOUST_LOC_SOURCE

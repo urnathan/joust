@@ -2,12 +2,20 @@
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
+LDFLAGS +=  @ldbacktrace@
 CXXFLAGS/ += -I $(srcdir)
-
 JOUSTPROGS := ezio kratos aloy
 LIBJOUST.O := joust.o
 LIBJOUSTI.O := error.o fatal.o lexer.o option.o readBuffer.o regex.o \
 	scanner.o spawn.o symbols.o token.o
+
+all:: .gdbinit
+
+.gdbinit: gdbinit
+	rm -f $@ ; ln -s $< $@
+
+clean::
+	rm -f .gdbinit gdbinit
 
 all:: $(JOUSTPROGS) libjousti.a libjoust.a
 

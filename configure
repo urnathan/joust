@@ -625,6 +625,7 @@ ac_includes_default="\
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 CONFIG_FILES
+SUBDIRS
 configure_args
 AR
 ldbacktrace
@@ -690,11 +691,10 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+with_tools
 with_toolbin
 enable_maintainer_mode
 with_compiler
-with_toollib
-with_toolinc
 with_bugurl
 enable_distribution
 enable_checking
@@ -1335,10 +1335,9 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-tools=DIR        tool directory
   --with-toolbin=DIR      tool bin directory
   --with-compiler=NAME    which compiler to use
-  --with-toollib=DIR      tool library directory
-  --with-toolinc=DIR      tool include directory
   --with-bugurl=URL       where to report bugs
   --with-bfd=DIR          location of libbfd
 
@@ -2190,9 +2189,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-# Joust: Journal Of User-Scripted Tests -*- mode:autoconf -*-
+# Nathan's Common Config -*- mode:autoconf -*-
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
+
+
 
 
 
@@ -2252,6 +2253,9 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+if test -e configure ; then
+as_fn_error $? "Do not build in the source tree.  Reasons" "$LINENO" 5
+fi
 # Make sure we can run config.sub.
 $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
   as_fn_error $? "cannot run $SHELL $ac_aux_dir/config.sub" "$LINENO" 5
@@ -2324,6 +2328,24 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking tools" >&5
+$as_echo_n "checking tools... " >&6; }
+
+# Check whether --with-tools was given.
+if test "${with_tools+set}" = set; then :
+  withval=$with_tools; if test "$withval" = "yes" ; then
+  as_fn_error $? "tool location not specified" "$LINENO" 5
+elif test "$withval" = "no" ; then
+  :
+elif ! test -d "${withval%/bin}" ; then
+  as_fn_error $? "tools not present" "$LINENO" 5
+else
+  tools=${withval%/bin}
+fi
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tools" >&5
+$as_echo "$tools" >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking tool binaries" >&5
 $as_echo_n "checking tool binaries... " >&6; }
 
@@ -2337,6 +2359,10 @@ elif ! test -d "${withval%/bin}/bin" ; then
   as_fn_error $? "tool bin not present" "$LINENO" 5
 else
   toolbin=${withval%/bin}/bin
+fi
+else
+  if test -d $tools/bin ; then
+  toolbin=$tools/bin
 fi
 fi
 
@@ -2373,7 +2399,7 @@ esac
 $as_echo_n "checking maintainer-mode... " >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $maintainer_mode" >&5
 $as_echo "$maintainer_mode" >&6; }
-test $maintainer_mode = yes && MAINTAINER=yes
+test "$maintainer_mode" = yes && MAINTAINER=yes
 
 
 # Check whether --with-compiler was given.
@@ -2383,7 +2409,7 @@ $as_echo_n "checking C++ compiler... " >&6; }
 if test "$withval" = "yes" ; then
   as_fn_error $? "NAME not specified" "$LINENO" 5
 elif test "$withval" = "no" ; then
-  as_fn_error $? "Gonna need a c++ compiler!" "$LINENO" 5
+  as_fn_error $? "Gonna need a C++ compiler!" "$LINENO" 5
 else
   CXX="${withval}"
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
@@ -3002,10 +3028,21 @@ $as_echo "no 🙁" >&6; }
 as_fn_error $? "C++20 support is too immature" "$LINENO" 5
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+if test "$tools" && test -d "$tools/include" ; then
+  CXX+=" -I $tools/include"
+fi
+if test "$tools" && test -d "$tools/lib" ; then
+  toollib="$tools/lib"
+  if os=$(CXX -print-multi-os-directory 2>/dev/null) ; then
+    toollib+="/${os}"
+  fi
+  LDFLAGS+=" -L $toollib"
+  unset toollib
+fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking adding -Wl,--no-undefined to linker" >&5
 $as_echo_n "checking adding -Wl,--no-undefined to linker... " >&6; }
 ORIG_LDFLAGS="$LDFLAGS"
-LDFLAGS+="-Wl,--no-undefined"
+LDFLAGS+=" -Wl,--no-undefined"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -3028,63 +3065,6 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 unset ORIG_LDFLAGS
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking tool libraries" >&5
-$as_echo_n "checking tool libraries... " >&6; }
-
-# Check whether --with-toollib was given.
-if test "${with_toollib+set}" = set; then :
-  withval=$with_toollib; if test "$withval" = "yes" ; then
-  as_fn_error $? "tool library location not specified" "$LINENO" 5
-elif test "$withval" = "no" ; then
-  if test "${toolbin}" ; then
-    toollib="${toolbin%/bin}/lib"
-    if os=$(CXX -print-multi-os-directory 2>/dev/null) ; then
-      toollib+="/${os}"
-    fi
-    if ! test -d "$toollib" ; then
-      # was not found
-      toollib=
-    fi
-  fi
-elif ! test -d "${withval}" ; then
-  as_fn_error $? "tool library not present" "$LINENO" 5
-else
-  toollib=${withval}
-fi
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $toollib" >&5
-$as_echo "$toollib" >&6; }
-if test "$toollib" ; then
-  LDFLAGS+="-L $toollib"
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking tool include" >&5
-$as_echo_n "checking tool include... " >&6; }
-
-# Check whether --with-toolinc was given.
-if test "${with_toolinc+set}" = set; then :
-  withval=$with_toolinc; if test "$withval" = "yes" ; then
-  as_fn_error $? "tool include location not specified" "$LINENO" 5
-elif test "$withval" = "no" ; then
-  if test "${toolbin}" ; then
-    toolinc="${toolbin%/bin}/include"
-    if ! test -d "$toolinc" ; then
-      # was not found
-      toolinc=
-    fi
-  fi
-elif ! test -d "${withval}" ; then
-  as_fn_error $? "tool include not present" "$LINENO" 5
-else
-  toolinc=${withval}
-fi
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $toolinc" >&5
-$as_echo "$toolinc" >&6; }
-if test "$toolinc" ; then
-  CXX+=" -I $toolinc"
-fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking bugurl" >&5
 $as_echo_n "checking bugurl... " >&6; }
@@ -3117,14 +3097,14 @@ else
 fi
 
 case "$enable_distribution" in
-  ("yes") joust_distribution=yes ;;
-  ("no") joust_distribution=no ;;
+  ("yes") nms_distribution=yes ;;
+  ("no") nms_distribution=no ;;
   (*) as_fn_error $? "unknown distribution $enable_distribution" "$LINENO" 5 ;;
 esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking distribution" >&5
 $as_echo_n "checking distribution... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $joust_distribution" >&5
-$as_echo "$joust_distribution" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $nms_distribution" >&5
+$as_echo "$nms_distribution" >&6; }
 # Check whether --enable-checking was given.
 if test "${enable_checking+set}" = set; then :
   enableval=$enable_checking;
@@ -3133,17 +3113,19 @@ else
 fi
 
 case "$enable_checking" in
-  ("yes") joust_checking=yes ;;
-  ("no") joust_checking= ;;
+  ("yes") nms_checking=yes ;;
+  ("no") nms_checking= ;;
   (*) as_fn_error $? "unknown check \"$enable_check\"" "$LINENO" 5 ;;
 esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking checking" >&5
 $as_echo_n "checking checking... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${joust_checking:-no}" >&5
-$as_echo "${joust_checking:-no}" >&6; }
-if test "$joust_checking" = yes ; then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${nms_checking:-no}" >&5
+$as_echo "${nms_checking:-no}" >&6; }
+if test "$nms_checking" = yes ; then
 
-$as_echo "#define JOUST_CHECKING 1" >>confdefs.h
+cat >>confdefs.h <<_ACEOF
+#define NMS_CHECKING 0${nms_checking:+1}
+_ACEOF
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking binutils" >&5
@@ -3159,8 +3141,8 @@ $as_echo "installed" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${withval}" >&5
 $as_echo "${withval}" >&6; }
-  CPPFLAGS="${CPPFLAGS} -I${withval}/include"
-  LDFLAGS="${LDFLAGS} -L${withval}/lib"
+  CPPFLAGS+=" -I${withval}/include"
+  LDFLAGS+=" -L${withval}/lib"
 fi
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: installed" >&5
@@ -3592,7 +3574,7 @@ _ACEOF
 fi
 done
 
-  if test "$joust_distribution" = no ; then
+  if test "$nms_distribution" = no ; then
 
 $as_echo "#define HAVE_DECL_BASENAME 1" >>confdefs.h
 
@@ -3681,10 +3663,10 @@ fi
 
   fi
   if test "$ac_cv_func_backtrace" = yes ; then
-    joust_backtrace=yes
+    nms_backtrace=yes
     ldbacktrace=-rdynamic
 
-$as_echo "#define JOUST_BACKTRACE 1" >>confdefs.h
+$as_echo "#define NMS_BACKTRACE 1" >>confdefs.h
 
   elif test "$enable_backtrace" = yes ; then
     as_fn_error $? "Backtrace unavailable" "$LINENO" 5
@@ -3693,8 +3675,8 @@ $as_echo "#define JOUST_BACKTRACE 1" >>confdefs.h
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking backtrace" >&5
 $as_echo_n "checking backtrace... " >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${joust_backtrace:-no}" >&5
-$as_echo "${joust_backtrace:-no}" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${nms_backtrace:-no}" >&5
+$as_echo "${nms_backtrace:-no}" >&6; }
 
 ac_config_headers="$ac_config_headers config.h"
 
@@ -3866,6 +3848,7 @@ ac_config_files="$ac_config_files $CONFIG_FILES"
 
 
 configure_args=$ac_configure_args
+
 
 
 

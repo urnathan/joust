@@ -64,10 +64,10 @@
 #undef HAVE_UNISTD_H
 
 /* Enable backtrace */
-#undef JOUST_BACKTRACE
+#undef NMS_BACKTRACE
 
 /* Enable checking */
-#undef JOUST_CHECKING
+#undef NMS_CHECKING
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT

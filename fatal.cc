@@ -25,7 +25,7 @@
 #elif HAVE_LIBIBERTY_DEMANGLE_H
 #include <libiberty/demangle.h>
 #endif
-#if JOUST_BACKTRACE
+#if NMS_BACKTRACE
 #include <execinfo.h>
 #endif
 #ifdef HAVE_UCONTEXT_T
@@ -62,7 +62,7 @@ public:
   ~Binfo () noexcept;
 
 public:
-#if JOUST_BACKTRACE
+#if NMS_BACKTRACE
   bool FindLocation (void *addr, bool is_return_address);
   bool InlineUnwind ();
   char *Demangle () noexcept;
@@ -149,7 +149,7 @@ Binfo::~Binfo () noexcept
 #endif
 }
 
-#if JOUST_BACKTRACE
+#if NMS_BACKTRACE
 bool Binfo::FindLocation (void *addr [[maybe_unused]],
 			  bool is_return_address [[maybe_unused]]) noexcept
 {
@@ -190,7 +190,7 @@ bool Binfo::FindLocation (void *addr [[maybe_unused]],
 }
 #endif
 
-#if JOUST_BACKTRACE
+#if NMS_BACKTRACE
 bool Binfo::InlineUnwind ()
 {
 #if HAVE_BFD_H
@@ -202,7 +202,7 @@ bool Binfo::InlineUnwind ()
 }
 #endif
 
-#if JOUST_BACKTRACE
+#if NMS_BACKTRACE
 char const *StripObjDir (char const *file)
 {
   char const *obj = OBJDIR;
@@ -214,7 +214,7 @@ char const *StripObjDir (char const *file)
 }
 #endif
 
-#if JOUST_BACKTRACE
+#if NMS_BACKTRACE
 char *Binfo::Demangle () noexcept
 {
   char *demangled = 0;
@@ -381,14 +381,14 @@ void SignalHandler (int sig) noexcept
 #endif
 
   Binfo binfo;
-#if HAVE_BFD_H && JOUST_BACKTRACE && JOUST_CHECKING
+#if HAVE_BFD_H && NMS_BACKTRACE && NMS_CHECKING
   void *return_addrs[3];
   if (backtrace (return_addrs, 3) == 3)
     binfo.FindLocation (return_addrs[2], false);
 #endif
 
   (HCF) (stack_overflow ? "stack overflow" : strsignal (sig)
-#if JOUST_CHECKING
+#if NMS_CHECKING
 	 , binfo
 #endif
 	 );
@@ -401,7 +401,7 @@ void SignalHandler (int sig) noexcept
 void TerminateHandler () noexcept
 {
   (HCF) (
-#if JOUST_CHECKING
+#if NMS_CHECKING
 	 "uncaught exception", Location (nullptr, 0)
 #else
 	 nullptr
@@ -412,7 +412,7 @@ void TerminateHandler () noexcept
 void UnexpectedHandler () noexcept
 {
   (HCF) (
-#if JOUST_CHECKING
+#if NMS_CHECKING
 	 "unexpected exception", Location (nullptr, 0)
 #else
 	 nullptr
@@ -469,7 +469,7 @@ void Progname (char const *prog)
     }
 }
 
-#if JOUST_CHECKING
+#if NMS_CHECKING
 void (AssertFailed) (Location loc)
 {
   (HCF) ("assertion failed", loc);
@@ -481,7 +481,7 @@ void (Unreachable) (Location loc)
 #endif
 
 void (HCF) (char const *msg
-#if JOUST_CHECKING
+#if NMS_CHECKING
 	    , Location const loc
 #endif
 	    ) noexcept
@@ -490,15 +490,15 @@ void (HCF) (char const *msg
 
   __asm__ volatile ("nop");  // HCF - you goofed!
 
-#if !JOUST_CHECKING
+#if !NMS_CHECKING
   Location loc (nullptr, 0);
 #endif
 
-  if (busy > JOUST_CHECKING)
+  if (busy > NMS_CHECKING)
     msg = "recursive internal error";
 
   fprintf (stderr, "%s: %s", progname, msg ? msg : "internal error");
-  if (busy++ <= JOUST_CHECKING)
+  if (busy++ <= NMS_CHECKING)
     {
       if (char const *file = loc.File ())
 	{
@@ -515,7 +515,7 @@ void (HCF) (char const *msg
 	}
       fprintf (stderr, "\n");
 
-#if JOUST_BACKTRACE
+#if NMS_BACKTRACE
       {
 #define MAX_BACKTRACE 100
 	void *return_addrs[MAX_BACKTRACE];
@@ -600,7 +600,7 @@ void (HCF) (char const *msg
 
       done:;
       }
-#endif // JOUST_BACKTRACE
+#endif // NMS_BACKTRACE
 
       BuildNote (stderr);
     }
@@ -620,7 +620,7 @@ void BuildNote (FILE *stream) noexcept
     fprintf (stream, "Source %s.\n", REVISION);
 
   fprintf (stream, "Build is %s & %s.\n",
-#if !JOUST_CHECKING
+#if !NMS_CHECKING
 	   "un"
 #endif
 	   "checked",
