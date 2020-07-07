@@ -1,6 +1,6 @@
 # Nathan's Common Config -*- mode:autoconf -*-
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
-# License: Affero GPL v3.0
+# License: Apache v2.0
 
 AC_DEFUN([NMS_NOT_IN_SOURCE],
 [if test -e configure ; then
@@ -266,3 +266,21 @@ if test "${enable_backtrace:-maybe}" != no ; then
 fi
 AC_MSG_CHECKING([backtrace])
 AC_MSG_RESULT([${nms_backtrace:-no}])])
+
+AC_DEFUN([NMS_CONFIG_FILES],
+[CONFIG_FILES="Makefile $1"
+SUBDIRS="$2"
+for generated in config.h.in configure ; do
+  if test $srcdir/configure.ac -nt $srcdir/$generated ; then
+    touch $srcdir/$generated
+  fi
+done
+for dir in . $SUBDIRS
+do
+  CONFIG_FILES+=" $dir/Makesub"
+  test -f ${srcdir}/$dir/tests/Makesub.in && CONFIG_FILES+=" $dir/tests/Makesub"
+done
+AC_CONFIG_FILES([$CONFIG_FILES])
+AC_SUBST(configure_args,[$ac_configure_args])
+AC_SUBST(SUBDIRS)
+AC_SUBST(CONFIG_FILES)])

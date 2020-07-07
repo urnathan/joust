@@ -21,6 +21,7 @@ AC_PROG_CXX
 NMS_CXX_20
 NMS_TOOL_DIRS
 NMS_LINK_OPT([-Wl,--no-undefined])
+NMS_CONFIG_FILES([gdbinit])
 
 NMS_BUGURL
 NMS_DISTRIBUTION
@@ -44,21 +45,5 @@ else
     [AC_MSG_ERROR([neither epoll/signalfd nor pselect found])])
 fi
 AC_CHECK_TYPES([ucontext_t],[],[],[#include <ucontext.h>])
-
-for generated in config.h.in configure ; do
-  if test $srcdir/configure.ac -nt $srcdir/$generated ; then
-    touch $srcdir/$generated
-  fi
-done
-
-CONFIG_FILES="Makefile gdbinit"
-for make in Makesub tests/Makesub ; do
-  test -f ${srcdir}/$make.in && CONFIG_FILES+=" $make"
-done
-AC_CONFIG_FILES([$CONFIG_FILES])
-
-AC_SUBST(configure_args,[$ac_configure_args])
-AC_SUBST(SUBDIRS)
-AC_SUBST(CONFIG_FILES)
 
 AC_OUTPUT
