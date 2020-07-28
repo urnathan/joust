@@ -492,6 +492,7 @@ void (HCF) (char const *msg
 
 #if !NMS_CHECKING
   Location loc (nullptr, 0);
+#define NMS_CHECKING 0
 #endif
 
   if (busy > NMS_CHECKING)
