@@ -2,12 +2,14 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-class Parser : public Scanner
+class Parser
+  : public Scanner
 {
   using Parent = Scanner;
 
 private:
-  enum State : signed char
+  enum State
+    : signed char
   {
     IDLE,		// not started
     REDIRECT_IN,	// read from file
@@ -24,29 +26,32 @@ private:
   bool here = false;
 
 public:
-  Parser (char const *file_, std::vector<Pipeline> &p, Symbols &s)
+  Parser
+    (char const *file_, std::vector<Pipeline> &p, Symbols &s)
     : Parent (file_), pipes (p), syms (s)
   {
   }
 
 public:
-  void Unlexed (Lexer const &lexer, char const *ctx);
+  void Unlexed
+    (Lexer const &lexer, char const *ctx);
 
 protected:
-  virtual bool ProcessLine (std::string_view const &variant,
-			    std::string_view const &pattern) override;
+  virtual bool ProcessLine
+    (std::string_view const &variant, std::string_view const &pattern)
+    override;
 
 private:
-  bool RecursivelyExpand (std::vector<std::string> *, Lexer &,
-			  bool braced, std::string &word,
-			  std::vector<std::string const *> &stack);
-  bool RecursivelyExpand (std::vector<std::string> *,
-			  std::string_view const &val, bool braced,
-			  std::string &word,
-			  std::vector<std::string const *> &stack);
+  bool RecursivelyExpand
+    (std::vector<std::string> *, Lexer &, bool braced, std::string &word,
+     std::vector<std::string const *> &stack);
+  bool RecursivelyExpand
+    (std::vector<std::string> *, std::string_view const &val, bool braced,
+     std::string &word, std::vector<std::string const *> &stack);
 };
 
-void Parser::Unlexed (Lexer const &lexer, char const *ctx)
+void Parser::Unlexed
+  (Lexer const &lexer, char const *ctx)
 {
   Error ()
     << "failed to lex " << ctx
@@ -55,8 +60,8 @@ void Parser::Unlexed (Lexer const &lexer, char const *ctx)
 }
 
 // [<from] [>to] cmd [| cmd [| cmd] ]]
-bool Parser::ProcessLine (std::string_view const &variant,
-			  std::string_view const &pattern) 
+bool Parser::ProcessLine
+  (std::string_view const &variant, std::string_view const &pattern) 
 {
   unsigned kind = 0;
   if (variant.size ())
@@ -401,9 +406,10 @@ bool Parser::ProcessLine (std::string_view const &variant,
   return false;
 }
 
-bool Parser::RecursivelyExpand (std::vector<std::string> *words,
-				Lexer &lexer, bool quoted, std::string &word,
-				std::vector<std::string const *> &stack)
+bool Parser::RecursivelyExpand
+  (std::vector<std::string> *words, Lexer &lexer,
+   bool quoted, std::string &word,
+   std::vector<std::string const *> &stack)
 {
   bool ok = true;
   bool braced = lexer.Peek (1) == '{';
@@ -462,10 +468,9 @@ bool Parser::RecursivelyExpand (std::vector<std::string> *words,
   return ok;
 }
 
-bool Parser::RecursivelyExpand (std::vector<std::string> *words,
-				std::string_view const &val,
-				bool quoted, std::string &word,
-				std::vector<std::string const *> &stack)
+bool Parser::RecursivelyExpand
+  (std::vector<std::string> *words, std::string_view const &val,
+   bool quoted, std::string &word, std::vector<std::string const *> &stack)
 {
   Lexer lex (val);
   bool escape = false;

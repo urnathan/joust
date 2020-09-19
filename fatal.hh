@@ -14,41 +14,44 @@
 // C
 #include <cstdio>
 
-namespace Joust {
+namespace Joust
+{
 
-class Location
+class SrcLoc
 {
 protected:
   char const *file;
   unsigned line;
 
 public:
-  constexpr Location (char const *file_
+  constexpr SrcLoc
+    (char const *file_
 #if JOUST_LOC_BUILTIN
-		      = __builtin_FILE ()
+     = __builtin_FILE ()
 #endif
-		      , unsigned line_
+     , unsigned line_
 #if JOUST_LOC_BUILTIN
-		      = __builtin_LINE ()
+     = __builtin_LINE ()
 #endif
-		      )
-    :file (file_), line (line_)
-  {
-  }
+     )
+    : file (file_), line (line_)
+  {}
 
 #if !JOUST_LOC_BUILTIN && JOUST_LOC_SOURCE
-  constexpr Location (source_location loc == source_location::current ())
-    :file (loc.file ()), line (loc.line ())
-  {
-  }
+  constexpr SrcLoc
+    (source_location loc == source_location::current ())
+    : file (loc.file ()), line (loc.line ())
+  {}
 #endif
 
 public:
-  constexpr char const *File () const
+  constexpr char const *File
+    () const
   {
     return file;
   }
-  constexpr unsigned Line () const
+  constexpr unsigned Line
+    () const
   {
     return line;
   }
@@ -56,25 +59,38 @@ public:
 
 extern char const *progname;
 
-void Progname (char const *argv0);
+void Progname
+  (char const *argv0);
 
-void HCF [[noreturn]]
-(
- char const *msg
+void HCF
+  [[noreturn]]
+  (char const *msg
 #if NMS_CHECKING
- , Location const = Location ()
+   , SrcLoc const = SrcLoc ()
 #if !JOUST_LOC_BUILTIN && !JOUST_LOC_SOURCE
-#define HCF(M) HCF ((M), Joust::Location (__FILE__, __LINE__))
+#define HCF(M) HCF ((M), Joust::SrcLoc (__FILE__, __LINE__))
 #endif
 #endif
- ) noexcept;
+   )
+  noexcept;
 
 #if NMS_CHECKING
-void AssertFailed [[noreturn]] (Location loc = Location ());
-void Unreachable [[noreturn]] (Location loc = Location ());
+void AssertFailed
+  [[noreturn]]
+  (SrcLoc loc = SrcLoc ());
+void Unreachable
+  [[noreturn]]
+  (SrcLoc loc = SrcLoc ());
+void Unimplemented
+  [[noreturn]]
+  (SrcLoc loc = SrcLoc ());
 #if !JOUST_LOC_BUILTIN && !JOUST_LOC_SOURCE
-#define AssertFailed() AssertFailed (Joust::Location (__FILE__, __LINE__))
-#define Unreachable() Unreachable (Joust::Location (__FILE__, __LINE__))
+#define AssertFailed()					\
+  AssertFailed (Joust::SrcLoc (__FILE__, __LINE__))
+#define Unreachable()					\
+  Unreachable (Joust::SrcLoc (__FILE__, __LINE__))
+#define Unimplemented()					\
+  Unimplemented (Joust::SrcLoc (__FILE__, __LINE__))
 #endif
 
 // Do we have __VA_OPT__, alas no specific feature macro for it :(
@@ -109,13 +125,26 @@ void Unreachable [[noreturn]] (Location loc = Location ());
 #define Assert(EXPR, ...)					\
   ((void)sizeof (bool (EXPR, ##__VA_ARGS__)), (void)0)
 #endif
-inline void Unreachable ()
+inline void Unreachable
+  ()
+{
+  __builtin_unreachable ();
+}
+inline void Unimplemented
+  ()
 {
   __builtin_unreachable ();
 }
 #endif
 
-void BuildNote (FILE *stream) noexcept;
-void Fatal [[noreturn]] (char const *, ...) noexcept;
-void SignalHandlers () noexcept;
+void BuildNote
+  (FILE *stream)
+  noexcept;
+void Fatal
+  [[noreturn]]
+  (char const *, ...)
+  noexcept;
+void SignalHandlers
+  ()
+  noexcept;
 }

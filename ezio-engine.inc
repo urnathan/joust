@@ -2,7 +2,8 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-class Engine : public Logger
+class Engine
+  : public Logger
 {
 public:
   using Parent = Logger;
@@ -14,11 +15,13 @@ private:
     std::vector<Pattern *> body;
 
   public:
-    Frame (Pattern *head = nullptr)
+    Frame
+      (Pattern *head = nullptr)
     {
       body.emplace_back (head);
     }
-    Frame (Frame &&from)
+    Frame
+      (Frame &&from)
       : none (std::move (from.none)),
 	body (std::move (from.body))
     {
@@ -26,7 +29,9 @@ private:
     ~Frame ();
 
   private:
-    Frame &operator= (Frame &&) = delete;
+    Frame &operator=
+      (Frame &&)
+      = delete;
     
   };
   using BodyIter = std::vector<Pattern *>::iterator;
@@ -40,41 +45,58 @@ private:
   BodyIter bodyIter; // Current element
 
 public:
-  Engine (Symbols &syms_, std::ostream &sum_, std::ostream &log_)
+  Engine
+    (Symbols &syms_, std::ostream &sum_, std::ostream &log_)
     : Parent (sum_, log_), syms (syms_)
   {
   }
-  ~Engine ();
+  ~Engine
+    ();
 
 private:
-  Engine (Engine &&) = delete;
-  Engine &operator= (Engine &&) = delete;
+  Engine
+    (Engine &&)
+    = delete;
+  Engine &operator=
+    (Engine &&)
+    = delete;
 
 public:
-  void BodyAdvance (BodyIter);
+  void BodyAdvance
+    (BodyIter);
 
 public:
   // Advance to frame
-  void FrameAdvance (FrameIter);
+  void FrameAdvance
+    (FrameIter);
 
 public:
-  void Process (char const *file);
-  void Process (std::string_view const &line, bool eof);
+  void Process
+    (char const *file);
+  void Process
+    (std::string_view const &line, bool eof);
 
 public:
   // Add pattern to frames or nevers, might start a new frame
-  void Add (Pattern *);
+  void Add
+    (Pattern *);
 
 public:
-  void Initialize ();
-  void Finalize ();
+  void Initialize
+    ();
+  void Finalize
+    ();
 
-  friend std::ostream &operator<< (std::ostream &, Engine const &);
-  friend std::ostream &operator<< (std::ostream &s, Frame const &e);
-  friend std::ostream &operator<< (std::ostream &s, std::vector<Frame> const &);
+  friend std::ostream &operator<<
+    (std::ostream &, Engine const &);
+  friend std::ostream &operator<<
+    (std::ostream &s, Frame const &e);
+  friend std::ostream &operator<<
+    (std::ostream &s, std::vector<Frame> const &);
 };
 
-Engine::Frame::~Frame ()
+Engine::Frame::~Frame
+  ()
 {
   for (auto *n : none)
     delete n;
@@ -82,13 +104,15 @@ Engine::Frame::~Frame ()
     delete b;
 }
 
-Engine::~Engine ()
+Engine::~Engine
+  ()
 {
   for (auto *n : nevers)
     delete n;
 }
 
-std::ostream &operator<< (std::ostream &s, std::vector<Pattern *> const &vec)
+std::ostream &operator<<
+  (std::ostream &s, std::vector<Pattern *> const &vec)
 {
   for (auto iter = vec.begin (); iter != vec.end (); ++iter)
     if (auto p = *iter)
@@ -97,7 +121,8 @@ std::ostream &operator<< (std::ostream &s, std::vector<Pattern *> const &vec)
   return s;
 }
 
-std::ostream &operator<< (std::ostream &s, std::vector<Engine::Frame> const &vec)
+std::ostream &operator<<
+  (std::ostream &s, std::vector<Engine::Frame> const &vec)
 {
   for (auto iter = vec.begin (); iter != vec.end (); ++iter)
     s << *iter;
@@ -105,21 +130,24 @@ std::ostream &operator<< (std::ostream &s, std::vector<Engine::Frame> const &vec
   return s;
 }
 
-std::ostream &operator<< (std::ostream &s, Engine::Frame const &f)
+std::ostream &operator<<
+  (std::ostream &s, Engine::Frame const &f)
 {
   s << f.body << f.none;
  
   return s;
 }
 
-std::ostream &operator<< (std::ostream &s, Engine const &e)
+std::ostream &operator<<
+  (std::ostream &s, Engine const &e)
 {
   s << e.frames << e.nevers;
 
   return s;
 }
 
-void Engine::Add (Pattern *p)
+void Engine::Add
+  (Pattern *p)
 {
   if (!p->Errored ())
     p->Canonicalize ();
@@ -154,14 +182,16 @@ void Engine::Add (Pattern *p)
     }
 }
 
-void Engine::BodyAdvance (BodyIter bodyIx)
+void Engine::BodyAdvance
+  (BodyIter bodyIx)
 {
   for (Frame const &frame = *frameIter;
        bodyIter != bodyIx; ++bodyIter)
     (*bodyIter)->Result (*this);
 }
 
-void Engine::FrameAdvance (FrameIter frameIx)
+void Engine::FrameAdvance
+  (FrameIter frameIx)
 {
   while (frameIter != frameIx)
     {
@@ -175,7 +205,8 @@ void Engine::FrameAdvance (FrameIter frameIx)
     }
 }
 
-void Engine::Initialize ()
+void Engine::Initialize
+  ()
 {
   if (frames.empty ())
     {
@@ -189,7 +220,8 @@ void Engine::Initialize ()
     ++bodyIter;
 }
 
-void Engine::Process (std::string_view const &text, bool eof)
+void Engine::Process
+  (std::string_view const &text, bool eof)
 {
   bool maybe_captures = false;
 
@@ -313,7 +345,8 @@ void Engine::Process (std::string_view const &text, bool eof)
     }
 }
 
-void Engine::Process (char const *file)
+void Engine::Process
+  (char const *file)
 {
   int fd = 0;
   if (file[file[0] == '-'])
@@ -418,7 +451,8 @@ void Engine::Process (char const *file)
   munmap (buffer, alloc);
 }
 
-void Engine::Finalize ()
+void Engine::Finalize
+  ()
 {
   Process ("", true);
   FrameAdvance (frames.end ());

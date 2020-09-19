@@ -8,9 +8,11 @@
 // C
 #include <cstring>
 
-namespace Joust {
+namespace Joust
+{
 
-void Option::Help (FILE *stream, char const *args) const
+void Option::Help
+  (FILE *stream, char const *args) const
 {
   enum {indent = 26};
 
@@ -29,8 +31,7 @@ void Option::Help (FILE *stream, char const *args) const
       if (opt->argform)
 	{
 	  bool adjacent = opt->argform[0] == '+';
-	  len += fprintf (stream, "%s<%s>",
-			  " " + adjacent,
+	  len += fprintf (stream, "%s%s", " " + adjacent,
 			  opt->argform + adjacent);
 	}
 
@@ -45,7 +46,8 @@ void Option::Help (FILE *stream, char const *args) const
     }
 }
 
-int Option::Process (int argc, char **argv, void *flags) const
+int Option::Process
+  (int argc, char **argv, void *flags) const
 {
   int argno = 0;
 
@@ -60,27 +62,41 @@ int Option::Process (int argc, char **argv, void *flags) const
       argno++;
 
       bool dash = opt[1] == '-';
+      size_t len = strlen (opt + 1 + dash);
       for (auto self = this; self->sname || self->cname; self++)
 	{
-	  bool single = false;
+	  size_t opt_len = 0;
 	  if (!dash && self->cname == opt[1])
-	    single = true;
-	  else if (!(self->sname && !strcmp (opt + 1 + dash, self->sname)))
+	    {
+	      if (self->argform && self->argform[0] == '+')
+		;
+	      else if (opt[2])
+		continue;
+
+	      opt_len = 1;
+	    }
+	  else if (self->sname)
+	    {
+	      opt_len = len;
+	      if (self->argform && self->argform[0] == '+')
+		opt_len = strlen (self->sname);
+	      if (opt_len > len || memcmp (opt + 1 + dash, self->sname, opt_len))
+		continue;
+	    }
+	  else
 	    continue;
 
 	  char const *arg = nullptr;
 	  if (self->argform)
 	    {
-	      if (single && self->argform[0] == '+')
-		arg = opt + 2;
+	      if (self->argform[0] == '+')
+		arg = opt + dash + 1 + opt_len;
 	      else if (argno == argc)
 		Fatal ("option '%s' requires <%s> argument", opt,
-		       argform + (argform[0] == '+'));
+		       self->argform + (self->argform[0] == '+'));
 	      else
 		arg = argv[argno++];
 	    }
-	  else if (single && opt[2])
-	    continue;
 
 	  if (self->process)
 	    self->process (self, opt, arg, flags);

@@ -53,7 +53,8 @@ using namespace Joust;
 // RUN-REQUIRE inside a loop would continue to the next iteration of
 // the loop.
 
-namespace {
+namespace
+{
 
 #include "kratos-command.inc"
 #include "kratos-pipeline.inc"
@@ -62,13 +63,15 @@ namespace {
 
 }
 
-static void Title (FILE *stream)
+static void Title
+  (FILE *stream)
 {
   fprintf (stream, "KRATOS: Kapture Run And Test Output Safely\n");
   fprintf (stream, "Copyright 2020 Nathan Sidwell, nathan@acm.org\n");
 }
 
-int main (int argc, char *argv[])
+int main
+  (int argc, char *argv[])
 {
   SignalHandlers ();
 

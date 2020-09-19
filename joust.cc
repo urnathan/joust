@@ -7,9 +7,11 @@
 // C
 #include <cstdlib>
 
-namespace Joust {
+namespace Joust
+{
 
-Logger::Status Logger::DecodeStatus (std::string_view const &line)
+Logger::Status Logger::DecodeStatus
+  (std::string_view const &line)
 {
   for (unsigned ix = STATUS_HWM; ix--;)
     if (line.size () > statuses[ix].size ()
@@ -20,7 +22,8 @@ Logger::Status Logger::DecodeStatus (std::string_view const &line)
   return STATUS_HWM;
 }
 
-Logger::Streamer Logger::Result (Status status, char const *file, unsigned line)
+Logger::Streamer Logger::Result
+  (Status status, char const *file, unsigned line)
 {
   Streamer result (this);
 

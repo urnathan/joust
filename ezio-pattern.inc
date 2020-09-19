@@ -4,7 +4,8 @@
 
 class Pattern
 {
-  class Lexer : public Joust::Lexer
+  class Lexer
+    : public Joust::Lexer
   {
   public:
     using Parent = Joust::Lexer;
@@ -28,7 +29,8 @@ public:
     PATTERN_KIND_FROB(NEVER), PATTERN_KIND_FROB(NONE),			\
     PATTERN_KIND_FROB(UNKNOWN)
 #define PATTERN_KIND_FROB(KIND) KIND
-  enum Kind : unsigned char
+  enum Kind
+    : unsigned char
   {
     PATTERN_KINDS,
     PATTERN_HWM,
@@ -39,7 +41,9 @@ public:
 public:
   static constexpr char const *kinds[PATTERN_HWM]
 #define PATTERN_KIND_FROB(KIND) #KIND
-    = { PATTERN_KINDS };
+    = {
+    PATTERN_KINDS
+  };
 #undef PATTERN_KIND_FROB
 
 private:
@@ -68,7 +72,8 @@ private:
   std::vector<Token> atoms;
 
 protected:
-  Pattern (Kind kind_, Parser const *parser, std::string_view const &text)
+  Pattern
+    (Kind kind_, Parser const *parser, std::string_view const &text)
     : file (parser->GetFile ()), line (parser->GetLine ()),
       kind (kind_), original (text)
   {
@@ -83,65 +88,92 @@ protected:
   }
 
 public:
-  ~Pattern () = default;
+  ~Pattern
+    ()
+    = default;
 
 public:
-  Kind GetKind () const
+  Kind GetKind
+    ()
+    const
   {
     return kind;
   }
 
 public:
-  bool Errored () const
+  bool Errored
+    ()
+    const
   {
     return has_error;
   }
-  bool Matched () const
+  bool Matched
+    ()
+    const
   {
     return has_matched;
   }
-  bool Captures () const
+  bool Captures
+    ()
+    const
   {
     return has_captures;
   }
 
 private:
-  void Append (Token &&a)
+  void Append
+    (Token &&a)
   {
     atoms.push_back (std::move (a));
   }
-  unsigned Size () const
+  unsigned Size
+    ()
+    const
   {
     return atoms.size ();
   }
 
 public:
-  Joust::Error Error ();
+  Joust::Error Error
+    ();
 
 public:
-  bool Canonicalize ();
+  bool Canonicalize
+    ();
 
 public:
-  Regex::Result Expand (Symbols const &);
-  Regex::Result Compare (Symbols &, std::string_view const &text, bool eof);
+  Regex::Result Expand
+    (Symbols const &);
+  Regex::Result Compare
+    (Symbols &, std::string_view const &text, bool eof);
 
 private:
-  Regex::Result DoExpand (Symbols const &);
+  Regex::Result DoExpand
+    (Symbols const &);
 
 public:
-  static Pattern *Parse (Parser *, Kind kind, std::string_view const &);
+  static Pattern *Parse
+    (Parser *, Kind kind, std::string_view const &);
 
 private:
-  bool ParseEscape (Parser *, Lexer &);
+  bool ParseEscape
+    (Parser *, Lexer &);
 
 private:
-  void Result (Logger &, Logger::Status) const;
+  void Result
+    (Logger &, Logger::Status)
+    const;
 
 public:
-  void Result (Logger &) const;
-  void Matched (Logger &) const;
+  void Result
+    (Logger &)
+    const;
+  void Matched
+    (Logger &)
+    const;
 
-  friend std::ostream &operator<< (std::ostream &s, Pattern const &p);
+  friend std::ostream &operator<<
+    (std::ostream &s, Pattern const &p);
 };
 
 // PATTERN_REGEXP is
@@ -152,7 +184,8 @@ public:
 //   string: $$
 //   string: .+
 // Final TOKEN_CLOSE has capture count 
-bool Pattern::Lexer::PatternRegexp ()
+bool Pattern::Lexer::PatternRegexp
+  ()
 {
   bool escape = false;
   unsigned square = 0;
@@ -250,7 +283,8 @@ bool Pattern::Lexer::PatternRegexp ()
   return false;
 }
 
-bool Pattern::Lexer::Pattern ()
+bool Pattern::Lexer::Pattern
+  ()
 {
   while (char c = Peek ())
     switch (c)
@@ -325,13 +359,15 @@ bool Pattern::Lexer::Pattern ()
   return true;
 }
 
-Error Pattern::Error ()
+Error Pattern::Error
+  ()
 {
   has_error = true;
   return Joust::Error (file, line);
 }
 
-std::ostream &operator<< (std::ostream &s, Pattern const &p)
+std::ostream &operator<<
+  (std::ostream &s, Pattern const &p)
 {
   return s << p.file << ':' << p.line << ":"
 	   << p.kinds[p.GetKind ()] << ", " << p.atoms << '\n';
@@ -341,7 +377,8 @@ std::ostream &operator<< (std::ostream &s, Pattern const &p)
 // regexp-expand: regexp-expand-opt STRING
 //              | regexp-expand-opt IDENTIFIER
 
-bool Pattern::ParseEscape (Parser *parser, Lexer &lexer)
+bool Pattern::ParseEscape
+  (Parser *parser, Lexer &lexer)
 {
   Token escape (Token::REGEX_CAPTURE);
   Token *next = lexer.GetToken ();
@@ -390,7 +427,8 @@ bool Pattern::ParseEscape (Parser *parser, Lexer &lexer)
 // match: match-opt match-word
 // match-word: STRING | IDENTIFIER | OPEN match-escape
 
-Pattern *Pattern::Parse (Parser *parser, Kind kind, std::string_view const &line)
+Pattern *Pattern::Parse
+  (Parser *parser, Kind kind, std::string_view const &line)
 {
   auto p = new Pattern (kind, parser, line);
   if (kind == UNKNOWN)
@@ -436,7 +474,8 @@ Pattern *Pattern::Parse (Parser *parser, Kind kind, std::string_view const &line
 // Promote fixed regexes to strings
 // Concatenate adjacent strings & whitespace
 // Prepend ^ and postpend $, if needed
-bool Pattern::Canonicalize ()
+bool Pattern::Canonicalize
+  ()
 {
   std::vector<Token> canon;
   canon.reserve (atoms.size ());
@@ -558,7 +597,8 @@ bool Pattern::Canonicalize ()
   return true;
 }
 
-Regex::Result Pattern::DoExpand (Symbols const &symbols)
+Regex::Result Pattern::DoExpand
+  (Symbols const &symbols)
 {
   for (auto token = atoms.begin (); token != atoms.end (); ++token)
     switch (token->GetKind ())
@@ -611,7 +651,8 @@ Regex::Result Pattern::DoExpand (Symbols const &symbols)
 }
 
 // Expand tokens to expansion
-Regex::Result Pattern::Expand (Symbols const &symbols)
+Regex::Result Pattern::Expand
+  (Symbols const &symbols)
 {
   if (Errored ())
     return Regex::FAILED;
@@ -698,13 +739,15 @@ Regex::Result Pattern::Compare
 }
 
 // Write to stdout
-void Pattern::Result (Logger &logger, Logger::Status s) const
+void Pattern::Result
+  (Logger &logger, Logger::Status s) const
 {
   logger.Result (s, file, line) << kinds[GetKind ()] << ' ' << original;
 }
 
 /* Emit result for a skipped-over pattern.  */
-void Pattern::Result (Logger &log) const
+void Pattern::Result
+  (Logger &log) const
 {
   if (Errored ())
     Result (log, Logger::ERROR);
@@ -712,7 +755,8 @@ void Pattern::Result (Logger &log) const
     Result (log, Logger::PassFail (GetKind () >= CAPTURE_HWM, is_xfail));
 }
 
-void Pattern::Matched (Logger &log) const
+void Pattern::Matched
+  (Logger &log) const
 {
   Assert (!Errored () && Matched ());
 

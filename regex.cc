@@ -6,12 +6,14 @@
 #include "regex.hh"
 #include "fatal.hh"
 
-namespace Joust::Regex {
+namespace Joust::Regex
+{
 
 // Escape characters in STRING that are significant to regex
 // extended POSIX, Base Definitions and Headers, Section 9.4
 
-void Protect (std::string &dst, std::string_view const &src)
+void Protect
+  (std::string &dst, std::string_view const &src)
 {
   // ) needs escaping, } must not be escaped, ] seems either way
   constexpr std::string_view meta (R"([{()*+?.\^$|)");
@@ -27,8 +29,9 @@ void Protect (std::string &dst, std::string_view const &src)
 }
 
 
-Result Create (std::regex &regex, std::string_view const &text,
-	       int &error) noexcept
+Result Create
+  (std::regex &regex, std::string_view const &text, int &error)
+  noexcept
 {
   try
     {
@@ -44,8 +47,10 @@ Result Create (std::regex &regex, std::string_view const &text,
     }
 }
 
-Result Search (std::regex const &regex, std::string_view const &text,
-	       std::cmatch &match, int &error) noexcept
+Result Search
+  (std::regex const &regex, std::string_view const &text,
+   std::cmatch &match, int &error)
+  noexcept
 {
   try
     {
@@ -62,7 +67,8 @@ Result Search (std::regex const &regex, std::string_view const &text,
     }
 }
 
-char const *Error (int error)
+char const *Error
+  (int error)
 {
   using namespace std::regex_constants;
   switch (error)

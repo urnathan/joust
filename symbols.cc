@@ -11,22 +11,27 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-namespace Joust {
+namespace Joust
+{
 
-std::string const *Symbols::Get (std::string const &var) const
+std::string const *Symbols::Get
+  (std::string const &var)
+  const
 {
   auto iter = table.find (var);
 
   return iter == table.end () ? nullptr : &iter->second;
 }
 
-bool Symbols::Set (std::string_view const &var, std::string_view const &v)
+bool Symbols::Set
+  (std::string_view const &var, std::string_view const &v)
 {
   auto [iter, inserted] = table.emplace (var, v);
   return inserted;
 }
 
-bool Symbols::Define (std::string_view const &define)
+bool Symbols::Define
+  (std::string_view const &define)
 {
   auto eq = std::find (define.begin (), define.end (), '=');
   auto val = eq + (eq != define.end ());
@@ -39,7 +44,8 @@ bool Symbols::Define (std::string_view const &define)
 // stem=$(basename -s .* $testFile)
 // subdir=$(dir $testFile)
 // tmp=${test:/=-}.TMPNAM
-std::string Symbols::Origin (char const *s)
+std::string Symbols::Origin
+  (char const *s)
 {
   std::string_view testFile (s);
 
@@ -83,7 +89,8 @@ std::string Symbols::Origin (char const *s)
   return path;
 }
 
-void Symbols::Read (char const *file)
+void Symbols::Read
+  (char const *file)
 {
   int fd = open (file, O_RDONLY | O_CLOEXEC);
   if (fd < 0)

@@ -7,11 +7,13 @@
 // C++
 #include <iostream>
 
-namespace Joust {
+namespace Joust
+{
 
 bool Error::errored;
 
-Error::Error (char const *file, unsigned line)
+Error::Error
+  (char const *file, unsigned line)
   : stream (&std::cerr)
   {
     errored = true;

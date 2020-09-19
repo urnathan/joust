@@ -24,16 +24,19 @@ enum ProcLimits
 };
 
 // Return pid_t & errno
-std::tuple<pid_t,int> Spawn (int fd_in, int fd_out, int fd_err,
-			     std::vector<std::string> const &words,
-			     std::vector<std::string> const *wrapper = nullptr,
-			     unsigned const *limits = nullptr);
+std::tuple<pid_t,int> Spawn
+  (int fd_in, int fd_out, int fd_err,
+   std::vector<std::string> const &words,
+   std::vector<std::string> const *wrapper = nullptr,
+   unsigned const *limits = nullptr);
 
-int MakePipe (int pipes[2]);
+int MakePipe
+  (int pipes[2]);
 
 // We always want cloexec pipes, and pipe2 is linux-specific
 #ifdef HAVE_PIPE2
-inline int MakePipe (int pipes[2])
+inline int MakePipe
+  (int pipes[2])
 {
   return pipe2 (pipes, O_CLOEXEC);
 }

@@ -34,22 +34,26 @@
 
 using namespace Joust;
 
-namespace {
+namespace
+{
 
 class Engine;
 #include "ezio-parser.inc"
 #include "ezio-pattern.inc"
 #include "ezio-engine.inc"
 #include "ezio-parser.inc"
+
 }
 
-static void Title (FILE *stream)
+static void Title
+  (FILE *stream)
 {
   fprintf (stream, "EZIO: Expect Zero Irregularities Observed\n");
   fprintf (stream, "Copyright 2020 Nathan Sidwell, nathan@acm.org\n");
 }
 
-int main (int argc, char *argv[])
+int main
+  (int argc, char *argv[])
 {
   SignalHandlers ();
 

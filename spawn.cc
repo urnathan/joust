@@ -11,12 +11,14 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-namespace Joust {
+namespace Joust
+{
 
-std::tuple<pid_t, int> Spawn (int fd_in, int fd_out, int fd_err,
-			      std::vector<std::string> const &command,
-			      std::vector<std::string> const *wrapper,
-			      unsigned const *limits)
+std::tuple<pid_t, int> Spawn
+  (int fd_in, int fd_out, int fd_err,
+   std::vector<std::string> const &command,
+   std::vector<std::string> const *wrapper,
+   unsigned const *limits)
 {
   std::tuple<pid_t, int> res {0, 0};
   auto &[pid, err] = res;
@@ -110,7 +112,8 @@ std::tuple<pid_t, int> Spawn (int fd_in, int fd_out, int fd_err,
 }
 
 #ifndef HAVE_PIPE2
-int MakePipe (int pipes[2])
+int MakePipe
+  (int pipes[2])
 {
   if (pipe (pipes) < 0)
     // Failed to make the pipes

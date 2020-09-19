@@ -9,7 +9,8 @@
 
 // regex propagates errors via exceptions, hence this wrapper to catch
 // and contain them.
-namespace Joust::Regex {
+namespace Joust::Regex
+{
 
 enum Result
 {
@@ -19,12 +20,18 @@ enum Result
   FAILED
 };
 
-Result Create (std::regex &, std::string_view const &text, int &) noexcept;
-Result Search (std::regex const &, std::string_view const &text,
-	       std::cmatch &, int &) noexcept;
-char const *Error (int);
-void Protect (std::string &, std::string_view const &);
-inline std::string Protect (std::string_view const &src)
+Result Create
+  (std::regex &, std::string_view const &text, int &)
+  noexcept;
+Result Search
+  (std::regex const &, std::string_view const &text, std::cmatch &, int &)
+  noexcept;
+char const *Error
+  (int);
+void Protect
+  (std::string &, std::string_view const &);
+inline std::string Protect
+  (std::string_view const &src)
 {
   std::string dst;
   Protect (dst, src);

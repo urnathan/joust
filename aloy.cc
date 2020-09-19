@@ -42,21 +42,26 @@
 
 using namespace Joust;
 
-namespace {
+namespace
+{
+
 class Engine;
 #include "aloy-job.inc"
 #include "aloy-engine.inc"
 #include "aloy-job.inc"
 #include "aloy-engine.inc"
+
 }
 
-static void Title (FILE *stream)
+static void Title
+  (FILE *stream)
 {
   fprintf (stream, "ALOY: Apply List, Observe Yield\n");
   fprintf (stream, "Copyright 2020 Nathan Sidwell, nathan@acm.org\n");
 }
 
-int main (int argc, char *argv[])
+int main
+  (int argc, char *argv[])
 {
   SignalHandlers ();
 

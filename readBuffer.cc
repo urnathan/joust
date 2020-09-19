@@ -10,9 +10,11 @@
 // OS
 #include <unistd.h>
 
-namespace Joust {
+namespace Joust
+{
 
-int ReadBuffer::Read ()
+int ReadBuffer::Read
+  ()
 {
   Assert (fd >= 0);
 

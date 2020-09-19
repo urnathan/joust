@@ -11,7 +11,8 @@ public:
     PIPELINE_KIND_FROB(REQUIRE),		\
     PIPELINE_KIND_FROB(END)
 #define PIPELINE_KIND_FROB(KIND) KIND
-  enum Kind : unsigned char
+  enum Kind
+    : unsigned char
   {
     PIPELINE_KINDS,
     PIPELINE_HWM,
@@ -22,7 +23,9 @@ public:
 public:
   static constexpr char const *kinds[PIPELINE_HWM]
 #define PIPELINE_KIND_FROB(KIND) #KIND
-    = { PIPELINE_KINDS };
+    = {
+    PIPELINE_KINDS
+  };
 #undef PIPELINE_KIND_FROB
 
 private:
@@ -36,40 +39,50 @@ private:
   bool here_doc : 1 = false;
 
 public:
-  Pipeline (Kind k, bool inverted, unsigned exit = 0)
+  Pipeline
+    (Kind k, bool inverted, unsigned exit = 0)
     : kind (k), expected_exit (exit), expect_inverted (inverted)
   {
     commands.emplace_back ();
   }
 
 public:
-  Kind GetKind () const
+  Kind GetKind
+    ()
+    const
   {
     return kind;
   }
 
 public:
-  void SetIn (std::string &&stdin, bool here)
+  void SetIn
+    (std::string &&stdin, bool here)
   {
     src = stdin;
     here_doc = here;
   }
 
 public:
-  int Execute (Logger &, unsigned const *);
+  int Execute
+    (Logger &, unsigned const *);
 
 public:
-  void Result (Logger &, Logger::Status);
+  void Result
+    (Logger &, Logger::Status);
 
 private:
-  friend std::ostream &operator<< (std::ostream &s, Pipeline const &pipe);
+  friend std::ostream &operator<<
+    (std::ostream &s, Pipeline const &pipe);
   friend class Parser;
 };
 
-static constexpr unsigned char sigs[] =
-  {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGALRM, SIGTERM};
+static constexpr unsigned char sigs[]
+  = {
+  SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGALRM, SIGTERM
+};
 
-std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
+std::ostream &operator<<
+  (std::ostream &s, Pipeline const &pipe)
 {
   {
     auto &cmd = pipe.commands.front ();
@@ -119,7 +132,8 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
 // Signals we saw
 volatile unsigned sigs_seen;
 
-void NoteSignal (int signal)
+void NoteSignal
+  (int signal)
 {
   for (unsigned ix = sizeof (sigs); ix--;)
     if (signal == sigs[ix])
@@ -132,7 +146,8 @@ void NoteSignal (int signal)
 
 // This mucks about with signals, so expects to be single threaded
 
-int Pipeline::Execute (Logger &logger, unsigned const *limits)
+int Pipeline::Execute
+  (Logger &logger, unsigned const *limits)
 {
   Assert (commands.size () == 1 || commands.size () == 3);
 
@@ -650,7 +665,8 @@ int Pipeline::Execute (Logger &logger, unsigned const *limits)
   return pass ? 0 : EINVAL;
 }
 
-void Pipeline::Result (Logger &logger, Logger::Status status)
+void Pipeline::Result
+  (Logger &logger, Logger::Status status)
 {
   auto const &cmd = commands.front ();
   auto l = logger.Result (status, cmd.file, cmd.line);

@@ -7,7 +7,8 @@
 class Command
 {
 public:
-  enum Redirect : char 
+  enum Redirect
+    : char 
   {
     R_NORMAL,
     R_FILE,
@@ -22,55 +23,70 @@ private:
   Redirect redirect = R_NORMAL;
 
 public:
-  auto Error ()
+  auto Error
+    ()
   {
     return Joust::Error (file, line);
   }
 
 public:
-  void FileLine (char const *f, unsigned l)
+  void FileLine
+    (char const *f, unsigned l)
   {
     file = f;
     line = l;
   }
-  auto File () const
+  auto File
+    ()
+    const
   {
     return file;
   }
-  auto Line () const
+  auto Line
+    ()
+    const
   {
     return line;
   }
 
 public:
-  auto RedirectType () const
+  auto RedirectType
+    ()
+    const
   {
     return redirect;
   }
-  void RedirectType (Redirect r)
+  void RedirectType
+    (Redirect r)
   {
     Assert (redirect == R_NORMAL);
     redirect = r;
   }
 
 public:
-  auto Empty () const
+  auto Empty
+    ()
+    const
   {
     return words.empty ();
   }
 
 public:
-  bool Execute (int, int, unsigned const *limits = nullptr);
-  void Stop (int sig)
+  bool Execute
+    (int, int, unsigned const *limits = nullptr);
+  void Stop
+    (int sig)
   {
     if (pid > 0)
       kill (pid, sig);
   }
 
 private:
-  void Shellify (Symbols const &);
+  void Shellify
+    (Symbols const &);
 
-  friend std::ostream &operator<<  (std::ostream &, Command const &);
+  friend std::ostream &operator<<
+    (std::ostream &, Command const &);
 
   friend class Pipeline;
   friend class Parser;
@@ -78,7 +94,8 @@ private:
 
 #else
 
-void Command::Shellify (Symbols const &syms)
+void Command::Shellify
+  (Symbols const &syms)
 {
   bool active = false;
   size_t len = 0;
@@ -126,7 +143,8 @@ void Command::Shellify (Symbols const &syms)
     }
 }
 
-bool Command::Execute (int fd_out, int fd_err, unsigned const *limits)
+bool Command::Execute
+  (int fd_out, int fd_err, unsigned const *limits)
 {
   auto spawn = Spawn (stdin, fd_out, fd_err, words, nullptr, limits);
 
@@ -138,7 +156,8 @@ bool Command::Execute (int fd_out, int fd_err, unsigned const *limits)
   return std::get<0> (spawn);
 }
 
-std::ostream &operator<< (std::ostream &s, Command const &cmd)
+std::ostream &operator<<
+  (std::ostream &s, Command const &cmd)
 {
   for (auto witer = cmd.words.begin (); witer != cmd.words.end (); ++witer)
     {

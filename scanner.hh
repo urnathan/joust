@@ -10,7 +10,8 @@
 #include <string_view>
 #include <vector>
 
-namespace Joust {
+namespace Joust
+{
 
 class Scanner
 {
@@ -19,33 +20,40 @@ private:
   unsigned line = 0;
   
 public:
-  Scanner (char const *file_)
+  Scanner
+    (char const *file_)
     : file (file_)
   {
   }
 
 public:
-  char const *GetFile () const 
+  char const *GetFile
+    ()
+    const 
   {
     return file;
   }
-  unsigned GetLine () const
+  unsigned GetLine
+    ()
+    const
   {
     return line;
   }
 
 public:
-  auto Error ()
+  auto Error
+    ()
   {
     return Joust::Error (file, line);
   }
 
 public:
-  void ScanFile (std::string const &, std::vector<char const *> const &prefixes);
+  void ScanFile
+    (std::string const &, std::vector<char const *> const &prefixes);
 
 protected:
-  virtual bool ProcessLine (std::string_view const &variant,
-			    std::string_view const &line);
+  virtual bool ProcessLine
+    (std::string_view const &variant, std::string_view const &line);
 };
 
 }

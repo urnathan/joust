@@ -12,7 +12,8 @@
 #include <string_view>
 #include <vector>
 
-namespace Joust {
+namespace Joust
+{
 
 class Lexer
 {
@@ -23,20 +24,30 @@ protected:
   unsigned t_ix = 0; // Next token to return
 
 public:
-  Lexer (std::string_view const &s)
+  Lexer
+    (std::string_view const &s)
     : string (s)
   {
   }
 
-  Lexer () = delete;
-  ~Lexer () = default;
+  Lexer
+    ()
+    = delete;
+  ~Lexer
+    ()
+    = default;
 
 private:
-  Lexer &operator= (Lexer const &) = delete;
-  Lexer (Lexer const &) = delete;
+  Lexer &operator=
+    (Lexer const &)
+    = delete;
+  Lexer
+    (Lexer const &)
+    = delete;
 
 public:
-  Token *GetToken ()
+  Token *GetToken
+    ()
   {
     if (Token *peeked = PeekToken ())
       {
@@ -45,7 +56,8 @@ public:
       }
     return nullptr;
   }
-  Token *PeekToken (unsigned advance = 0)
+  Token *PeekToken
+    (unsigned advance = 0)
   {
     if (t_ix + advance >= tokens.size ())
       return nullptr;
@@ -53,32 +65,42 @@ public:
   }
 
 public:
-  std::string_view Before () const;
-  std::string_view After () const;
+  std::string_view Before
+    ()
+    const;
+  std::string_view After
+    ()
+    const;
 
 public:
-  char Peek (unsigned a = 0) const
+  char Peek
+    (unsigned a = 0)
+    const
   {
     if (c_ix + a >= string.size ())
       return 0;
     return string[c_ix + a];
   }
-  void Advance (unsigned a = 1)
+  void Advance
+    (unsigned a = 1)
   {
     Assert (c_ix + a <= string.size ());
     c_ix += a;
   }
-  char SkipWS ();
+  char SkipWS
+    ();
 
 public:
   // Advance and peek
-  char AdvancePeek ()
+  char AdvancePeek
+    ()
   {
     Advance ();
     return Peek ();
   }
   // Peek and advance
-  char PeekAdvance ()
+  char PeekAdvance
+    ()
   {
     char c = Peek ();
     if (c)
@@ -87,14 +109,18 @@ public:
   }
 
 public:
-  void Append (Token &&tok);
+  void Append
+    (Token &&tok);
   // Append char C to final token KIND
-  void Append (Token::Kind, char c);
+  void Append
+    (Token::Kind, char c);
 
 
 public:
-  bool Identifier ();
-  bool Integer ();
+  bool Identifier
+    ();
+  bool Integer
+    ();
 };
 
 }

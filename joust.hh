@@ -16,7 +16,8 @@
 #define JOUST_LINE() 0
 #endif
 
-namespace Joust {
+namespace Joust
+{
 
 class Logger
 {
@@ -26,26 +27,33 @@ private:
     Logger *logger;
 
   public:
-    Streamer (Logger *l)
+    Streamer
+      (Logger *l)
       : logger (l)
     {
     }
-    Streamer (Streamer &&s)
+    Streamer
+      (Streamer &&s)
       : logger (s.logger)
     {
       s.logger = nullptr;
     }
-    ~Streamer ()
+    ~Streamer
+      ()
     {
       if (logger)
 	*logger << '\n';
     }
 
   private:
-    Streamer &operator= (Streamer &&) = delete;
+    Streamer &operator=
+      (Streamer &&)
+      = delete;
 
   public:
-    template<typename T> Streamer &operator << (T &&obj)
+    template<typename T>
+    Streamer &operator<<
+      (T &&obj)
     {
       *logger << std::forward<T> (obj);
 
@@ -62,13 +70,19 @@ public:
     JOUST_STATUS_FROB(ERROR),			\
     JOUST_STATUS_FROB(UNSUPPORTED)
 #define JOUST_STATUS_FROB(STATUS) STATUS
-    enum Status { JOUST_STATUSES, STATUS_HWM };
+    enum Status
+    {
+      JOUST_STATUSES,
+      STATUS_HWM
+    };
 #undef JOUST_STATUS_FROB
 
 public:
   static constexpr std::string_view statuses[STATUS_HWM]
 #define JOUST_STATUS_FROB(STATUS) std::string_view (#STATUS)
-    = { JOUST_STATUSES };
+    = {
+    JOUST_STATUSES
+  };
 #undef JOUST_STATUS_FROB
 #undef JOUST_STATUSES
 
@@ -77,52 +91,69 @@ private:
   std::ostream &log;
 
 public:
-  Logger (std::ostream &s, std::ostream &l)
+  Logger
+    (std::ostream &s, std::ostream &l)
     : sum (s), log (l)
   {
   }
 
-  Logger ()
+  Logger
+    ()
     : Logger (std::cout, std::cerr)
   {
   }
 
 private:
-  Logger (Logger const &) = delete;
-  Logger &operator= (Logger const &) = delete;
+  Logger
+    (Logger const &)
+    = delete;
+  Logger &operator=
+    (Logger const &)
+    = delete;
 
 public:
-  std::ostream &Sum () const
+  std::ostream &Sum
+    ()
+    const
   {
     return sum;
   }
-  std::ostream &Log () const
+  std::ostream &Log
+    ()
+    const
   {
     return log;
   }
 
 public:
-  void Flush ()
+  void Flush
+    ()
   {
     sum.flush ();
     log.flush ();
   }
   
 public:
-  static Status PassFail (bool pass, bool xfail = false)
+  static Status PassFail
+    (bool pass, bool xfail = false)
   {
     return Status ((pass ? PASS : FAIL) + (xfail ? XPASS - PASS : 0));
   }
 
 protected:
-  Status DecodeStatus (std::string_view const &);
+  Status DecodeStatus
+    (std::string_view const &);
 
 public:
-  Streamer Result (Status status, char const *file = JOUST_FILE (),
-		   unsigned line = JOUST_LINE ());
+  Streamer Result
+    (Status status,
+     char const *file = JOUST_FILE (), unsigned line = JOUST_LINE ());
 
 public:
-  template<typename T> Logger const &operator << (T const &obj) const
+  template<typename T>
+  Logger const &operator<<
+    (T const &obj)
+    const
   {
     sum << obj;
     log << obj;

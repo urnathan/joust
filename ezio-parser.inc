@@ -5,7 +5,8 @@
 #if !defined (EZIO_PARSER)
 #define EZIO_PARSER 1
 
-class Parser : public Scanner
+class Parser
+  : public Scanner
 {
   using Parent = Scanner;
 
@@ -17,44 +18,58 @@ private:
   Engine &e;
 
 public:
-  Parser (char const *file_, Engine &e_)
+  Parser
+    (char const *file_, Engine &e_)
     : Parent (file_), e (e_)
   {
   }
 
 public:
-  bool GetMatchSpace () const
+  bool GetMatchSpace
+    ()
+    const
   {
     return matchSpace;
   }
-  bool GetMatchSol () const
+  bool GetMatchSol
+    ()
+    const
   {
     return matchSol;
   }
-  bool GetMatchEol () const
+  bool GetMatchEol
+    ()
+    const
   {
     return matchEol;
   }
-  bool GetXfail () const
+  bool GetXfail
+    ()
+    const
   {
     return xfail;
   }
 
 public:
-  void Unparsed (char const *ctx, Token const *);
-  void Unlexed (Lexer const &lexer, char const *ctx);
+  void Unparsed
+    (char const *ctx, Token const *);
+  void Unlexed
+    (Lexer const &lexer, char const *ctx);
 
 protected:
-  virtual bool ProcessLine (std::string_view const &variant,
-			    std::string_view const &pattern) override;
+  virtual bool ProcessLine
+    (std::string_view const &variant, std::string_view const &pattern)
+    override;
 
 private:
-  void Options (std::string_view const &);
+  void Options
+    (std::string_view const &);
 };
 
 #else
 
-void Parser::Unlexed (Lexer const &lexer, char const *ctx)
+void Parser::Unlexed
+  (Lexer const &lexer, char const *ctx)
 {
   Error ()
     << "failed to lex " << ctx
@@ -62,12 +77,14 @@ void Parser::Unlexed (Lexer const &lexer, char const *ctx)
     << "' at '" << lexer.After () << "'";
 }
 
-void Parser::Unparsed (char const *ctx, Token const *token)
+void Parser::Unparsed
+  (char const *ctx, Token const *token)
 {
   Error () << "unexpected '" << token << "' parsing " << ctx;
 }
 
-void Parser::Options (std::string_view const &text)
+void Parser::Options
+  (std::string_view const &text)
 {
   Lexer lexer (text);
 
@@ -130,8 +147,8 @@ void Parser::Options (std::string_view const &text)
       }
 }
 
-bool Parser::ProcessLine (std::string_view const &variant,
-			  std::string_view const &pattern) 
+bool Parser::ProcessLine
+  (std::string_view const &variant, std::string_view const &pattern) 
 {
   if (variant == "OPTION")
     Options (std::move (pattern));

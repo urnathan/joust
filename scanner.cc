@@ -15,14 +15,15 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-namespace Joust {
+namespace Joust
+{
 
 // Read the pattern file.  These are lines containing one of PREFIXES,
 // everything after the prefix, up to \n is the pattern.
 // Lines must match the regexp [^:alnum:]prefix(-opt)?: to be recognized
 
-void Scanner::ScanFile (std::string const &fname,
-			std::vector<char const *> const &prefixes)
+void Scanner::ScanFile
+  (std::string const &fname, std::vector<char const *> const &prefixes)
 {
   int fd = open (fname.c_str (), O_RDONLY | O_CLOEXEC);
   if (fd < 0)
@@ -156,8 +157,8 @@ void Scanner::ScanFile (std::string const &fname,
   munmap (buffer, alloc);
 }
 
-bool Scanner::ProcessLine (std::string_view const &variant,
-			   std::string_view const &)
+bool Scanner::ProcessLine
+  (std::string_view const &variant, std::string_view const &)
 {
   Error () << "unrecognized command variant '" << variant << '\'';
   return true;
