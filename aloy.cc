@@ -95,7 +95,7 @@ int main (int argc, char *argv[])
   if (flags.help)
     {
       Title (stdout);
-      options->Help (stdout, "command [options]");
+      options->Help (stdout, "[generator-options]");
       return 0;
     }
   if (flags.version)

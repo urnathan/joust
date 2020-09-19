@@ -3,7 +3,7 @@
 # License: Affero GPL v3.0
 
 LDFLAGS +=  @ldbacktrace@
-CXXFLAGS/ += -I $(srcdir)
+CXXFLAGS/ += -I$(srcdir)
 JOUSTPROGS := ezio kratos aloy
 LIBJOUST.O := joust.o
 LIBJOUSTI.O := error.o fatal.o lexer.o option.o readBuffer.o regex.o \
