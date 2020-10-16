@@ -12,6 +12,7 @@ namespace Joust
 
 Logger::Status Logger::DecodeStatus
   (std::string_view const &line)
+  noexcept
 {
   for (unsigned ix = STATUS_HWM; ix--;)
     if (line.size () > statuses[ix].size ()
@@ -24,6 +25,7 @@ Logger::Status Logger::DecodeStatus
 
 Logger::Streamer Logger::Result
   (Status status, char const *file, unsigned line)
+  noexcept
 {
   Streamer result (this);
 

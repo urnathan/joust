@@ -53,6 +53,7 @@ tests are somewhere under `tests` subdirectories within this heirarchy.
 Here is a `Makefile` snippet to invoke the testsuite:
 
 ```make
+ALOY := @ALOY@
 # The list of test programs to compile, before invoking tests
 TESTS := $(patsubst $(srcdir)/%.cc,%,\
 	$(wildcard $(srcdir)/tests/*/*.cc))

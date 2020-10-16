@@ -29,17 +29,20 @@ private:
   public:
     Streamer
       (Logger *l)
+      noexcept
       : logger (l)
     {
     }
     Streamer
       (Streamer &&s)
+      noexcept
       : logger (s.logger)
     {
       s.logger = nullptr;
     }
     ~Streamer
       ()
+      noexcept
     {
       if (logger)
 	*logger << '\n';
@@ -54,6 +57,7 @@ private:
     template<typename T>
     Streamer &operator<<
       (T &&obj)
+      noexcept
     {
       *logger << std::forward<T> (obj);
 
@@ -93,12 +97,14 @@ private:
 public:
   Logger
     (std::ostream &s, std::ostream &l)
+    noexcept
     : sum (s), log (l)
   {
   }
 
   Logger
     ()
+    noexcept
     : Logger (std::cout, std::cerr)
   {
   }
@@ -115,12 +121,14 @@ public:
   std::ostream &Sum
     ()
     const
+    noexcept
   {
     return sum;
   }
   std::ostream &Log
     ()
     const
+    noexcept
   {
     return log;
   }
@@ -128,6 +136,7 @@ public:
 public:
   void Flush
     ()
+    noexcept
   {
     sum.flush ();
     log.flush ();
@@ -136,24 +145,35 @@ public:
 public:
   static Status PassFail
     (bool pass, bool xfail = false)
+    noexcept
   {
     return Status ((pass ? PASS : FAIL) + (xfail ? XPASS - PASS : 0));
   }
 
 protected:
   Status DecodeStatus
-    (std::string_view const &);
+    (std::string_view const &)
+    noexcept;
 
 public:
   Streamer Result
     (Status status,
-     char const *file = JOUST_FILE (), unsigned line = JOUST_LINE ());
+     char const *file = JOUST_FILE (), unsigned line = JOUST_LINE ())
+    noexcept;
+  Streamer Result
+    (bool pass, bool xfail = false,
+     char const *file = JOUST_FILE (), unsigned line = JOUST_LINE ())
+    noexcept
+  {
+    return Result (PassFail (pass, xfail), file, line);
+  }
 
 public:
   template<typename T>
   Logger const &operator<<
     (T const &obj)
     const
+    noexcept
   {
     sum << obj;
     log << obj;
