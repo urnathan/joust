@@ -111,10 +111,7 @@ public:
 
   Tester
     ()
-    noexcept
-    : Tester (std::cout, std::cerr)
-  {
-  }
+    noexcept;
 
 private:
   Tester

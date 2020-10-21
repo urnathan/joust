@@ -6,9 +6,22 @@
 #include "joust.hh"
 // C
 #include <cstdlib>
+// OS
+#include <unistd.h>
 
 namespace Joust
 {
+
+Tester::Tester
+  ()
+  noexcept
+  : Tester (std::cerr)
+{
+  /* If one of the std streams is not a tty, then enable sum stream
+     too.  This is pretty much the best we can do.   */
+  if (!isatty (1) || !isatty (2))
+    sum = &std::cout;
+}
 
 Tester::Status Tester::DecodeStatus
   (std::string_view const &line)
