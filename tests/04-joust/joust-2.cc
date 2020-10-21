@@ -13,11 +13,11 @@
 
 int main (int, char *[])
 {
-  Joust::Logger log {};
+  Joust::Tester log {};
 
-  log.Result (Joust::Logger::PASS) << "test1";
+  log.Result (Joust::Tester::PASS) << "test1";
   log.Log () << "location " << __FILE__ << ':' << __LINE__ - 1 << '\n';
-  log.Result (Joust::Logger::FAIL) << "test2";
+  log.Result (Joust::Tester::FAIL) << "test2";
 
   return 0;
 }

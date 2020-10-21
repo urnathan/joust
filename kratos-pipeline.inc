@@ -64,11 +64,11 @@ public:
 
 public:
   int Execute
-    (Logger &, unsigned const *);
+    (Tester &, unsigned const *);
 
 public:
   void Result
-    (Logger &, Logger::Status);
+    (Tester &, Tester::Status);
 
 private:
   friend std::ostream &operator<<
@@ -147,7 +147,7 @@ void NoteSignal
 // This mucks about with signals, so expects to be single threaded
 
 int Pipeline::Execute
-  (Logger &logger, unsigned const *limits)
+  (Tester &logger, unsigned const *limits)
 {
   Assert (commands.size () == 1 || commands.size () == 3);
 
@@ -445,7 +445,7 @@ int Pipeline::Execute
 			cmd->Error () << "failed reading "
 				      << cmd->words.front () << io_streams[iostr]
 				      << strerror (done);
-			Result (logger, Logger::ERROR);
+			Result (logger, Tester::ERROR);
 		      }
 		    int fd = streams[stream].Close ();
 #ifdef USE_EPOLL
@@ -471,7 +471,7 @@ int Pipeline::Execute
 			  << "failed writing here doc at byte "
 			  << here_pos << " (" << limit
 			  << " remain): " << strerror (err);
-			Result (logger, Logger::ERROR);
+			Result (logger, Tester::ERROR);
 			here_pos = src.size ();
 		      }
 		  }
@@ -564,7 +564,7 @@ int Pipeline::Execute
 				<< '\'' << iter->words.front ()
 				<< "' exited with "
 				<< (is_sig ? "signal " : "code ") << ex;
-			      Result (logger, Logger::ERROR);
+			      Result (logger, Tester::ERROR);
 			    }
 			  goto found_pid;
 			}
@@ -586,7 +586,7 @@ int Pipeline::Execute
 	      commands.front ().Stop (SIGTERM);
 	      commands.front ().Error ()
 		<< "TIMEOUT after " << limits[PL_HWM] << " seconds";
-	      Result (logger, Logger::ERROR);
+	      Result (logger, Tester::ERROR);
 	      break;
 
 	    case SIGPIPE:
@@ -629,7 +629,7 @@ int Pipeline::Execute
 		{
 		  s = &std::cerr;
 		  auto &cmd = commands[0];
-		  logger.Result (Logger::ERROR, cmd.File (), cmd.Line ())
+		  logger.Result (Tester::ERROR, cmd.File (), cmd.Line ())
 		    << "# Unexpected" << io_streams[ix - 1]
 		    << cmd;
 		}
@@ -652,9 +652,9 @@ int Pipeline::Execute
     logger.Log () << commands.front ().words[0] << " exited with "
 		  << (signalled ? "signal " : "code ") << exit_code << '\n';
   if (kind == REQUIRE)
-    Result (logger, pass ? Logger::PASS : Logger::UNSUPPORTED);
+    Result (logger, pass ? Tester::PASS : Tester::UNSUPPORTED);
   else
-    Result (logger, Logger::PassFail (pass, xfailed));
+    Result (logger, Tester::PassFail (pass, xfailed));
 
   if (stopped)
     {
@@ -666,7 +666,7 @@ int Pipeline::Execute
 }
 
 void Pipeline::Result
-  (Logger &logger, Logger::Status status)
+  (Tester &logger, Tester::Status status)
 {
   auto const &cmd = commands.front ();
   auto l = logger.Result (status, cmd.file, cmd.line);

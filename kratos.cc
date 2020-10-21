@@ -181,7 +181,7 @@ int main
 	Fatal ("cannot write '%s': %m", out.c_str ());
     }
 
-  Logger logger (flags.out ? sum : std::cout, flags.out ? log : std::cerr);
+  Tester logger (flags.out ? sum : std::cout, flags.out ? log : std::cerr);
   if (flags.verbose)
     {
       logger.Sum () << "Pipelines\n";
@@ -204,7 +204,7 @@ int main
 	  Lexer lexer (*limit);
 
 	  if (!lexer.Integer () || lexer.Peek ())
-	    logger.Result (Logger::ERROR)
+	    logger.Result (Tester::ERROR)
 	      << "limit '" << vars[ix] << "=" << *limit << "' invalid";
 	  else
 	    limits[ix] = lexer.GetToken ()->GetInteger ();
@@ -232,7 +232,7 @@ int main
 	    break;
 
 	  default:
-	    pipe.Result (logger, Logger::UNSUPPORTED);
+	    pipe.Result (logger, Tester::UNSUPPORTED);
 	    skipping = false;
 	    break;
 	  }

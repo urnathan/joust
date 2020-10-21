@@ -10,7 +10,7 @@
 namespace Joust
 {
 
-Logger::Status Logger::DecodeStatus
+Tester::Status Tester::DecodeStatus
   (std::string_view const &line)
   noexcept
 {
@@ -23,7 +23,7 @@ Logger::Status Logger::DecodeStatus
   return STATUS_HWM;
 }
 
-Logger::Streamer Logger::Result
+Tester::Streamer Tester::Result
   (Status status, char const *file, unsigned line)
   noexcept
 {

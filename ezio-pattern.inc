@@ -161,15 +161,15 @@ private:
 
 private:
   void Result
-    (Logger &, Logger::Status)
+    (Tester &, Tester::Status)
     const;
 
 public:
   void Result
-    (Logger &)
+    (Tester &)
     const;
   void Matched
-    (Logger &)
+    (Tester &)
     const;
 
   friend std::ostream &operator<<
@@ -740,25 +740,25 @@ Regex::Result Pattern::Compare
 
 // Write to stdout
 void Pattern::Result
-  (Logger &logger, Logger::Status s) const
+  (Tester &logger, Tester::Status s) const
 {
   logger.Result (s, file, line) << kinds[GetKind ()] << ' ' << original;
 }
 
 /* Emit result for a skipped-over pattern.  */
 void Pattern::Result
-  (Logger &log) const
+  (Tester &log) const
 {
   if (Errored ())
-    Result (log, Logger::ERROR);
+    Result (log, Tester::ERROR);
   else if (!Matched ())
-    Result (log, Logger::PassFail (GetKind () >= CAPTURE_HWM, is_xfail));
+    Result (log, Tester::PassFail (GetKind () >= CAPTURE_HWM, is_xfail));
 }
 
 void Pattern::Matched
-  (Logger &log) const
+  (Tester &log) const
 {
   Assert (!Errored () && Matched ());
 
-  Result (log, Logger::PassFail (GetKind () < CAPTURE_HWM, is_xfail));
+  Result (log, Tester::PassFail (GetKind () < CAPTURE_HWM, is_xfail));
 }

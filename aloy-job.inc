@@ -103,7 +103,7 @@ void Job::Read
       if (done >= 0)
 	{
 	  static char const *const io[] = {" stdout:", " stderr:"};
-	  log.Result (Logger::ERROR)
+	  log.Result (Tester::ERROR)
 	    << "failed reading "
 	    << *this << io[subcode] << strerror (done);
 	}
@@ -166,7 +166,7 @@ bool Job::Spawn
 
  fail:
   if (err)
-    log.Result (Logger::ERROR) << "failed spawning " << preamble[0]
+    log.Result (Tester::ERROR) << "failed spawning " << preamble[0]
 			       << ":" << strerror (err);
 
   if (pid)
@@ -216,13 +216,13 @@ void Job::ReportExit
   if (WIFSIGNALED (exit_status))
     {
       int sig = WTERMSIG (exit_status);
-      log.Result (Logger::ERROR)
+      log.Result (Tester::ERROR)
 	<< *this << " terminated with signal " << sig;
     }
   else if (WIFEXITED (exit_status))
     {
       if (int code = WEXITSTATUS (exit_status))
-	log.Result (Logger::ERROR)
+	log.Result (Tester::ERROR)
 	  << *this << " exited with status " << code;
     }
   else

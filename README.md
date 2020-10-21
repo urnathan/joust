@@ -39,9 +39,9 @@ and then matches them against the specified file or stdin.
 
 (Yet to be written)
 
-* Joust Logger
+* Joust Tester
 
-A header file and library, to allow logging from your own test program.
+A header file and library, to allow testing from your own test program.
 
 ## Example
 
@@ -372,19 +372,19 @@ You can use libjoust directly, to write unit tests.
 // Kratos runline
 // RUN: $subdir$stem
 
-#include "logger.hh"  // Yeah, I like .hh, bite me.
+#include "joust.hh"  // Yeah, I like .hh, bite me.
 
 int main ()
 {
-  Joust::Logger logger;
+  Joust::Tester tester;
 
   int error_code = PerformSomeTest ();
   if (error_code)
     // Emit arbitrary explanatory text to the log stream
-    logger.Log () << "Foo test produced " << error_code << '\n';
+    tester.Log () << "Foo test produced " << error_code << '\n';
 
   // Inform of results (source location will be included)
-  logger.Result (Joust::Logger::PassFail (!error_code)) << "Foo test";
+  tester.Result (Joust::Tester::PassFail (!error_code)) << "Foo test";
 }
 
 ```

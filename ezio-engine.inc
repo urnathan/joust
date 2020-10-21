@@ -3,10 +3,10 @@
 // License: Affero GPL v3.0
 
 class Engine
-  : public Logger
+  : public Tester
 {
 public:
-  using Parent = Logger;
+  using Parent = Tester;
 
 private:
   struct Frame 

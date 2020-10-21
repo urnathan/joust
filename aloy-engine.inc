@@ -5,10 +5,10 @@
 #if !defined (ALOY_ENGINE)
 #define ALOY_ENGINE
 class Engine
-  : public Logger
+  : public Tester
 {
 public:
-  using Parent = Logger;
+  using Parent = Tester;
 
 private:
   enum class FD
@@ -203,8 +203,8 @@ Engine::~Engine
 std::ostream &operator<<
   (std::ostream &s, Engine const &self)
 {
-  for (unsigned ix = 0; ix != Logger::STATUS_HWM; ix++)
-    if (ix == Logger::PASS || self.counts[ix])
+  for (unsigned ix = 0; ix != Tester::STATUS_HWM; ix++)
+    if (ix == Tester::PASS || self.counts[ix])
       s << self.statuses[ix] << ' ' << self.counts[ix] << '\n';
 
   return s;
@@ -498,7 +498,7 @@ void Engine::StopMake
 #endif
   make_out = make_in = -1;
   used_tokens.clear ();
-  Result (Logger::ERROR) << " terminating jobserver:" << strerror (err);
+  Result (Tester::ERROR) << " terminating jobserver:" << strerror (err);
 }
 
 void Engine::ReadMake
@@ -730,9 +730,9 @@ void Engine::Fini
 	}
       if (bad_count)
 	{
-	  Result (Logger::ERROR) << job << ": unexpected summary line '"
+	  Result (Tester::ERROR) << job << ": unexpected summary line '"
 				 << bad_line << '\'';
-	  counts[Logger::ERROR]++;
+	  counts[Tester::ERROR]++;
 	}
     }
 

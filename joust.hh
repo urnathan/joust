@@ -19,16 +19,16 @@
 namespace Joust
 {
 
-class Logger
+class Tester
 {
 private:
   class Streamer
   {
-    Logger *logger;
+    Tester *logger;
 
   public:
     Streamer
-      (Logger *l)
+      (Tester *l)
       noexcept
       : logger (l)
     {
@@ -91,30 +91,37 @@ public:
 #undef JOUST_STATUSES
 
 private:
-  std::ostream &sum;
+  std::ostream *sum;
   std::ostream &log;
 
 public:
-  Logger
+  Tester
     (std::ostream &s, std::ostream &l)
     noexcept
-    : sum (s), log (l)
+    : sum (&s), log (l)
   {
   }
 
-  Logger
+  Tester
+    (std::ostream &l)
+    noexcept
+    : sum (nullptr), log (l)
+  {
+  }
+
+  Tester
     ()
     noexcept
-    : Logger (std::cout, std::cerr)
+    : Tester (std::cout, std::cerr)
   {
   }
 
 private:
-  Logger
-    (Logger const &)
+  Tester
+    (Tester const &)
     = delete;
-  Logger &operator=
-    (Logger const &)
+  Tester &operator=
+    (Tester const &)
     = delete;
 
 public:
@@ -123,7 +130,7 @@ public:
     const
     noexcept
   {
-    return sum;
+    return sum ? *sum : log;
   }
   std::ostream &Log
     ()
@@ -132,13 +139,14 @@ public:
   {
     return log;
   }
-
+  
 public:
   void Flush
     ()
     noexcept
   {
-    sum.flush ();
+    if (sum)
+      sum->flush ();
     log.flush ();
   }
   
@@ -170,12 +178,13 @@ public:
 
 public:
   template<typename T>
-  Logger const &operator<<
+  Tester const &operator<<
     (T const &obj)
     const
     noexcept
   {
-    sum << obj;
+    if (sum)
+      *sum << obj;
     log << obj;
 
     return *this;
