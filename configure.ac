@@ -3,7 +3,7 @@
 # License: Affero GPL v3.0
 
 AC_INIT([joust],[0.0],[github.com/urnathan/joust])
-AC_CONFIG_SRCDIR(README.md)
+AC_CONFIG_SRCDIR(aloy.cc)
 m4_include(config.m4)
 
 AC_CONFIG_AUX_DIR(build-aux)
@@ -29,7 +29,7 @@ NMS_ENABLE_CHECKING
 NMS_WITH_BINUTILS
 NMS_ENABLE_BACKTRACE
 
-AC_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 AC_CHECK_TOOL([AR],[ar])
 AH_VERBATIM([_GNU_SOURCE],[#define _GNU_SOURCE 1])
 AH_VERBATIM([_FORTIFY_SOURCE],[#undef _FORTIFY_SOURCE])
