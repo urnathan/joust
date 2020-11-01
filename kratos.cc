@@ -153,15 +153,16 @@ int main
       syms.Read (vars);
 
   std::vector<Pipeline> pipes;
+  bool ended = false;
   {
     std::string pathname = syms.Origin (testFile);
     Parser parser (testFile, pipes, syms);
 
     // Scan the pattern file
-    parser.ScanFile (pathname, flags.prefixes);
+    ended = parser.ScanFile (pathname, flags.prefixes);
   }
 
-  if (pipes.empty () || Error::Errors ())
+  if ((!ended && pipes.empty ()) || Error::Errors ())
     Fatal ("failed to construct commands '%s'", testFile);
 
   std::ofstream sum, log;
@@ -204,12 +205,15 @@ int main
 	  Lexer lexer (*limit);
 
 	  if (!lexer.Integer () || lexer.Peek ())
-	    logger.Result (Tester::ERROR)
+	    logger.Result (Tester::ERROR, testFile, 0)
 	      << "limit '" << vars[ix] << "=" << *limit << "' invalid";
 	  else
 	    limits[ix] = lexer.GetToken ()->GetInteger ();
 	}
     }
+
+  if (pipes.empty ())
+    logger.Result (Tester::PASS, testFile, 0) << "No tests to test";
 
   for (auto &pipe : pipes)
     {

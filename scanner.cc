@@ -22,7 +22,7 @@ namespace Joust
 // everything after the prefix, up to \n is the pattern.
 // Lines must match the regexp [^:alnum:]prefix(-opt)?: to be recognized
 
-void Scanner::ScanFile
+bool Scanner::ScanFile
   (std::string const &fname, std::vector<char const *> const &prefixes)
 {
   int fd = open (fname.c_str (), O_RDONLY | O_CLOEXEC);
@@ -31,7 +31,7 @@ void Scanner::ScanFile
     fatal:
       int err = errno;
       Error () << "cannot read file '" << fname << "': " << strerror (err);
-      return;
+      return false;
     }
   size_t len = [] (int fd_)
 	       {
@@ -80,7 +80,8 @@ void Scanner::ScanFile
 	}
     }
 
-  line = 1;  
+  line = 1;
+  bool ended = false;
   for (char const *base = begin; ;)
     {
       // Advance any initial points that are before BEGIN, and
@@ -148,13 +149,18 @@ void Scanner::ScanFile
       std::string_view variant_text (variant, colon);
 
       if (ProcessLine (std::move (variant_text), std::move (pattern_text)))
-	break;
+	{
+	  ended = true;
+	  break;
+	}
 
       base = begin = eol + 1;
       line++;
     }
 
   munmap (buffer, alloc);
+
+  return ended;
 }
 
 bool Scanner::ProcessLine

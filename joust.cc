@@ -67,7 +67,9 @@ Tester::Streamer Tester::Result
 	    }
 	}
 
-      result << file << ':' << line << ':';
+      result << file << ':';
+      if (line)
+	result << line << ':';
     }
 
   return result;

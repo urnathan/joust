@@ -48,7 +48,7 @@ public:
   }
 
 public:
-  void ScanFile
+  bool ScanFile
     (std::string const &, std::vector<char const *> const &prefixes);
 
 protected:
