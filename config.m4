@@ -7,40 +7,24 @@ AC_DEFUN([NMS_NOT_IN_SOURCE],
 AC_MSG_ERROR([Do not build in the source tree.  Reasons])
 fi])
 
+# thanks to Zack Weinberg for fixing this!
 AC_DEFUN([NMS_TOOLS],
-[AC_MSG_CHECKING([tools])
+[AC_SUBST([tools], [])
 AC_ARG_WITH([tools],
-AS_HELP_STRING([--with-tools=DIR],[tool directory]),
-[if test "$withval" = "yes" ; then
-  AC_MSG_ERROR([tool location not specified])
-elif test "$withval" = "no" ; then
-  :
-elif ! test -d "${withval%/bin}" ; then
-  AC_MSG_ERROR([tools not present])
-else
-  tools=${withval%/bin}
+  AS_HELP_STRING([--with-tools=DIR],[tool directory]),
+  [AS_CASE([$withval],
+    [yes], [AC_MSG_ERROR([--with-tools requires an argument])],
+    [no], [:],
+    [tools="${withval%/bin}"])])
+
+if test -n "$tools" ; then
+  if test -d "$tools/bin"; then
+    PATH="$tools/bin:$PATH"
+    AC_MSG_NOTICE([Using tools in $tools])
+  else
+    AC_MSG_ERROR([tool location does not exist])
+  fi
 fi])
-AC_MSG_RESULT($tools)
-AC_MSG_CHECKING([tool binaries])
-AC_ARG_WITH([toolbin],
-AS_HELP_STRING([--with-toolbin=DIR],[tool bin directory]),
-[if test "$withval" = "yes" ; then
-  AC_MSG_ERROR([tool bin location not specified])
-elif test "$withval" = "no" ; then
-  :
-elif ! test -d "${withval%/bin}/bin" ; then
-  AC_MSG_ERROR([tool bin not present])
-else
-  toolbin=${withval%/bin}/bin
-fi],
-[if test -d $tools/bin ; then
-  toolbin=$tools/bin
-fi])
-AC_MSG_RESULT($toolbin)
-if test "$toolbin" ; then
-  PATH="$toolbin:$PATH"
-fi
-AC_SUBST(toolbin)])
 
 AC_DEFUN([NMS_TOOL_DIRS],
 [if test "$tools" && test -d "$tools/include" ; then
@@ -57,10 +41,9 @@ fi])
 
 AC_DEFUN([NMS_NUM_CPUS],
 [AC_MSG_CHECKING([number of CPUs])
-case $build in
-     (*-*-darwin*) NUM_CPUS=$(sysctl -n hw.ncpu 2>/dev/null) ;;
-     (*) NUM_CPUS=$(grep -c '^processor' /proc/cpuinfo 2>/dev/null) ;;
-esac
+AS_CASE([$build],
+[*-*-darwin*], [NUM_CPUS=$(sysctl -n hw.ncpu 2>/dev/null)],
+[NUM_CPUS=$(grep -c '^processor' /proc/cpuinfo 2>/dev/null)])
 test "$NUM_CPUS" = 0 && NUM_CPUS=
 AC_MSG_RESULT([${NUM_CPUS:-unknown}])
 test "$NUM_CPUS" = 1 && NUM_CPUS=
@@ -71,11 +54,10 @@ AC_DEFUN([NMS_MAINTAINER_MODE],
 AS_HELP_STRING([--enable-maintainer-mode],
 [enable maintainer mode.  Add rules to rebuild configurey bits]),,
 [enable_maintainer_mode=no])
-case "$enable_maintainer_mode" in
-  ("yes") maintainer_mode=yes ;;
-  ("no") maintainer=no ;;
-  (*) AC_MSG_ERROR([unknown maintainer mode $enable_maintainer_mode]) ;;
-esac
+AS_CASE([$enable_maintainer_mode],
+  [yes], [maintainer_mode=yes],
+  [no], [maintainer=no],
+  [AC_MSG_ERROR([unknown maintainer mode $enable_maintainer_mode])])
 AC_MSG_CHECKING([maintainer-mode])
 AC_MSG_RESULT([$maintainer_mode])
 test "$maintainer_mode" = yes && MAINTAINER=yes
@@ -171,16 +153,15 @@ AC_MSG_RESULT([yes 🙂]),
 AC_MSG_RESULT([no 🙁])
 AC_MSG_ERROR([C++20 support is too immature]))])
 
-AC_DEFUN([NMS_EXCEPTIONS],
+AC_DEFUN([NMS_ENABLE_EXCEPTIONS],
 [AC_ARG_ENABLE([exceptions],
 AS_HELP_STRING([--enable-exceptions],
 [enable exceptions & rtti]),,
 [enable_exceptions="no"])
-case "$enable_exceptions" in
-  ("yes") nms_exceptions=yes ;;
-  ("no") nms_exceptions=no ;;
-  (*) AC_MSG_ERROR([unknown exceptions $enable_exceptions]) ;;
-esac
+AS_CASE([$enable_exceptions],
+  [yes], [nms_exceptions=yes],
+  [no], [nms_exceptions=no],
+  [AC_MSG_ERROR([unknown exceptions $enable_exceptions])])
 AC_MSG_CHECKING([exceptions])
 AC_MSG_RESULT([$nms_exceptions])
 if test "$nms_exceptions" != no ; then
@@ -202,13 +183,11 @@ AC_DEFUN([NMS_BUGURL],
 [AC_MSG_CHECKING([bugurl])
 AC_ARG_WITH(bugurl,
 AS_HELP_STRING([--with-bugurl=URL],[where to report bugs]),
-if test "$withval" = "yes" ; then
-  AC_MSG_ERROR([URL not specified])
-elif test "$withval" = "no" ; then
-  BUGURL=""
-else
-  BUGURL="${withval}"
-fi,BUGURL="${PACKAGE_BUGREPORT}")
+AS_CASE(["$withval"],
+  [yes], [AC_MSG_ERROR([--with-bugurl requires an argument])],
+  [no], [BUGURL=""],
+  [BUGURL="${withval}"]),
+[BUGURL="${PACKAGE_BUGREPORT}"])
 AC_MSG_RESULT($BUGURL)
 AC_DEFINE_UNQUOTED(BUGURL,"$BUGURL",[Bug reporting location])])
 
@@ -217,24 +196,22 @@ AC_DEFUN([NMS_DISTRIBUTION],
 AS_HELP_STRING([--enable-distribution],
 [enable distribution.  Inhibit components that prevent distribution]),,
 [enable_distribution="no"])
-case "$enable_distribution" in
-  ("yes") nms_distribution=yes ;;
-  ("no") nms_distribution=no ;;
-  (*) AC_MSG_ERROR([unknown distribution $enable_distribution]) ;;
-esac
+AS_CASE([$enable_distribution],
+  [yes], [nms_distribution=yes],
+  [no], [nms_distribution=no],
+  [AC_MSG_ERROR([unknown distribution $enable_distribution])])
 AC_MSG_CHECKING([distribution])
 AC_MSG_RESULT([$nms_distribution])])
 
 AC_DEFUN([NMS_ENABLE_CHECKING],
-[AC_ARG_ENABLE(checking,
+[AC_ARG_ENABLE([checking],
 AS_HELP_STRING([--enable-checking],
 [enable run-time checking]),,
 [enable_checking="yes"])
-case "$enable_checking" in
-  ("yes") nms_checking=yes ;;
-  ("no") nms_checking= ;;
-  (*) AC_MSG_ERROR([unknown check "$enable_check"]) ;;
-esac
+AS_CASE([$enable_checking],
+  [yes|all|yes,*], [nms_checking=yes],
+  [no|none|release], [nms_checking=],
+  [AC_MSG_ERROR([unknown check "$enable_checking"])])
 AC_MSG_CHECKING([checking])
 AC_MSG_RESULT([${nms_checking:-no}])
 if test "$nms_checking" = yes ; then
@@ -258,7 +235,7 @@ AC_MSG_RESULT(installed))])
 
 AC_DEFUN([NMS_ENABLE_BACKTRACE],
 [AC_REQUIRE([NMS_DISTRIBUTION])
-AC_ARG_ENABLE(backtrace,
+AC_ARG_ENABLE([backtrace],
 AS_HELP_STRING([--enable-backtrace],[provide backtrace on fatality.]),,
 [enable_backtrace="maybe"])
 if test "${enable_backtrace:-maybe}" != no ; then

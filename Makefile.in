@@ -2,16 +2,17 @@
 # Copyright (C) 2019-2020 Nathan Sidwell, nathan@acm.org
 # License: Apache v2.0
 
-ifeq (0,$(MAKELEVEL)$(SERIAL))
-ifneq (,@toolbin@)
-$(info Prepending @toolbin@ to PATH)
-PATH := @toolbin@:$(PATH)
+ifeq (0,$(MAKELEVEL))
+ifneq (,@tools@)
+$(info Prepending @tools@/bin to PATH)
+PATH := @tools@/bin:$(PATH)
 export PATH
 endif
-
+ifeq (,$(SERIAL))
 # Figure out if we should set parallelism
 ifeq (,$(filter clean%,$(MAKECMDGOALS)))
 PARALLELISM := @NUM_CPUS@
+endif
 endif
 endif
 
@@ -40,7 +41,9 @@ bindir := @bindir@
 libdir := @libdir@
 includedir := @includedir@
 SUBDIRS := @SUBDIRS@
-SHELL := zsh
+# autoconf doesn't seem to like setting SHELL
+SHELL := $(shell which zsh 2>/dev/null >/dev/null && echo zsh \
+  || (echo "No ZSH, maybe flakey" >&2 && echo sh))
 
 # We have to place the -I paths last, so that building will see -I paths to us
 CXX := $(filter-out -I%,@CXX@)
