@@ -1,54 +1,73 @@
-// Joust/EZIO: Expect Zero Irregularities Observed	-*- mode:c++ -*-
+// Joust/KRATOS: Kapture Run And Test Output Safely	-*- mode:c++ -*-
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-// EZIO is a pattern matcher.  It looks for CHECK lines in the
-// provided source and then applies those to the text provided in
-// stdin.
+// KRATOS is a test executor.  It looks for RUN lines in the provided
+// source and executes them, within a restricted pipeline of checking.
 
+#include "config.h"
 // Joust
+#include "joust/tester.hh"
 #include "error.hh"
-#include "joust.hh"
 #include "lexer.hh"
-#include "regex.hh"
+#include "readBuffer.hh"
 #include "scanner.hh"
+#include "spawn.hh"
 #include "symbols.hh"
 #include "token.hh"
 #include "fatal.hh"
 #include "option.hh"
 // C++
-#include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <regex>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 // C
-#include <stddef.h>
+#include <cstring>
 // OS
 #include <fcntl.h>
+#include <signal.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
+#ifdef USE_EPOLL
+#include <sys/epoll.h>
+#include <sys/signalfd.h>
+#else
+#include <sys/select.h>
+#endif
+#include <sys/fcntl.h>
+#include <sys/time.h>
+#include <sys/wait.h>
 
 using namespace Joust;
+
+// Not (yet) supported (because I don't have a need for it):
+
+// * Offloading to a remote execution system.  Add $wrapper variable or
+// something?
+
+// * Copying files to/from remote system.  Add $cpto $cp from
+// variables along with RUN-AUX: or similar.
+
+// * Iteration over a set of flags.  Add RUN-ITERATE: along with
+// ability to defer some toplevel variable expansion to runtime.
+// RUN-REQUIRE inside a loop would continue to the next iteration of
+// the loop.
 
 namespace
 {
 
-class Engine;
-#include "ezio-parser.inc"
-#include "ezio-pattern.inc"
-#include "ezio-engine.inc"
-#include "ezio-parser.inc"
+#include "kratos-command.inc"
+#include "kratos-pipeline.inc"
+#include "kratos-command.inc"
+#include "kratos-parser.inc"
 
 }
 
 static void Title
   (FILE *stream)
 {
-  fprintf (stream, "EZIO: Expect Zero Irregularities Observed\n");
+  fprintf (stream, "KRATOS: Kapture Run And Test Output Safely\n");
   fprintf (stream, "Copyright 2020 Nathan Sidwell, nathan@acm.org\n");
 }
 
@@ -64,8 +83,7 @@ int main
     bool verbose = false;
     std::vector<char const *> prefixes; // Pattern prefixes
     std::vector<char const *> defines;  // Var defines
-    char const *include = nullptr;  // File of var defines
-    char const *in = "";
+    char const *include = nullptr;  // file of var defines
     char const *out = "";
     char const *dir = nullptr;
   } flags;
@@ -95,7 +113,6 @@ int main
       {nullptr, 'D', offsetof (Flags, defines), append, "+var=val", "Define"},
       {"defines", 'd', offsetof (Flags, include), nullptr,
        "file", "File of defines"},
-      {"in", 'i', offsetof (Flags, in), nullptr, "file", "Input"},
       {"out", 'o', offsetof (Flags, out), nullptr, "file", "Output"},
       {"prefix", 'p', offsetof (Flags, prefixes), append,
        "prefix", "Pattern prefix (repeatable)"},
@@ -105,7 +122,7 @@ int main
   if (flags.help)
     {
       Title (stdout);
-      options->Help (stdout, "pattern-files+");
+      options->Help (stdout, "testfile");
       return 0;
     }
   if (flags.version)
@@ -118,13 +135,16 @@ int main
     if (chdir (flags.dir) < 0)
       Fatal ("cannot chdir '%s': %m", flags.dir);
 
+  if (argno == argc)
+    Fatal ("expected test filename");
+  char const *testFile = argv[argno++];
+
   if (!flags.prefixes.size ())
-    flags.prefixes.push_back ("CHECK");
+    flags.prefixes.push_back ("RUN");
 
   Symbols syms;
 
   // Register defines
-  syms.Set ("EOF", "${}EOF");
   for (auto d : flags.defines)
     syms.Define (std::string_view (d));
   if (flags.include)
@@ -132,6 +152,19 @@ int main
   if (auto *vars = getenv ("JOUST"))
     if (*vars)
       syms.Read (vars);
+
+  std::vector<Pipeline> pipes;
+  bool ended = false;
+  {
+    std::string pathname = syms.Origin (testFile);
+    Parser parser (testFile, pipes, syms);
+
+    // Scan the pattern file
+    ended = parser.ScanFile (pathname, flags.prefixes);
+  }
+
+  if ((!ended && pipes.empty ()) || Error::Errors ())
+    Fatal ("failed to construct commands '%s'", testFile);
 
   std::ofstream sum, log;
   if (!flags.out[flags.out[0] == '-'])
@@ -150,31 +183,65 @@ int main
 	Fatal ("cannot write '%s': %m", out.c_str ());
     }
 
-  Engine engine (syms, flags.out ? sum : std::cout, flags.out ? log : std::cerr);
-
-  while (argno != argc)
+  Tester logger (flags.out ? sum : std::cout, flags.out ? log : std::cerr);
+  if (flags.verbose)
     {
-      char const *patternFile = argv[argno++];
-      std::string pathname = syms.Origin (patternFile);
-      Parser parser (patternFile, engine);
-
-      // Scan the pattern file
-      parser.ScanFile (pathname, flags.prefixes);
-      if (Error::Errors ())
-	Fatal ("failed to construct patterns '%s'", patternFile);
+      logger.Sum () << "Pipelines\n";
+      for (unsigned ix = 0; ix != pipes.size (); ix++)
+	logger.Sum () << ix << pipes[ix];
     }
 
-  engine.Initialize ();
+  bool skipping = false;
+  unsigned limits[PL_HWM + 1];
 
-  if (flags.verbose)
-    engine.Log () << engine << '\n';
+  for (unsigned ix = PL_HWM + 1; ix--;)
+    {
+      static char const *const vars[PL_HWM + 1]
+	= {"cpulimit", "memlimit", "filelimit", "timelimit"};
 
-  engine.Process (flags.in);
+      // Default to 1 minute or 1 GB
+      limits[ix] = ix == PL_CPU || ix == PL_HWM ? 60 : 1;
+      if (auto limit = syms.Get (vars[ix]))
+	{
+	  Lexer lexer (*limit);
 
-  engine.Finalize ();
+	  if (!lexer.Integer () || lexer.Peek ())
+	    logger.Result (Tester::ERROR, testFile, 0)
+	      << "limit '" << vars[ix] << "=" << *limit << "' invalid";
+	  else
+	    limits[ix] = lexer.GetToken ()->GetInteger ();
+	}
+    }
 
-  sum.close ();
-  log.close ();
+  if (pipes.empty ())
+    logger.Result (Tester::PASS, testFile, 0) << "No tests to test";
+
+  for (auto &pipe : pipes)
+    {
+      if (!skipping)
+	{
+	  logger.Log () << '\n';
+	  int e = pipe.Execute (logger, pipe.GetKind () < Pipeline::PIPE_HWM
+				? limits : nullptr);
+	  if (e == EINTR)
+	    break;
+
+	  if (e && pipe.GetKind () == Pipeline::REQUIRE)
+	    skipping = true;
+
+	}
+      else
+	switch (pipe.GetKind ())
+	  {
+	  case Pipeline::REQUIRE:
+	    break;
+
+	  default:
+	    pipe.Result (logger, Tester::UNSUPPORTED);
+	    skipping = false;
+	    break;
+	  }
+    }
 
   return Error::Errors ();
 }

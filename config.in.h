@@ -1,0 +1,16 @@
+
+#define PROJECT_NAME "@PROJECT_NAME@"
+#define PROJECT_URL "@PROJECT_URL@"
+#define PROJECT_VERSION "@CMAKE_PROJECT_VERSION@"
+
+#define PREFIX_DIRS "@BIN2SRC@", "@CMAKE_BINARY_DIR@/", "@CMAKE_SOURCE_DIR@/"
+
+#cmakedefine01 HAVE_PIPE2
+#cmakedefine01 HAVE_MREMAP
+#cmakedefine01 HAVE_UCONTEXT
+#cmakedefine01 USE_EPOLL
+
+#cmakedefine01 NMS_CHECKING
+#cmakedefine01 NMS_BACKTRACE
+#cmakedefine01 HAVE_BFD
+#cmakedefine01 HAVE_DEMANGLE

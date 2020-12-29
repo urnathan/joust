@@ -341,7 +341,6 @@ void Engine::ReadGenerator
 {
   // Lex
   auto &buffer = generator.Buffer (0);
-  unsigned added = 0;
   auto first = buffer.begin ();
   auto last = buffer.end ();
   while (first != last)
@@ -543,7 +542,6 @@ void Engine::QueueMake
 void Engine::WriteMake
   ()
 {
-  size_t tokens = used_tokens.size ();
   ssize_t wrote = write (make_out, used_tokens.data (), used_tokens.size ());
   if (wrote < 0)
     {

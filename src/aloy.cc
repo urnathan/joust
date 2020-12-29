@@ -6,9 +6,10 @@
 // stdin, and then applies those to the command provided to it.  These
 // are executed in parallel under MAKEFLAGS control.
 
+#include "config.h"
 // Joust
+#include "joust/tester.hh"
 #include "error.hh"
-#include "joust.hh"
 #include "lexer.hh"
 #include "readBuffer.hh"
 #include "spawn.hh"

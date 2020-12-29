@@ -185,8 +185,7 @@ void Engine::Add
 void Engine::BodyAdvance
   (BodyIter bodyIx)
 {
-  for (Frame const &frame = *frameIter;
-       bodyIter != bodyIx; ++bodyIter)
+  for (; bodyIter != bodyIx; ++bodyIter)
     (*bodyIter)->Result (*this);
 }
 

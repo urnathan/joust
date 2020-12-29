@@ -5,7 +5,7 @@
 
 pushd ${0%/*}
 setopt nullglob
-for subdir in $@ ; do
-    echo $subdir/*(.^*)
+for subdir in **(/) ; do
+    echo ${subdir}/*(.^*)
 done
 popd

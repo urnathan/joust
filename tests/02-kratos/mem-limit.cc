@@ -6,6 +6,7 @@
 // MAP: Segmentation fault
 // MAP-END:
 
+#include "config.h"
 // Joust
 #include "fatal.hh"
 #include "option.hh"

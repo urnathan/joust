@@ -2,6 +2,7 @@
 // Copyright (C) 2019-2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
+#include "config.h"
 // Joust
 #include "fatal.hh"
 // C++
@@ -17,24 +18,24 @@
 #include <cstring>
 // OS
 #include <cxxabi.h>
-#if HAVE_BFD_H
+#if HAVE_BFD
 #include <bfd.h>
 #endif
-#if HAVE_DEMANGLE_H
+#if HAVE_DEMANGLE
+// Stop libiberty declaring a broken basename fn
+#define HAVE_DECL_BASENAME 1
 #include <demangle.h>
-#elif HAVE_LIBIBERTY_DEMANGLE_H
-#include <libiberty/demangle.h>
 #endif
 #if NMS_BACKTRACE
 #include <execinfo.h>
 #endif
-#ifdef HAVE_UCONTEXT_T
+#ifdef HAVE_UCONTEXT
 // Used for segv stack probing
 #include <ucontext.h>
 #endif
 #include <unistd.h>
 
-#if HAVE_BFD_H
+#if HAVE_BFD
 extern char __executable_start[];
 extern char __etext[];
 #endif
@@ -52,7 +53,7 @@ class Binfo
 {
   using Parent = SrcLoc;
 
-#if HAVE_BFD_H
+#if HAVE_BFD
   bfd *theBfd;
   asymbol **syms;
   bfd_vma pc;
@@ -84,12 +85,12 @@ Binfo::Binfo
   ()
   noexcept
   :
-#if HAVE_BFD_H
+#if HAVE_BFD
   Parent (nullptr, 0), theBfd (nullptr), syms (nullptr),
 #endif
     fn (nullptr)
 {
-#if HAVE_BFD_H
+#if HAVE_BFD
   bfd_init ();
   bfd_set_error_handler ([] (char const *, va_list) {});
 
@@ -152,7 +153,7 @@ Binfo::~Binfo
   ()
   noexcept
 {
-#if HAVE_BFD_H
+#if HAVE_BFD
   free (syms);
   syms = 0;
 
@@ -172,7 +173,7 @@ bool Binfo::FindSrcLoc
   fn = nullptr;
   *static_cast <Parent *> (this) = SrcLoc (nullptr, 0);
 
-#if HAVE_BFD_H
+#if HAVE_BFD
   pc = reinterpret_cast<bfd_vma> (addr) - is_return_address;
 
   auto find_line
@@ -210,7 +211,7 @@ bool Binfo::FindSrcLoc
 bool Binfo::InlineUnwind
   ()
 {
-#if HAVE_BFD_H
+#if HAVE_BFD
   if (theBfd && bfd_find_inliner_info (theBfd, &file, &fn, &line))
     return true;
 #endif
@@ -219,27 +220,58 @@ bool Binfo::InlineUnwind
 }
 #endif
 
-#if NMS_BACKTRACE
-char const *StripObjDir
+char const *StripRootDirs
   (char const *file)
 {
-  char const *obj = OBJDIR;
-  unsigned ol = strlen (obj);
+  char const *const roots[] = {PREFIX_DIRS, ""};
 
-  if (!strncmp (obj, file, ol) && file[ol] == '/')
-    file += ol + 1;
+  for (auto dir : roots)
+    {
+      size_t l = strlen (dir);
+
+      if (!strncmp (dir, file, l) && file[l] != '/')
+	{
+	  auto trail = file + l;
+	  unsigned depth = 0;
+
+	try_remove_dots:;
+	  auto probe = trail;
+
+	  for (auto slash = probe; auto c = *slash++;)
+	    if (c == '/')
+	      {
+		if (slash - probe == 3
+		    && probe[0] == '.'
+		    && probe[1] == '.')
+		  {
+		    if (!depth)
+		      goto not_this_prefix;
+		    if (!--depth)
+		      {
+			trail = slash;
+			goto try_remove_dots;
+		      }
+		  }
+		else
+		  depth++;
+		probe = slash;
+	      }
+	  file = trail;
+	  break;
+	}
+    not_this_prefix:;
+    }
+
   return file;
 }
-#endif
 
 #if NMS_BACKTRACE
 char *Binfo::Demangle
   () noexcept
 {
   char *demangled = 0;
-#if HAVE_DEMANGLE_H || HAVE_LIBIBERTY_DEMANGLE_H
-  if (theBfd)
-    demangled = bfd_demangle (theBfd, fn, DMGL_ANSI | DMGL_PARAMS);
+#if HAVE_DEMANGLE
+  demangled = cplus_demangle (fn, DMGL_ANSI | DMGL_PARAMS);
 
   if (demangled)
     {
@@ -303,7 +335,7 @@ char *Binfo::Demangle
       *dst = 0;
       demangled = reformed;
     }
-#endif // HAVE_DEMANGLE_H || HAVE_LIBIBERTY_DEMANGLE_H
+#endif
   return demangled;
 }
 #endif
@@ -396,7 +428,7 @@ void SignalHandler
     }
 
   Binfo binfo;
-#if HAVE_BFD_H && NMS_BACKTRACE && NMS_CHECKING
+#if NMS_BACKTRACE && NMS_CHECKING && HAVE_BFD
   void *return_addrs[3];
   if (backtrace (return_addrs, 3) == 3)
     binfo.FindSrcLoc (return_addrs[2], false);
@@ -528,7 +560,6 @@ void (HCF)
 
 #if !NMS_CHECKING
   SrcLoc loc (nullptr, 0);
-#define NMS_CHECKING 0
 #endif
 
   if (busy > NMS_CHECKING)
@@ -538,18 +569,7 @@ void (HCF)
   if (busy++ <= NMS_CHECKING)
     {
       if (char const *file = loc.File ())
-	{
-	  char const *src = SRCDIR;
-
-	  if (src[0])
-	    {
-	      size_t l = strlen (src);
-
-	      if (!strncmp (src, file, l) && file[l] == '/')
-		file += l + 1;
-	    }
-	  fprintf (stderr, " at %s:%u", file, loc.Line ());
-	}
+	fprintf (stderr, " at %s:%u", StripRootDirs (file), loc.Line ());
       fprintf (stderr, " 🤮\n");
 
 #if NMS_BACKTRACE
@@ -602,7 +622,7 @@ void (HCF)
 		    
 		    inliner++;
 		    fprintf (stderr, "%s %s:%u",
-			     pfx, StripObjDir (binfo.File ()), binfo.Line ());
+			     pfx, StripRootDirs (binfo.File ()), binfo.Line ());
 		    if (binfo.fn)
 		      {
 			char *demangled = binfo.Demangle ();
@@ -651,13 +671,8 @@ void BuildNote
   (FILE *stream)
   noexcept
 {
-  fprintf (stream, "Version %s.\n", PACKAGE_NAME " " PACKAGE_VERSION);
-  fprintf (stream, "Report bugs to %s.\n", BUGURL[0] ? BUGURL : "you");
-  if (PACKAGE_URL[0])
-    fprintf (stream, "See %s for more information.\n", PACKAGE_URL);
-  if (REVISION[0])
-    fprintf (stream, "Source %s.\n", REVISION);
-
+  fprintf (stream, "Version %s.\n", PROJECT_NAME " " PROJECT_VERSION);
+  fprintf (stream, "See %s for more information.\n", PROJECT_URL);
   fprintf (stream, "Build is %s & %s.\n",
 #if !NMS_CHECKING
 	   "un"

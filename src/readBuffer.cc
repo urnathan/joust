@@ -2,6 +2,7 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
+#include "config.h"
 // Joust
 #include "readBuffer.hh"
 #include "fatal.hh"

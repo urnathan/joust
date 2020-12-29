@@ -2,7 +2,7 @@
 # Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
-dir @srcdir@
+dir @CMAKE_SOURCE_DIR@
 # some default breakpoints, to catch the fatal exit
 set breakpoint pending on
 break SignalHandler

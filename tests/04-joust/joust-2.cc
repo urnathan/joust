@@ -2,12 +2,13 @@
 // RUN-END:
 
 // OUT-NEXT: PASS: {file:[^:]+}:{line1:[0-9]+}:test1
-// ERR-NEXT: location {:.+}/tests/$file:$line1
+// ERR-NEXT: location {:.+}/$file:$line1
 // OUT-NEXT: FAIL: $file:{line2:[0-9]+}:test2
 // OUT-NEXT: $EOF
 
+#include "config.h"
 // Joust
-#include "joust.hh"
+#include "joust/tester.hh"
 // C
 #include <stddef.h>
 

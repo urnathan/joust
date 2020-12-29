@@ -2,8 +2,9 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
+#include "config.h"
 // Joust
-#include "joust.hh"
+#include "joust/tester.hh"
 // C
 #include <cstdlib>
 // OS
@@ -46,7 +47,7 @@ Tester::Streamer Tester::Result
 
   if (file)
     {
-      if (char const *srcdir = getenv ("srcbuilddir"))
+      if (char const *srcdir = getenv ("srcdir"))
 	{
 	  // Strip off a leading $srcdir from the filename -- if it
 	  // came from __FILE__ it'll have that in it, which is

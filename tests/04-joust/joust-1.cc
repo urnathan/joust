@@ -45,12 +45,12 @@
 // NESTED2-NEXT: ^00-0x{:[0-9a-f]+} $subdir$stem({:[^)]*})
 
 // FATAL-LABEL: Version
-// FATAL-NEXT: Report bugs
-// FATAL-NEXT: Source
+// FATAL-NEXT: See {:.*} for more information.
 // FATAL-NEXT: Build is
 // FATAL-NEXT: $EOF
 // FATAL-END:
 
+#include "config.h"
 // Joust
 #include "fatal.hh"
 #include "option.hh"
@@ -61,7 +61,6 @@ using namespace Joust;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
-
 static void InvokeHCF [[gnu::always_inlne]] ()
 {
   HCF ("burn it all down");
@@ -96,25 +95,13 @@ int main (int argc, char *argv[])
        nullptr, "Demangled"},
       {nullptr, 0, 0, nullptr, nullptr, nullptr}
     };
-  int argno = options->Process (argc, argv, &flags);
+  options->Process (argc, argv, &flags);
 
   if (flags.is_backtraced)
-    {
-#if JOUST_BACKTRACE
-      return 0;
-#else
-      return 1;
-#endif
-    }
+    return NMS_BACKTRACE == 0;
 
   if (flags.is_demangled)
-    {
-#if HAVE_DEMANGLE_H || HAVE_LIBIBERTY_DEMANGLE_H
-      return 0;
-#else
-      return 1;
-#endif
-    }
+    return HAVE_DEMANGLE == 0;
 
   if (flags.do_inline)
     InvokeHCF ();
