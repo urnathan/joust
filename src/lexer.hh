@@ -4,9 +4,10 @@
 
 #pragma once
 
+// NMS
+#include "nms/fatal.hh"
 // Joust
 #include "token.hh"
-#include "fatal.hh"
 // C++
 #include <string>
 #include <string_view>

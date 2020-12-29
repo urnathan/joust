@@ -3,9 +3,10 @@
 // License: Affero GPL v3.0
 
 #include "config.h"
+// NMS
+#include "nms/fatal.hh"
 // Joust
 #include "symbols.hh"
-#include "fatal.hh"
 // OS
 #include <fcntl.h>
 #include <unistd.h>
@@ -97,7 +98,7 @@ void Symbols::Read
   if (fd < 0)
     {
     fatal:
-      Fatal ("cannot read defines '%s': %m", file);
+      NMS::Fatal ("cannot read defines '%s': %m", file);
     }
   size_t len = [] (int fd_)
 	       {

@@ -1,4 +1,4 @@
-// Joust Test Suite			-*- mode:c++ -*-
+// NMS Test Suite			-*- mode:c++ -*-
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
@@ -7,7 +7,7 @@
 // C
 #include <cstdio>
 
-namespace Joust
+namespace NMS
 {
 
 class Option 

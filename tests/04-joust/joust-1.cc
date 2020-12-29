@@ -15,7 +15,7 @@
 // RUN-SIGNAL:ABRT $subdir$stem --inline |& ezio -p INLINE1 -p FATAL $test
 // INLINE1-OPTION: matchSol
 // INLINE1: $stem: burn it all down
-// INLINE1-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} Joust::HCF (char const *,
+// INLINE1-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} NMS::HCF (char const *,
 // INLINE1-NEXT: 01-0x{:[0-9a-f]+} tests/$test:{:[0-9]+} {:(main)|(InvokeHCF)}
 // INLINE1-NEXT: 01{:(.1)|(-0x[0-9a-f]+)} tests/$test:{:[0-9]+} main
 
@@ -31,7 +31,7 @@
 // RUN-SIGNAL:ABRT $subdir$stem --nested |& ezio -p NESTED1 -p FATAL $test
 // NESTED1-OPTION: matchSol
 // NESTED1: $stem: go boom
-// NESTED1-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} Joust::HCF (char const *,
+// NESTED1-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} NMS::HCF (char const *,
 // NESTED1-NEXT: 01-0x{:[0-9a-f]+} tests/$test:{:[0-9]+} NestedHCF (int)
 // NESTED1-NEXT: 02-0x{ret:[0-9a-f]+} tests/$test:{:[0-9]+} NestedHCF (int)
 // NESTED1-NEXT: 03-0x{:$ret} tests/$test:{:[0-9]+} NestedHCF (int)
@@ -51,19 +51,17 @@
 // FATAL-END:
 
 #include "config.h"
-// Joust
-#include "fatal.hh"
-#include "option.hh"
+// NMS
+#include "nms/fatal.hh"
+#include "nms/option.hh"
 // C
 #include <stddef.h>
-
-using namespace Joust;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
 static void InvokeHCF [[gnu::always_inlne]] ()
 {
-  HCF ("burn it all down");
+  NMS::HCF ("burn it all down");
 }
 #pragma GCC diagnostic pop
 
@@ -71,12 +69,12 @@ static void NestedHCF [[gnu::noinline]] (int ix = 3)
 {
   if (ix--)
     NestedHCF (ix);
-  HCF ("go boom!");
+  NMS::HCF ("go boom!");
 }
 
 int main (int argc, char *argv[])
 {
-  SignalHandlers ();
+  NMS::SignalHandlers ();
 
   struct Flags 
   {
@@ -85,7 +83,7 @@ int main (int argc, char *argv[])
     bool is_backtraced = false;
     bool is_demangled = false;
   } flags;
-  static constexpr Option const options[] =
+  static constexpr NMS::Option const options[] =
     {
       {"inline", 0, offsetof (Flags, do_inline), nullptr, nullptr, "Inline"},
       {"nested", 0, offsetof (Flags, do_nested), nullptr, nullptr, "Nested"},

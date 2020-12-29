@@ -7,22 +7,20 @@
 // MAP-END:
 
 #include "config.h"
-// Joust
-#include "fatal.hh"
-#include "option.hh"
+// NMS
+#include "nms/fatal.hh"
+#include "nms/option.hh"
 // C
 #include <cstring>
 // OS
 #include <sys/mman.h>
 
-using namespace Joust;
-
 int main (int argc, char *argv[])
 {
-  SignalHandlers ();
+  NMS::SignalHandlers ();
 
   bool map = false;
-  static constexpr Option const options[] =
+  static constexpr NMS::Option const options[] =
     {
       {"map", 'm', 0, nullptr, nullptr, "MMap"},
       {nullptr, 0, 0, nullptr, nullptr, nullptr}

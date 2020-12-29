@@ -7,6 +7,9 @@
 // stdin.
 
 #include "config.h"
+// NMS
+#include "nms/fatal.hh"
+#include "nms/option.hh"
 // Joust
 #include "joust/tester.hh"
 #include "error.hh"
@@ -15,8 +18,6 @@
 #include "scanner.hh"
 #include "symbols.hh"
 #include "token.hh"
-#include "fatal.hh"
-#include "option.hh"
 // C++
 #include <algorithm>
 #include <fstream>
@@ -56,7 +57,7 @@ static void Title
 int main
   (int argc, char *argv[])
 {
-  SignalHandlers ();
+  NMS::SignalHandlers ();
 
   struct Flags 
   {
@@ -71,23 +72,24 @@ int main
     char const *dir = nullptr;
   } flags;
   auto append = []
-    (Option const *option, char const *opt, char const *arg, void *f)
+    (NMS::Option const *option, char const *opt, char const *arg, void *f)
 		{
 		  if (!arg[0])
-		    Fatal ("option '%s' is empty", opt);
+		    NMS::Fatal ("option '%s' is empty", opt);
 		  for (char const *p = arg; *p; p++)
 		    {
 		      if (*p == '='
 			  && option->offset == offsetof (Flags, defines))
 			break;
 		      if (!std::isalnum (*p))
-			Fatal ("option '%s%s%s' is ill-formed with '%c'", opt,
-			       option->argform[0] == '+' ? "" : " ",
-			       option->argform[0] == '+' ? "" : arg, *p);
+			NMS::Fatal ("option '%s%s%s' is ill-formed with '%c'",
+				    opt,
+				    option->argform[0] == '+' ? "" : " ",
+				    option->argform[0] == '+' ? "" : arg, *p);
 		    }
 		  option->Flag<std::vector<char const *>> (f).push_back (arg);
 		};
-  static constexpr Option const options[] =
+  static constexpr NMS::Option const options[] =
     {
       {"help", 'h', offsetof (Flags, help), nullptr, nullptr, "Help"},
       {"version", 0, offsetof (Flags, version), nullptr, nullptr, "Version"},
@@ -112,12 +114,12 @@ int main
   if (flags.version)
     {
       Title (stdout);
-      BuildNote (stdout);
+      NMS::BuildNote (stdout);
       return 0;
     }
   if (flags.dir)
     if (chdir (flags.dir) < 0)
-      Fatal ("cannot chdir '%s': %m", flags.dir);
+      NMS::Fatal ("cannot chdir '%s': %m", flags.dir);
 
   if (!flags.prefixes.size ())
     flags.prefixes.push_back ("CHECK");
@@ -144,11 +146,11 @@ int main
       out.append (".sum");
       sum.open (out);
       if (!sum.is_open ())
-	Fatal ("cannot write '%s': %m", out.c_str ());
+	NMS::Fatal ("cannot write '%s': %m", out.c_str ());
       out.erase (len).append (".log");
       log.open (out);
       if (!log.is_open ())
-	Fatal ("cannot write '%s': %m", out.c_str ());
+	NMS::Fatal ("cannot write '%s': %m", out.c_str ());
     }
 
   Engine engine (syms, flags.out ? sum : std::cout, flags.out ? log : std::cerr);
@@ -162,7 +164,7 @@ int main
       // Scan the pattern file
       parser.ScanFile (pathname, flags.prefixes);
       if (Error::Errors ())
-	Fatal ("failed to construct patterns '%s'", patternFile);
+	NMS::Fatal ("failed to construct patterns '%s'", patternFile);
     }
 
   engine.Initialize ();

@@ -1,10 +1,10 @@
-// Joust Test Suite			-*- mode:c++ -*-
+// NMS Test Suite			-*- mode:c++ -*-
 // Copyright (C) 2019-2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 #include "config.h"
-// Joust
-#include "fatal.hh"
+// NMS
+#include "nms/fatal.hh"
 // C++
 #include <exception>
 #include <typeinfo>
@@ -40,7 +40,7 @@ extern char __executable_start[];
 extern char __etext[];
 #endif
 
-namespace Joust
+namespace NMS
 {
 
 char const *progname = "$PROG";
@@ -72,9 +72,11 @@ public:
 public:
 #if NMS_BACKTRACE
   bool FindSrcLoc
-    (void *addr, bool is_return_address);
+    (void *addr, bool is_return_address)
+    noexcept;
   bool InlineUnwind
-    ();
+    ()
+    noexcept;
   char *Demangle
     ()
     noexcept;
@@ -210,6 +212,7 @@ bool Binfo::FindSrcLoc
 #if NMS_BACKTRACE
 bool Binfo::InlineUnwind
   ()
+  noexcept
 {
 #if HAVE_BFD
   if (theBfd && bfd_find_inliner_info (theBfd, &file, &fn, &line))
@@ -223,7 +226,7 @@ bool Binfo::InlineUnwind
 char const *StripRootDirs
   (char const *file)
 {
-  char const *const roots[] = {PREFIX_DIRS, ""};
+  char const *const roots[] = {NMS_PREFIX_DIRS, ""};
 
   for (auto dir : roots)
     {
@@ -672,7 +675,8 @@ void BuildNote
   noexcept
 {
   fprintf (stream, "Version %s.\n", PROJECT_NAME " " PROJECT_VERSION);
-  fprintf (stream, "See %s for more information.\n", PROJECT_URL);
+  if (PROJECT_URL[0])
+    fprintf (stream, "See %s for more information.\n", PROJECT_URL);
   fprintf (stream, "Build is %s & %s.\n",
 #if !NMS_CHECKING
 	   "un"

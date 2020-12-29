@@ -210,7 +210,7 @@ void Engine::Initialize
   if (frames.empty ())
     {
       if (nevers.empty ())
-	Fatal ("nothing to check");
+	NMS::Fatal ("nothing to check");
       frames.emplace_back ();
     }
   frameIter = frames.begin ();
@@ -354,7 +354,7 @@ void Engine::Process
       if (fd < 0)
 	{
 	fatal:
-	  Fatal ("cannot read test file '%s': %m", file);
+	  NMS::Fatal ("cannot read test file '%s': %m", file);
 	}
     }
 

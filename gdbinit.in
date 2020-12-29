@@ -3,11 +3,4 @@
 # License: Affero GPL v3.0
 
 dir @CMAKE_SOURCE_DIR@
-# some default breakpoints, to catch the fatal exit
-set breakpoint pending on
-break SignalHandler
-break Fatal
-break HCF
-set complaints 0
-break exit
-set breakpoint pending off
+include extern/nms/gdbinit

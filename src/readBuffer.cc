@@ -3,9 +3,10 @@
 // License: Affero GPL v3.0
 
 #include "config.h"
+// NMS
+#include "nms/fatal.hh"
 // Joust
 #include "readBuffer.hh"
-#include "fatal.hh"
 // C
 #include <cerrno>
 // OS

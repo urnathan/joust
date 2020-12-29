@@ -3,9 +3,10 @@
 // License: Affero GPL v3.0
 
 #include "config.h"
+// NMS
+#include "nms/fatal.hh"
 // Joust
 #include "spawn.hh"
-#include "fatal.hh"
 // OS
 #include <fcntl.h>
 #include <unistd.h>

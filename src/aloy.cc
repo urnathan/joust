@@ -7,14 +7,15 @@
 // are executed in parallel under MAKEFLAGS control.
 
 #include "config.h"
+// NMS
+#include "nms/fatal.hh"
+#include "nms/option.hh"
 // Joust
 #include "joust/tester.hh"
 #include "error.hh"
 #include "lexer.hh"
 #include "readBuffer.hh"
 #include "spawn.hh"
-#include "fatal.hh"
-#include "option.hh"
 // C++
 #include <algorithm>
 #include <deque>
@@ -64,7 +65,7 @@ static void Title
 int main
   (int argc, char *argv[])
 {
-  SignalHandlers ();
+  NMS::SignalHandlers ();
 
   struct Flags 
   {
@@ -78,14 +79,14 @@ int main
     char const *dir = nullptr;
   } flags;
   constexpr auto uint_fn
-    = [] (Option const *option, char const *opt, char const *arg, void *f)
+    = [] (NMS::Option const *option, char const *opt, char const *arg, void *f)
       {
 	char *eptr;
 	option->Flag<unsigned> (f) = strtol (arg, &eptr, 0);
 	if (*eptr || eptr == arg)
-	  Fatal ("option '%s %s' illformed", opt, arg);
+	  NMS::Fatal ("option '%s %s' illformed", opt, arg);
       };
-  static constexpr Option const options[] =
+  static constexpr NMS::Option const options[] =
     {
       {"help", 'h', offsetof (Flags, help), nullptr, nullptr, "Help"},
       {"version", 0, offsetof (Flags, version), nullptr, nullptr, "Version"},
@@ -107,12 +108,12 @@ int main
   if (flags.version)
     {
       Title (stdout);
-      BuildNote (stdout);
+      NMS::BuildNote (stdout);
       return 0;
     }
   if (flags.dir)
     if (chdir (flags.dir) < 0)
-      Fatal ("cannot chdir '%s': %m", flags.dir);
+      NMS::Fatal ("cannot chdir '%s': %m", flags.dir);
 
   // Get the log streams
   std::ofstream sum, log;
@@ -125,11 +126,11 @@ int main
       out.append (".sum");
       sum.open (out);
       if (!sum.is_open ())
-	Fatal ("cannot write '%s': %m", out.c_str ());
+	NMS::Fatal ("cannot write '%s': %m", out.c_str ());
       out.erase (len).append (".log");
       log.open (out);
       if (!log.is_open ())
-	Fatal ("cannot write '%s': %m", out.c_str ());
+	NMS::Fatal ("cannot write '%s': %m", out.c_str ());
     }
 
   Engine engine (std::min (flags.jobs, 256u),

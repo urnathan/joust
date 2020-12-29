@@ -4,8 +4,8 @@
 
 #pragma once
 
-// Joust
-#include "fatal.hh"
+// NMS
+#include "nms/fatal.hh"
 // C++
 #include <ostream>
 #include <string>

@@ -6,6 +6,9 @@
 // source and executes them, within a restricted pipeline of checking.
 
 #include "config.h"
+// NMS
+#include "nms/fatal.hh"
+#include "nms/option.hh"
 // Joust
 #include "joust/tester.hh"
 #include "error.hh"
@@ -15,8 +18,6 @@
 #include "spawn.hh"
 #include "symbols.hh"
 #include "token.hh"
-#include "fatal.hh"
-#include "option.hh"
 // C++
 #include <fstream>
 #include <iostream>
@@ -74,7 +75,7 @@ static void Title
 int main
   (int argc, char *argv[])
 {
-  SignalHandlers ();
+  NMS::SignalHandlers ();
 
   struct Flags 
   {
@@ -88,23 +89,24 @@ int main
     char const *dir = nullptr;
   } flags;
   auto append = []
-    (Option const *option, char const *opt, char const *arg, void *f)
+    (NMS::Option const *option, char const *opt, char const *arg, void *f)
 		{
 		  if (!arg[0])
-		    Fatal ("option '%s' is empty", opt);
+		    NMS::Fatal ("option '%s' is empty", opt);
 		  for (char const *p = arg; *p; p++)
 		    {
 		      if (*p == '='
 			  && option->offset == offsetof (Flags, defines))
 			break;
 		      if (!std::isalnum (*p))
-			Fatal ("option '%s%s%s' is ill-formed with '%c'", opt,
-			       option->argform[0] == '+' ? "" : " ",
-			       option->argform[0] == '+' ? "" : arg, *p);
+			NMS::Fatal ("option '%s%s%s' is ill-formed with '%c'",
+				    opt,
+				    option->argform[0] == '+' ? "" : " ",
+				    option->argform[0] == '+' ? "" : arg, *p);
 		    }
 		  option->Flag<std::vector<char const *>> (f).push_back (arg);
 		};
-  static constexpr Option const options[] =
+  static constexpr NMS::Option const options[] =
     {
       {"help", 'h', offsetof (Flags, help), nullptr, nullptr, "Help"},
       {"version", 0, offsetof (Flags, version), nullptr, nullptr, "Version"},
@@ -128,15 +130,15 @@ int main
   if (flags.version)
     {
       Title (stdout);
-      BuildNote (stdout);
+      NMS::BuildNote (stdout);
       return 0;
     }
   if (flags.dir)
     if (chdir (flags.dir) < 0)
-      Fatal ("cannot chdir '%s': %m", flags.dir);
+      NMS::Fatal ("cannot chdir '%s': %m", flags.dir);
 
   if (argno == argc)
-    Fatal ("expected test filename");
+    NMS::Fatal ("expected test filename");
   char const *testFile = argv[argno++];
 
   if (!flags.prefixes.size ())
@@ -164,7 +166,7 @@ int main
   }
 
   if ((!ended && pipes.empty ()) || Error::Errors ())
-    Fatal ("failed to construct commands '%s'", testFile);
+    NMS::Fatal ("failed to construct commands '%s'", testFile);
 
   std::ofstream sum, log;
   if (!flags.out[flags.out[0] == '-'])
@@ -176,11 +178,11 @@ int main
       out.append (".sum");
       sum.open (out);
       if (!sum.is_open ())
-	Fatal ("cannot write '%s': %m", out.c_str ());
+	NMS::Fatal ("cannot write '%s': %m", out.c_str ());
       out.erase (len).append (".log");
       log.open (out);
       if (!log.is_open ())
-	Fatal ("cannot write '%s': %m", out.c_str ());
+	NMS::Fatal ("cannot write '%s': %m", out.c_str ());
     }
 
   Tester logger (flags.out ? sum : std::cout, flags.out ? log : std::cerr);
