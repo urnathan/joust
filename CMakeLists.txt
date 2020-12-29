@@ -44,6 +44,7 @@ configure_file (gdbinit.in .gdbinit ESCAPE_QUOTES)
 # link?configure_file (gdbinit.in .gdbinit ESCAPE_QUOTES)
   
 include_directories ("${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/include"
+  "${CMAKE_SOURCE_DIR}/src"
   "${CMAKE_SOURCE_DIR}/extern/nms/include")
 
 # the user visible library
@@ -62,7 +63,7 @@ target_link_libraries (internal PRIVATE nms)
 # our executables
 set (PROGS aloy ezio kratos)
 foreach (PROG ${PROGS})
-  add_executable (${PROG} src/${PROG}.cc)
+  add_executable (${PROG} progs/${PROG}.cc)
   target_link_libraries (${PROG} PRIVATE joust internal nms)
   install (TARGETS ${PROG} DESTINATION bin)
 endforeach ()
