@@ -6,7 +6,7 @@
 // Gaige
 #include "gaige/lexer.hh"
 
-namespace Joust
+namespace Gaige
 {
 
 std::string_view Lexer::Before

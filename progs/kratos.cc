@@ -42,6 +42,7 @@
 #include <sys/wait.h>
 
 using namespace Joust;
+using namespace Gaige;
 
 // Not (yet) supported (because I don't have a need for it):
 

@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-namespace Joust
+namespace Gaige
 {
 
 enum ProcLimits

@@ -26,7 +26,7 @@ public:
   auto Error
     ()
   {
-    return Joust::Error (file, line);
+    return Gaige::Error (file, line);
   }
 
 public:

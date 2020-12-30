@@ -8,7 +8,7 @@
 // Gaige
 #include "gaige/regex.hh"
 
-namespace Joust::Regex
+namespace Gaige::Regex
 {
 
 // Escape characters in STRING that are significant to regex

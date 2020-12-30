@@ -8,7 +8,7 @@
 #include <ostream>
 #include <utility>
 
-namespace Joust
+namespace Gaige
 {
 
 class Error

@@ -9,7 +9,7 @@
 
 // regex propagates errors via exceptions, hence this wrapper to catch
 // and contain them.
-namespace Joust::Regex
+namespace Gaige::Regex
 {
 
 enum Result

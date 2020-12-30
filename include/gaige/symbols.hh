@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <variant>
 
-namespace Joust
+namespace Gaige
 {
 
 class Symbols

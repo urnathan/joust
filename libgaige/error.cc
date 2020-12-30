@@ -8,7 +8,7 @@
 // C++
 #include <iostream>
 
-namespace Joust
+namespace Gaige
 {
 
 bool Error::errored;

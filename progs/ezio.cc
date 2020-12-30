@@ -36,6 +36,7 @@
 #include <sys/stat.h>
 
 using namespace Joust;
+using namespace Gaige;
 
 namespace
 {

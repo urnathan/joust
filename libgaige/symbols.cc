@@ -13,7 +13,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-namespace Joust
+namespace Gaige
 {
 
 std::string const *Symbols::Get

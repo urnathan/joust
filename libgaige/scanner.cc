@@ -17,7 +17,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-namespace Joust
+namespace Gaige
 {
 
 // Read the pattern file.  These are lines containing one of PREFIXES,

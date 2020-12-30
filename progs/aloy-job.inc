@@ -158,7 +158,7 @@ bool Job::Spawn
     err = errno;
   else
     {
-      auto spawn = Joust::Spawn (null_fd, job_fds[0], job_fds[1],
+      auto spawn = Gaige::Spawn (null_fd, job_fds[0], job_fds[1],
 				 command, &preamble);
       pid = std::get<0> (spawn);
       err = std::get<1> (spawn);

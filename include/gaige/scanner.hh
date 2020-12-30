@@ -4,13 +4,13 @@
 
 #pragma once
 
-// Joust
-#include "error.hh"
+// Gaige
+#include "gaige/error.hh"
 // C++
 #include <string_view>
 #include <vector>
 
-namespace Joust
+namespace Gaige
 {
 
 class Scanner
@@ -44,7 +44,7 @@ public:
   auto Error
     ()
   {
-    return Joust::Error (file, line);
+    return Gaige::Error (file, line);
   }
 
 public:

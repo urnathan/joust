@@ -6,7 +6,7 @@
 // Gaige
 #include "gaige/token.hh"
 
-namespace Joust
+namespace Gaige
 {
 
 Token::Token

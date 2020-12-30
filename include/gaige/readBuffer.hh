@@ -7,7 +7,7 @@
 // C++
 #include <vector>
 
-namespace Joust
+namespace Gaige
 {
 
 class ReadBuffer

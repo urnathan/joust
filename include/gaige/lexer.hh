@@ -6,14 +6,14 @@
 
 // NMS
 #include "nms/fatal.hh"
-// Joust
-#include "token.hh"
+// Gaige
+#include "gaige/token.hh"
 // C++
 #include <string>
 #include <string_view>
 #include <vector>
 
-namespace Joust
+namespace Gaige
 {
 
 class Lexer

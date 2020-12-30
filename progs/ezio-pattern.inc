@@ -5,10 +5,10 @@
 class Pattern
 {
   class Lexer
-    : public Joust::Lexer
+    : public Gaige::Lexer
   {
   public:
-    using Parent = Joust::Lexer;
+    using Parent = Gaige::Lexer;
 
   public:
     using Parent::Parent;
@@ -134,7 +134,7 @@ private:
   }
 
 public:
-  Joust::Error Error
+  Gaige::Error Error
     ();
 
 public:
@@ -363,7 +363,7 @@ Error Pattern::Error
   ()
 {
   has_error = true;
-  return Joust::Error (file, line);
+  return Gaige::Error (file, line);
 }
 
 std::ostream &operator<<

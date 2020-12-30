@@ -12,7 +12,7 @@
 // OS
 #include <unistd.h>
 
-namespace Joust
+namespace Gaige
 {
 
 int ReadBuffer::Read

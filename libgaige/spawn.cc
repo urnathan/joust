@@ -13,7 +13,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-namespace Joust
+namespace Gaige
 {
 
 std::tuple<pid_t, int> Spawn
