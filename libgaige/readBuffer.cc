@@ -5,8 +5,8 @@
 #include "config.h"
 // NMS
 #include "nms/fatal.hh"
-// Joust
-#include "readBuffer.hh"
+// Gaige
+#include "gaige/readBuffer.hh"
 // C
 #include <cerrno>
 // OS

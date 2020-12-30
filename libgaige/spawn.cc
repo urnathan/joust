@@ -5,8 +5,8 @@
 #include "config.h"
 // NMS
 #include "nms/fatal.hh"
-// Joust
-#include "spawn.hh"
+// Gaige
+#include "gaige/spawn.hh"
 // OS
 #include <fcntl.h>
 #include <unistd.h>

@@ -10,12 +10,13 @@
 // NMS
 #include "nms/fatal.hh"
 #include "nms/option.hh"
+// Gaige
+#include "gaige/error.hh"
+#include "gaige/lexer.hh"
+#include "gaige/readBuffer.hh"
+#include "gaige/spawn.hh"
 // Joust
 #include "joust/tester.hh"
-#include "error.hh"
-#include "lexer.hh"
-#include "readBuffer.hh"
-#include "spawn.hh"
 // C++
 #include <algorithm>
 #include <deque>

@@ -5,8 +5,8 @@
 #include "config.h"
 // NMS
 #include "nms/fatal.hh"
-// Joust
-#include "regex.hh"
+// Gaige
+#include "gaige/regex.hh"
 
 namespace Joust::Regex
 {

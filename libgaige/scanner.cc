@@ -5,8 +5,8 @@
 #include "config.h"
 // NMS
 #include "nms/fatal.hh"
-// Joust
-#include "scanner.hh"
+// Gaige
+#include "gaige/scanner.hh"
 // C++
 #include <iostream>
 // C

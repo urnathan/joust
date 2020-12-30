@@ -3,8 +3,8 @@
 // License: Affero GPL v3.0
 
 #include "config.h"
-// Joust
-#include "lexer.hh"
+// Gaige
+#include "gaige/lexer.hh"
 
 namespace Joust
 {

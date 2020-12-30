@@ -3,8 +3,8 @@
 // License: Affero GPL v3.0
 
 #include "config.h"
-// Joust
-#include "token.hh"
+// Gaige
+#include "gaige/token.hh"
 
 namespace Joust
 {

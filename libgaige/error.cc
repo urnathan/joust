@@ -3,8 +3,8 @@
 // License: Affero GPL v3.0
 
 #include "config.h"
-// Joust
-#include "error.hh"
+// Gaige
+#include "gaige/error.hh"
 // C++
 #include <iostream>
 

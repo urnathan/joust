@@ -41,30 +41,28 @@ add_subdirectory (extern/nms EXCLUDE_FROM_ALL)
 configure_file (config.h.in config.h ESCAPE_QUOTES)
 configure_file (gdbinit.in .gdbinit ESCAPE_QUOTES)
 	       
-# link?configure_file (gdbinit.in .gdbinit ESCAPE_QUOTES)
-  
 include_directories ("${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/include"
-  "${CMAKE_SOURCE_DIR}/src"
   "${CMAKE_SOURCE_DIR}/extern/nms/include")
 
 # the user visible library
-add_library (joust src/tester.cc)
+file (GLOB JOUST_SRCS CONFIGURE_DEPENDS "libjoust/*.cc")
+file (GLOB JOUST_HDRS CONFIGURE_DEPENDS "include/joust/*.hh")
+add_library (joust ${JOUST_SRCS})
 install (TARGETS joust DESTINATION lib)
-install (FILES include/joust/tester.hh DESTINATION include/joust)
+install (FILES ${JOUST_HDRS} DESTINATION include/joust)
 
-# our internal library
-add_library (internal STATIC
-  src/error.cc src/lexer.cc src/readBuffer.cc
-  src/regex.cc src/scanner.cc src/spawn.cc src/symbols.cc src/token.cc)
-set_source_files_properties (src/regex.cc PROPERTIES COMPILE_OPTIONS
+# gaige Group All Internal Gizmo Elements
+file (GLOB GAIGE_SRCS CONFIGURE_DEPENDS "libgaige/*.cc")
+add_library (gaige STATIC ${GAIGE_SRCS})
+set_source_files_properties (libgaige/regex.cc PROPERTIES COMPILE_OPTIONS
   "-fexceptions;-frtti")
-target_link_libraries (internal PRIVATE nms)
+target_link_libraries (gaige PRIVATE nms)
 
 # our executables
 set (PROGS aloy ezio kratos)
 foreach (PROG ${PROGS})
   add_executable (${PROG} progs/${PROG}.cc)
-  target_link_libraries (${PROG} PRIVATE joust internal nms)
+  target_link_libraries (${PROG} PRIVATE joust gaige nms)
   install (TARGETS ${PROG} DESTINATION bin)
 endforeach ()
 
