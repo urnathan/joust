@@ -4,5 +4,11 @@
 # ignore locks
 .\#*
 
+# ignore merge files created by git.
+*.orig
+
+# ignore nested build directory
+/build*
+
 # ignore automate cache
 autom4te.cache
