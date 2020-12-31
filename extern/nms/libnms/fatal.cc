@@ -40,6 +40,11 @@ extern char __executable_start[];
 extern char __etext[];
 #endif
 
+// We care about code size, not speed.
+#if __OPTIMIZE__
+#pragma GCC optimize "Os"
+#endif
+
 namespace NMS
 {
 
@@ -270,7 +275,8 @@ char const *StripRootDirs
 
 #if NMS_BACKTRACE
 char *Binfo::Demangle
-  () noexcept
+  ()
+  noexcept
 {
   char *demangled = 0;
 #if HAVE_DEMANGLE
@@ -518,6 +524,7 @@ void SignalHandlers
 // Set the program name from, typically, argv[0]
 void Progname
   (char const *prog)
+  noexcept
 {
   if (prog)
     {
@@ -531,16 +538,19 @@ void Progname
 #if NMS_CHECKING
 void (AssertFailed)
   (SrcLoc loc)
+  noexcept
 {
   (HCF) ("💥 assertion failed", loc);
 }
 void (Unreachable)
   (SrcLoc loc)
+  noexcept
 {
   (HCF) ("🛇 unreachable reached", loc);
 }
 void (Unimplemented)
   (SrcLoc loc)
+  noexcept
 {
   (HCF) ("✍  unimplemented functionality", loc);
 }

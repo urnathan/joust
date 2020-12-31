@@ -11,7 +11,9 @@ SHELL=zsh")
 add_custom_target (check
   srcdir=${CMAKE_SOURCE_DIR} PATH="${CMAKE_BINARY_DIR}:$ENV{PATH}"
   JOUST=joust.defs aloy
-  -t kratos -o joust -g ${CMAKE_CURRENT_SOURCE_DIR}/jouster)
+  -t kratos -o joust -g ${CMAKE_CURRENT_SOURCE_DIR}/jouster
+  COMMENT "Jousting"
+  USES_TERMINAL)
 add_dependencies (check ${PROGS})
 
 function (add_test_executables)

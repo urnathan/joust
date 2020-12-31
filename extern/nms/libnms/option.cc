@@ -13,14 +13,17 @@ namespace NMS
 {
 
 void Option::Help
-  (FILE *stream, char const *args) const
+  (FILE *stream, char const *args)
+  const
 {
   enum {indent = 26};
+  static char const pfx[]
+    = "          " "          " "       ";
 
   fprintf (stdout, "Usage: %s [options] %s\n", progname, args);
   for (auto *opt = this; opt->sname || opt->cname; opt++)
     {
-      int len = fprintf (stream, "  ");
+      unsigned len = fprintf (stream, "  ");
       if (opt->cname)
 	len += fprintf (stream, "-%c", opt->cname);
       if (opt->sname)
@@ -36,19 +39,21 @@ void Option::Help
 			  opt->argform + adjacent);
 	}
 
-      if (len > indent)
+      if (len > strlen (pfx))
 	{
 	  fprintf (stream, "\n");
 	  len = 0;
 	}
-      while (len <= indent)
-	len += fprintf (stream, " ");
+      len += fprintf (stream, pfx + len);
       fprintf (stream, "%s\n", opt->help);
+      if (opt->helper)
+	opt->helper (opt, stream, pfx);
     }
 }
 
 int Option::Process
-  (int argc, char **argv, void *flags) const
+  (int argc, char **argv, void *flags)
+  const
 {
   int argno = 0;
 

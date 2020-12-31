@@ -82,23 +82,28 @@ int main
   } flags;
   constexpr auto uint_fn
     = [] (NMS::Option const *option, char const *opt, char const *arg, void *f)
-      {
-	char *eptr;
-	option->Flag<unsigned> (f) = strtol (arg, &eptr, 0);
-	if (*eptr || eptr == arg)
-	  NMS::Fatal ("option '%s %s' illformed", opt, arg);
-      };
+    {
+      char *eptr;
+      option->Flag<unsigned> (f) = strtol (arg, &eptr, 0);
+      if (*eptr || eptr == arg)
+	NMS::Fatal ("option '%s %s' illformed", opt, arg);
+    };
   static constexpr NMS::Option const options[] =
     {
-      {"help", 'h', offsetof (Flags, help), nullptr, nullptr, "Help"},
-      {"version", 0, offsetof (Flags, version), nullptr, nullptr, "Version"},
-      {"verbose", 'v', offsetof (Flags, verbose), nullptr, nullptr, "Verbose"},
-      {"dir", 'C', offsetof (Flags, dir), nullptr, "directory", "Set directory"},
-      {"jobs", 'j', offsetof (Flags, jobs), uint_fn, "+val", "Define"},
-      {"out", 'o', offsetof (Flags, out), nullptr, "file", "Output"},
-      {"gen", 'g', offsetof (Flags, gen), nullptr, "prog", "Generator"},
-      {"tester", 't', offsetof (Flags, tester), nullptr, "prog", "Tester"},
-      {nullptr, 0, 0, nullptr, nullptr, nullptr}
+      {"help", 'h', offsetof (Flags, help), nullptr,
+       nullptr, "Help", nullptr},
+      {"version", 0, offsetof (Flags, version), nullptr,
+       nullptr, "Version", nullptr},
+      {"verbose", 'v', offsetof (Flags, verbose), nullptr,
+       nullptr, "Verbose", nullptr},
+      {"dir", 'C', offsetof (Flags, dir), nullptr,
+       "directory", "Set directory", nullptr},
+      {"jobs", 'j', offsetof (Flags, jobs), uint_fn, "+val", "Define", nullptr},
+      {"out", 'o', offsetof (Flags, out), nullptr, "file", "Output", nullptr},
+      {"gen", 'g', offsetof (Flags, gen), nullptr, "prog", "Generator", nullptr},
+      {"tester", 't', offsetof (Flags, tester), nullptr,
+       "prog", "Tester", nullptr},
+      {nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr}
     };
   int argno = options->Process (argc, argv, &flags);
   if (flags.help)

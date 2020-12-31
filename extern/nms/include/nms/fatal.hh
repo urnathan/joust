@@ -40,18 +40,23 @@ public:
 #if !NMS_LOC_BUILTIN && NMS_LOC_SOURCE
   constexpr SrcLoc
     (source_location loc == source_location::current ())
+    noexcept
     : file (loc.file ()), line (loc.line ())
   {}
 #endif
 
 public:
   constexpr char const *File
-    () const
+    ()
+    const
+    noexcept
   {
     return file;
   }
   constexpr unsigned Line
-    () const
+    ()
+    const
+    noexcept
   {
     return line;
   }
@@ -60,7 +65,8 @@ public:
 extern char const *progname;
 
 void Progname
-  (char const *argv0);
+  (char const *argv0)
+  noexcept;
 
 void HCF
   [[noreturn]]
@@ -77,13 +83,16 @@ void HCF
 #if NMS_CHECKING
 void AssertFailed
   [[noreturn]]
-  (SrcLoc loc = SrcLoc ());
+  (SrcLoc loc = SrcLoc ())
+  noexcept;
 void Unreachable
   [[noreturn]]
-  (SrcLoc loc = SrcLoc ());
+  (SrcLoc loc = SrcLoc ())
+  noexcept;
 void Unimplemented
   [[noreturn]]
-  (SrcLoc loc = SrcLoc ());
+  (SrcLoc loc = SrcLoc ())
+  noexcept;
 #define AssertFailed() NMS::AssertFailed ()
 #define Unreachable() NMS::Unreachable ()
 #define Unimplemented() NMS::Unimplemented ()

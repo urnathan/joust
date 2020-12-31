@@ -92,35 +92,39 @@ int main
   } flags;
   auto append = []
     (NMS::Option const *option, char const *opt, char const *arg, void *f)
-		{
-		  if (!arg[0])
-		    NMS::Fatal ("option '%s' is empty", opt);
-		  for (char const *p = arg; *p; p++)
-		    {
-		      if (*p == '='
-			  && option->offset == offsetof (Flags, defines))
-			break;
-		      if (!std::isalnum (*p))
-			NMS::Fatal ("option '%s%s%s' is ill-formed with '%c'",
-				    opt,
-				    option->argform[0] == '+' ? "" : " ",
-				    option->argform[0] == '+' ? "" : arg, *p);
-		    }
-		  option->Flag<std::vector<char const *>> (f).push_back (arg);
-		};
+  {
+    if (!arg[0])
+      NMS::Fatal ("option '%s' is empty", opt);
+    for (char const *p = arg; *p; p++)
+      {
+	if (*p == '='
+	    && option->offset == offsetof (Flags, defines))
+	  break;
+	if (!std::isalnum (*p))
+	  NMS::Fatal ("option '%s%s%s' is ill-formed with '%c'", opt,
+		      option->argform[0] == '+' ? "" : " ",
+		      option->argform[0] == '+' ? "" : arg, *p);
+      }
+    option->Flag<std::vector<char const *>> (f).push_back (arg);
+  };
   static constexpr NMS::Option const options[] =
     {
-      {"help", 'h', offsetof (Flags, help), nullptr, nullptr, "Help"},
-      {"version", 0, offsetof (Flags, version), nullptr, nullptr, "Version"},
-      {"verbose", 'v', offsetof (Flags, verbose), nullptr, nullptr, "Verbose"},
-      {"dir", 'C', offsetof (Flags, dir), nullptr, "directory", "Set directory"},
-      {nullptr, 'D', offsetof (Flags, defines), append, "+var=val", "Define"},
+      {"help", 'h', offsetof (Flags, help), nullptr,
+       nullptr, "Help", nullptr},
+      {"version", 0, offsetof (Flags, version), nullptr,
+       nullptr, "Version", nullptr},
+      {"verbose", 'v', offsetof (Flags, verbose), nullptr,
+       nullptr, "Verbose", nullptr},
+      {"dir", 'C', offsetof (Flags, dir), nullptr,
+       "directory", "Set directory", nullptr},
+      {nullptr, 'D', offsetof (Flags, defines), append,
+       "+var=val", "Define", nullptr},
       {"defines", 'd', offsetof (Flags, include), nullptr,
-       "file", "File of defines"},
-      {"out", 'o', offsetof (Flags, out), nullptr, "file", "Output"},
+       "file", "File of defines", nullptr},
+      {"out", 'o', offsetof (Flags, out), nullptr, "file", "Output", nullptr},
       {"prefix", 'p', offsetof (Flags, prefixes), append,
-       "prefix", "Pattern prefix (repeatable)"},
-      {nullptr, 0, 0, nullptr, nullptr, nullptr}
+       "prefix", "Pattern prefix (repeatable)", nullptr},
+      {nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr}
     };
   int argno = options->Process (argc, argv, &flags);
   if (flags.help)

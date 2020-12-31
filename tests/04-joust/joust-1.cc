@@ -85,13 +85,15 @@ int main (int argc, char *argv[])
   } flags;
   static constexpr NMS::Option const options[] =
     {
-      {"inline", 0, offsetof (Flags, do_inline), nullptr, nullptr, "Inline"},
-      {"nested", 0, offsetof (Flags, do_nested), nullptr, nullptr, "Nested"},
+      {"inline", 0, offsetof (Flags, do_inline), nullptr,
+       nullptr, "Inline", nullptr},
+      {"nested", 0, offsetof (Flags, do_nested), nullptr,
+       nullptr, "Nested", nullptr},
       {"backtraced", 0, offsetof (Flags, is_backtraced), nullptr,
-       nullptr, "Backtraced"},
+       nullptr, "Backtraced", nullptr},
       {"demangled", 0, offsetof (Flags, is_demangled), nullptr,
-       nullptr, "Demangled"},
-      {nullptr, 0, 0, nullptr, nullptr, nullptr}
+       nullptr, "Demangled", nullptr},
+      {nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr}
     };
   options->Process (argc, argv, &flags);
 

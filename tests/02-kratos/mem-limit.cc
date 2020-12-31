@@ -22,8 +22,8 @@ int main (int argc, char *argv[])
   bool map = false;
   static constexpr NMS::Option const options[] =
     {
-      {"map", 'm', 0, nullptr, nullptr, "MMap"},
-      {nullptr, 0, 0, nullptr, nullptr, nullptr}
+      {"map", 'm', 0, nullptr, nullptr, "MMap", nullptr},
+      {nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr}
     };
   options->Process (argc, argv, &map);
 
