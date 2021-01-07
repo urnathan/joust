@@ -5,11 +5,13 @@
 // HELP: Usage: $stem [options]
 // HELP-NEXT: Inline
 // HELP-NEXT: Nested
+// HELP-NEXT: Optimized
 // HELP-NEXT: Backtraced
 // HELP-NEXT: Demangled
 // HELP-NEXT: $EOF
 // HELP-END:
 
+// RUN-REQUIRE:! $subdir$stem --optimized
 // RUN-REQUIRE: $subdir$stem --backtraced
 // RUN-REQUIRE: $subdir$stem --demangled
 // RUN-SIGNAL:ABRT $subdir$stem --inline |& ezio -p INLINE1 -p FATAL $test
@@ -26,6 +28,7 @@
 // INLINE2-NEXT: ^00-0x{:[0-9a-f]+} $subdir$stem({:[^)]*})
 // INLINE2: (main
 
+// RUN-REQUIRE:! $subdir$stem --optimized
 // RUN-REQUIRE: $subdir$stem --backtraced
 // RUN-REQUIRE: $subdir$stem --demangled
 // RUN-SIGNAL:ABRT $subdir$stem --nested |& ezio -p NESTED1 -p FATAL $test
@@ -82,6 +85,7 @@ int main (int argc, char *argv[])
     bool do_nested = false;
     bool is_backtraced = false;
     bool is_demangled = false;
+    bool is_optimized = false;
   } flags;
   static constexpr NMS::Option const options[] =
     {
@@ -89,6 +93,8 @@ int main (int argc, char *argv[])
        nullptr, "Inline", nullptr},
       {"nested", 0, offsetof (Flags, do_nested), nullptr,
        nullptr, "Nested", nullptr},
+      {"optimized", 0, offsetof (Flags, is_optimized), nullptr,
+       nullptr, "Optimized", nullptr},
       {"backtraced", 0, offsetof (Flags, is_backtraced), nullptr,
        nullptr, "Backtraced", nullptr},
       {"demangled", 0, offsetof (Flags, is_demangled), nullptr,
@@ -96,6 +102,14 @@ int main (int argc, char *argv[])
       {nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr}
     };
   options->Process (argc, argv, &flags);
+
+  if (flags.is_optimized)
+    {
+#if __OPTIMIZE__
+      return 0;
+#endif
+      return 1;
+    }
 
   if (flags.is_backtraced)
     return NMS_BACKTRACE == 0;

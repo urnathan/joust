@@ -9,13 +9,20 @@ cmake_minimum_required (VERSION 3.18)
 
 project (Joust VERSION 1.0 LANGUAGES CXX)
 set (PROJECT_URL "https://github.com/urnathan/joust")
+message (NOTICE "${CMAKE_BUILD_TYPE} build")
 
 include (CheckLibraryExists)
 include (CheckSymbolExists)
 include (CheckIncludeFileCXX)
 
-set (CMAKE_BUILD_TYPE Debug)
 set (CMAKE_CXX_STANDARD 20)
+
+set (CMAKE_CXX_FLAGS_DEBUG -g3)
+set (CMAKE_CXX_FLAGS_RELWITHDEBINFO
+  "${CMAKE_CXX_FLAGS_RELEASE} ${CMAKE_CXX_FLAGS_DEBUG}")
+add_compile_options ("-W;-Wall;-Woverloaded-virtual")
+add_compile_options ("-fdiagnostics-color=always;-fno-diagnostics-show-option")
+add_compile_options ("-fno-exceptions;-fno-rtti")
 
 check_symbol_exists (pipe2 "unistd.h" HAVE_PIPE2)
 check_symbol_exists (mremap "sys/mman.h" HAVE_MREMAP)
@@ -31,10 +38,6 @@ else ()
     message (FATAL_ERROR "Neither epoll_create1(2) nor pselect(2) available")
   endif ()
 endif ()
-
-add_compile_options ("-W;-Wall;-Woverloaded-virtual")
-add_compile_options ("-fdiagnostics-color=always;-fno-diagnostics-show-option")
-add_compile_options ("-fno-exceptions;-fno-rtti")
 
 add_subdirectory (extern/nms EXCLUDE_FROM_ALL)
 
