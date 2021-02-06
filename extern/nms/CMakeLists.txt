@@ -1,5 +1,5 @@
 # NMS utils
-# Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
+# Copyright (C) 2020-2021 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
 # This happens to be my first CMake project, so it's undoubtably wonky
@@ -24,7 +24,9 @@ if (CMAKE_BUILD_TYPE MATCHES "^Rel")
   set (DFLT_CHECKING OFF)
 endif ()
 option (NMS_CHECKING "Enable checking" ${DFLT_CHECKING})
+message (NOTICE "NMS checking:${NMS_CHECKING}")
 option (NMS_BACKTRACE "Enable backtrace on crash" ON)
+message (NOTICE "NMS backtrace:${NMS_BACKTRACE}")
 
 if (NMS_BACKTRACE)
   check_library_exists (bfd bfd_init "/usr/lib" HAVE_BFD)
@@ -38,7 +40,7 @@ file (RELATIVE_PATH BIN2SRC ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 configure_file (config.h.in config.h ESCAPE_QUOTES @ONLY)
 configure_file (gdbinit.in gdbinit ESCAPE_QUOTES @ONLY)
 
-include_directories ("${NMS_BINARY_DIR}" "${NMS_INCLUDE_DIR}")
+include_directories (${NMS_BINARY_DIR} ${NMS_INCLUDE_DIR})
 
 # The user visible library
 add_library (nms libnms/fatal.cc libnms/option.cc)

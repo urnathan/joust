@@ -1,5 +1,5 @@
 // NMS Test Suite			-*- mode:c++ -*-
-// Copyright (C) 2019-2020 Nathan Sidwell, nathan@acm.org
+// Copyright (C) 2019-2021 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 #include "config.h"
@@ -563,10 +563,8 @@ void (HCF)
 #endif
    )
   noexcept
-{ // HCF - you goofed!
+{  __asm__ volatile ("nop"); // HCF - you goofed!
   static int busy = 0;
-
-  __asm__ volatile ("nop");  // HCF - you goofed!
 
   fflush (stdout);
   fflush (stderr);

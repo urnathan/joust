@@ -291,8 +291,17 @@ void Engine::Init
 
   if (genner)
     {
-      std::vector<std::string> g {genner};
-      
+      std::vector<std::string> g;
+
+      while (auto *space = std::strchr (genner, ' '))
+	{
+	  g.emplace_back (genner, space);
+	  while (*space == ' ')
+	    space++;
+	  genner = space;
+	}
+      g.push_back (genner);
+
       if (generator.Spawn (*this, g, poll_fd))
 	fixed_jobs++;
     }

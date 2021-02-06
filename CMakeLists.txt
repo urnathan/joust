@@ -7,9 +7,13 @@
 # Don't actually know the minimum version this'll work with, 3.18 is what I have
 cmake_minimum_required (VERSION 3.18)
 
+if (NOT CMAKE_BUILD_TYPE)
+  set (CMAKE_BUILD_TYPE Debug)
+endif ()
+message (NOTICE "Build type:${CMAKE_BUILD_TYPE}")
+
 project (Joust VERSION 1.0 LANGUAGES CXX)
 set (PROJECT_URL "https://github.com/urnathan/joust")
-message (NOTICE "${CMAKE_BUILD_TYPE} build")
 
 include (CheckLibraryExists)
 include (CheckSymbolExists)

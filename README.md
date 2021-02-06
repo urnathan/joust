@@ -139,7 +139,7 @@ provide some scripts for its use.  Typical invocation is:
 * `-C DIR`:  Change to `DIR` before doing anything else.
 * `-j COUNT`:  Fixed job limit
 * `-o STEM`  Output file stem, defaults to `-` (stdout/stderr)
-* `-g GEN`:  Generator program, defaults to `kratos`
+* `-g GEN`:  Generator program, spaces separate arguments
 * `-t TESTER` Tester program, defaults to `kratos`
 
 Additional arguments can be passed to the tester program, by using a
@@ -462,39 +462,19 @@ loop.
 ## Building Joust
 
 Building Joust is reasonably straight forwards.  You need a C++20
-compiler, as I use some features of C++20.  The configure script
-allows you to point at special build tools with
-`--with-tools=TOOLDIR`.  I used this to point at a prerelease C++20
-toolchain.
+compiler, as I use some features of C++20.  Use the CMake idiom of
+building in a subdirectory called 'build{something}'
 
-Although building in the source tree probably works, I do not build
-and test that configuration.  I create a sibling `obj` directory, and
-build there.
-
-Here's a recipe
+Here's a recipe:
 
 ```zsh
-mkdir src obj
-git clone git@github.com:urnathan/joust.git src
-cd obj
-../src/configure
+git clone git@github.com:urnathan/joust.git
+cd joust
+mkdir build
+cd build
+cmake ..
 make
 make check
 ```
-
-The `configure` script supports a number of options, you can disable
-checking, and backtrace for instance.  When building you can override
-`CXXFLAGS` if needs be &mdash; I often used `make CXXFLAGS=-g3` if I need to
-debug it.
-
-The Makefile  automatically enables parallelism, trying to keep
-each available CPU busy.  You can override this by adding
-`PARALLELISM=` on the command line.  Set it to empty, or to the
-desired parallelism.
-
-### Install
-
-The usual `--prefix` and related options can be used to specify where
-joust should be installed
 
 <a name="1">1</a>: or 'Journal Of Utterly Stupid Tests'
