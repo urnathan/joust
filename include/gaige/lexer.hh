@@ -2,7 +2,7 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-#pragma once
+#ifndef GAIGE_LEXER_HH
 
 // NMS
 #include "nms/fatal.hh"
@@ -125,3 +125,6 @@ public:
 };
 
 }
+
+#define GAIGE_LEXER_HH
+#endif

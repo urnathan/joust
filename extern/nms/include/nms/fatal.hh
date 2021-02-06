@@ -2,7 +2,7 @@
 // Copyright (C) 2019-2021 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-#pragma once
+#ifndef NMS_FATAL_HH
 
 // C++
 #if __GNUC__ >= 10
@@ -153,3 +153,6 @@ void SignalHandlers
   ()
   noexcept;
 }
+
+#define NMS_FATAL_HH
+#endif

@@ -2,7 +2,7 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-#pragma once
+#ifndef GAIGE_SPAWN_HH
 
 // C++
 #include <string>
@@ -43,3 +43,6 @@ inline int MakePipe
 #endif
 
 }
+
+#define GAIGE_SPAWN_HH
+#endif

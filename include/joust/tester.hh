@@ -2,7 +2,7 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-#pragma once
+#ifndef JOUST_TESTER_HH
 
 // C++
 #include <iostream>
@@ -192,3 +192,6 @@ public:
 #undef JOUST_LINE
 
 }
+
+#define JOUST_TESTER_HH
+#endif

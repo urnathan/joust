@@ -2,7 +2,7 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-#pragma once
+#ifndef GAIGE_READBUFFER_HH
 
 // C++
 #include <vector>
@@ -56,3 +56,6 @@ public:
 };
 
 }
+
+#define GAIGE_READBUFFER_HH
+#endif

@@ -2,7 +2,7 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-#pragma once
+#ifndef GAIGE_SYMBOLS_HH
 
 // C++
 #include <string>
@@ -51,3 +51,6 @@ public:
 };
 
 }
+
+#define GAIGE_SYMBOLS_HH
+#endif
