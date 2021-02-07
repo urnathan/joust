@@ -76,7 +76,7 @@ int main
     bool verbose = false;
     unsigned jobs = 0;
     char const *tester = "kratos";
-    char const *gen = nullptr;
+    std::vector<std::string> gen;
     char const *out = "";
     char const *dir = nullptr;
   } flags;
@@ -131,7 +131,8 @@ int main
   Engine engine (std::min (flags.jobs, 256u),
 		 flags.out ? sum : std::cout, flags.out ? log : std::cerr);
 
-  engine.Init (flags.tester, flags.gen, argc - argno, argv + argno);
+  engine.Init (flags.tester, flags.gen.empty () ? nullptr : &flags.gen,
+	       argc - argno, argv + argno);
   bool show_progress = flags.out && isatty (1);;
   size_t progress_size = 0;
 

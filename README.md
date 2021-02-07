@@ -139,7 +139,7 @@ provide some scripts for its use.  Typical invocation is:
 * `-C DIR`:  Change to `DIR` before doing anything else.
 * `-j COUNT`:  Fixed job limit
 * `-o STEM`  Output file stem, defaults to `-` (stdout/stderr)
-* `-g GEN`:  Generator program, spaces separate arguments
+* `-g GEN`:  Generator program and arguments
 * `-t TESTER` Tester program, defaults to `kratos`
 
 Additional arguments can be passed to the tester program, by using a

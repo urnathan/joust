@@ -69,7 +69,7 @@ public:
       || !used_tokens.empty () || !ready_tokens.empty ();
   }
   void Init
-    (char const *tester, char const *genner,
+    (char const *tester, std::vector<std::string> *genner,
      int argc, char const *const argv[]);
   void Fini
     (std::ostream * = nullptr);
@@ -227,7 +227,8 @@ void NoteSignal
 #endif
 
 void Engine::Init
-  (char const *tester, char const *genner, int argc, char const *const argv[])
+  (char const *tester, std::vector<std::string> *genner,
+   int argc, char const *const argv[])
 {
   auto now = time (nullptr);
   *this << "Test run: " << ctime (&now) << "\n";
@@ -291,18 +292,7 @@ void Engine::Init
 
   if (genner)
     {
-      std::vector<std::string> g;
-
-      while (auto *space = std::strchr (genner, ' '))
-	{
-	  g.emplace_back (genner, space);
-	  while (*space == ' ')
-	    space++;
-	  genner = space;
-	}
-      g.push_back (genner);
-
-      if (generator.Spawn (*this, g, poll_fd))
+      if (generator.Spawn (*this, *genner, poll_fd))
 	fixed_jobs++;
     }
   else
