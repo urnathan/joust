@@ -89,19 +89,14 @@ int main (int argc, char *argv[])
   } flags;
   static constexpr NMS::Option const options[] =
     {
-      {"inline", 0, offsetof (Flags, do_inline), nullptr,
-       nullptr, "Inline", nullptr},
-      {"nested", 0, offsetof (Flags, do_nested), nullptr,
-       nullptr, "Nested", nullptr},
-      {"optimized", 0, offsetof (Flags, is_optimized), nullptr,
-       nullptr, "Optimized", nullptr},
-      {"backtraced", 0, offsetof (Flags, is_backtraced), nullptr,
-       nullptr, "Backtraced", nullptr},
-      {"demangled", 0, offsetof (Flags, is_demangled), nullptr,
-       nullptr, "Demangled", nullptr},
-      {nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr}
+      {"inline", 0, OPTION_FLDFN (Flags, do_inline), "Inline"},
+      {"nested", 0, OPTION_FLDFN (Flags, do_nested), "Nested"},
+      {"optimized", 0, OPTION_FLDFN (Flags, is_optimized), "Optimized"},
+      {"backtraced", 0, OPTION_FLDFN (Flags, is_backtraced), "Backtraced"},
+      {"demangled", 0, OPTION_FLDFN (Flags, is_demangled), "Demangled"},
+      {}
     };
-  options->Process (argc, argv, &flags);
+  options->Parse (argc, argv, &flags);
 
   if (flags.is_optimized)
     {

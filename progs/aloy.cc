@@ -80,32 +80,20 @@ int main
     char const *out = "";
     char const *dir = nullptr;
   } flags;
-  constexpr auto uint_fn
-    = [] (NMS::Option const *option, char const *opt, char const *arg, void *f)
+  static constinit NMS::Option const options[] =
     {
-      char *eptr;
-      option->Flag<unsigned> (f) = strtol (arg, &eptr, 0);
-      if (*eptr || eptr == arg)
-	NMS::Fatal ("option '%s %s' illformed", opt, arg);
+      {"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
+      {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
+      {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
+      {"dir", 'C', OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
+      {"jobs", 'j', NMS::Option::F_IsConcatenated,
+       OPTION_FLDFN (Flags, jobs), "N:Concurrency"},
+      {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
+      {"gen", 'g', OPTION_FLDFN (Flags, gen), "PROGRAM:Generator"},
+      {"tester", 't', OPTION_FLDFN (Flags, tester), "PROGRAM:Tester"},
+      {}
     };
-  static constexpr NMS::Option const options[] =
-    {
-      {"help", 'h', offsetof (Flags, help), nullptr,
-       nullptr, "Help", nullptr},
-      {"version", 0, offsetof (Flags, version), nullptr,
-       nullptr, "Version", nullptr},
-      {"verbose", 'v', offsetof (Flags, verbose), nullptr,
-       nullptr, "Verbose", nullptr},
-      {"dir", 'C', offsetof (Flags, dir), nullptr,
-       "directory", "Set directory", nullptr},
-      {"jobs", 'j', offsetof (Flags, jobs), uint_fn, "+val", "Define", nullptr},
-      {"out", 'o', offsetof (Flags, out), nullptr, "file", "Output", nullptr},
-      {"gen", 'g', offsetof (Flags, gen), nullptr, "prog", "Generator", nullptr},
-      {"tester", 't', offsetof (Flags, tester), nullptr,
-       "prog", "Tester", nullptr},
-      {nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr}
-    };
-  int argno = options->Process (argc, argv, &flags);
+  int argno = options->Parse (argc, argv, &flags);
   if (flags.help)
     {
       Title (stdout);

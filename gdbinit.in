@@ -3,4 +3,4 @@
 # License: Affero GPL v3.0
 
 dir @CMAKE_SOURCE_DIR@
-include extern/nms/gdbinit
+source @NMS_BINARY_DIR@/gdbinit

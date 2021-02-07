@@ -16,27 +16,53 @@ void Option::Help
   (FILE *stream, char const *args)
   const
 {
-  enum {indent = 26};
+  fprintf (stream, "Usage: %s [options] %s\n", progname, args);
+  Help (stream);
+}
+
+void Option::Help
+  (FILE *stream)
+  const
+{
   static char const pfx[]
     = "          " "          " "       ";
-
-  fprintf (stdout, "Usage: %s [options] %s\n", progname, args);
-  for (auto *opt = this; opt->sname || opt->cname; opt++)
+  if (IsEnd ())
+    return;
+  else if (IsSubOptions ())
+      subOptions->Help (stream);
+  else if (helpText)
     {
       unsigned len = fprintf (stream, "  ");
-      if (opt->cname)
-	len += fprintf (stream, "-%c", opt->cname);
-      if (opt->sname)
+
+      if (shortName)
+	len += fprintf (stream, "-%c", shortName);
+
+      if (longName)
 	{
-	  if (opt->cname)
+	  if (shortName)
 	    len += fprintf (stream, " ");
-	  len += fprintf (stream, "--%s", opt->sname);
+	  len += fprintf (stream, "--%s", longName);
 	}
-      if (opt->argform)
+
+      auto *help = helpText;
+      if (HasParameter ())
 	{
-	  bool adjacent = opt->argform[0] == '+';
-	  len += fprintf (stream, "%s%s", " " + adjacent,
-			  opt->argform + adjacent);
+	  auto *colon = strchr (help, ':');
+	  int l;
+	  if (colon)
+	    {
+	      l = colon - help;
+	      colon = help;
+	      help += l + 1;
+	    }
+	  else
+	    {
+	      colon = "ARG";
+	      l = 3;
+	    }
+
+	  len += fprintf (stream, "%c%.*s",
+			  " ="[IsConcatenated ()], l, colon);
 	}
 
       if (len > strlen (pfx))
@@ -44,14 +70,17 @@ void Option::Help
 	  fprintf (stream, "\n");
 	  len = 0;
 	}
+
       len += fprintf (stream, pfx + len);
-      fprintf (stream, "%s\n", opt->help);
-      if (opt->helper)
-	opt->helper (opt, stream, pfx);
+      fprintf (stream, "%s\n", help);
+      if (helpFn)
+	  helpFn (stream, pfx);
     }
+
+  return this[1].Help (stream);
 }
 
-int Option::Process
+int Option::Parse
   (int argc, char **argv, void *flags)
   const
 {
@@ -59,65 +88,217 @@ int Option::Process
 
   Progname (argv[argno++]);
 
-  while (argno != argc)
+  while (argno != argc && argv[argno][0] == '-' && argv[argno][1])
     {
-      char const *opt = argv[argno];
+      auto const *arg = argv[argno];
 
-      if (opt[0] != '-')
-	break;
       argno++;
-
-      bool dash = opt[1] == '-';
-      size_t len = strlen (opt + 1 + dash);
-      for (auto self = this; self->sname || self->cname; self++)
+      if (arg[1] == '-')
 	{
-	  size_t opt_len = 0;
-	  if (!dash && self->cname == opt[1])
-	    {
-	      if (self->argform && self->argform[0] == '+')
-		;
-	      else if (opt[2])
-		continue;
-
-	      opt_len = 1;
-	    }
-	  else if (self->sname)
-	    {
-	      opt_len = len;
-	      if (self->argform && self->argform[0] == '+')
-		opt_len = strlen (self->sname);
-	      if (opt_len > len || memcmp (opt + 1 + dash, self->sname, opt_len))
-		continue;
-	    }
+	  // long option
+	  arg += 2;
+	  auto *next = argno < argc ? argv[argno] : nullptr;
+	  auto used = ParseLong (arg, next, flags);
+	  if (used >= 0)
+	    argno += used;
 	  else
-	    continue;
-
-	  char const *arg = nullptr;
-	  if (self->argform)
-	    {
-	      if (self->argform[0] == '+')
-		arg = opt + dash + 1 + opt_len;
-	      else if (argno == argc)
-		Fatal ("option '%s' requires <%s> argument", opt,
-		       self->argform + (self->argform[0] == '+'));
-	      else
-		arg = argv[argno++];
-	    }
-
-	  if (self->process)
-	    self->process (self, opt, arg, flags);
-	  else if (arg)
-	    self->Flag<char const *> (flags) = arg;
-	  else
-	    self->Flag<bool> (flags) = true;
-
-	  goto found;
+	    Fatal ("unknown option '--%s'", arg);
 	}
-      Fatal ("unknown option '%s'", opt);
-    found:;
+      else
+	{
+	  // short option
+	  arg += 1;
+	  while (*arg)
+	    {
+	      auto *next = argno < argc ? argv[argno] : nullptr;
+	      auto used = ParseShort (arg, next, flags);
+	      if (used >= 0)
+		argno += used;
+	      else
+		Fatal ("unknown option '-%c'", *arg);
+	    }
+	}
     }
 
   return argno;
+}
+
+int Option::ParseShort
+  (char const *&arg, char const *next, void *vars)
+  const
+  noexcept
+{
+  if (IsEnd ())
+    return -1;
+  
+  if (IsSubOptions ())
+    {
+      auto *subVars = subObject ?: Var (vars);
+      auto used = subOptions->ParseShort (arg, next, subVars);
+      if (used >= 0)
+	return used;
+    }
+  else if (shortName == *arg)
+    {
+      arg++;
+      char const *param = nullptr;
+
+      auto used = 0;
+      if (parseFn (flags, nullptr, nullptr))
+	{
+	  if (*arg)
+	    {
+	      if (IsConcatenated ())
+		{
+		  param = arg;
+		  arg += strlen (arg);
+		}
+	    }
+	  else if (next)
+	    {
+	      param = next;
+	      used = 1;
+	    }
+
+	  if (!param)
+	    Fatal ("option '-%c' requires %s argument", shortName,
+		   IsConcatenated () ? "an" : "a separate");
+	}
+      if (!parseFn (flags, Var (vars), param))
+	Fatal ("option '-%c %s' is ill-formed", shortName, param);
+      return used;
+    }
+
+  return this[1].ParseShort (arg, next, vars);
+}
+
+int Option::ParseLong
+  (char const *arg, char const *next, void *vars)
+  const
+  noexcept
+{
+  if (IsEnd ())
+    return -1;
+  
+  if (IsSubOptions ())
+    {
+      auto *subVars = subObject ?: Var (vars);
+      auto used = subOptions->ParseLong (arg, next, subVars);
+      if (used >= 0)
+	return used;
+    }
+  else if (longName)
+    {
+      size_t len = strlen (longName);
+
+      if (0 == strncmp (longName, arg, len))
+	{
+	  auto used = 0;
+	  char const *param = nullptr;
+	  bool hasParm = parseFn (flags, nullptr, nullptr);
+
+	  if (!arg[len])
+	    {
+	      if (hasParm)
+		{
+		  param = next;
+		  if (!param)
+		    Fatal ("option '--%s' requires %s argument", longName,
+			   IsConcatenated () ? "an" : "a separate");
+		  used = 1;
+		}
+	    }
+	  else if (arg[len] == '=' && IsConcatenated ())
+	    {
+	      if (hasParm)
+		param = &arg[len + 1];
+	      else
+		used = -1;
+	    }
+	  else
+	    used = -1;
+
+	  if (used >= 0)
+	    {
+	      if (!parseFn (flags, Var (vars), param))
+		Fatal ("option '--%s %s' is ill-formed", longName, param);
+	  
+	      return used;
+	    }
+	}
+    }
+
+  return this[1].ParseLong (arg, next, vars);
+}
+
+bool Option::Parser<bool>::Fn
+  (Flags, bool *var, char const *)
+{
+  if (!var)
+    return false;
+  *var = true;
+  return true;
+}
+
+bool Option::ParseFalse
+  (Flags, bool *var, char const *)
+{
+  if (!var)
+    return false;
+  *var = false;
+  return true;
+}
+
+bool Option::Parser<signed>::Fn
+  (Flags, signed *var, char const *param)
+{
+  if (var)
+    {
+      char *eptr;
+      *var = strtol (param, &eptr, 0);
+      if (*eptr || eptr == param)
+	return false;
+    }
+
+  return true;
+}
+
+bool Option::Parser<unsigned>::Fn
+  (Flags, unsigned *var, char const *param)
+{
+  if (var)
+    {
+      char *eptr;
+      *var = strtoul (param, &eptr, 0);
+      if (*eptr || eptr == param)
+	return false;
+    }
+
+  return true;
+}
+
+bool Option::Parser<char const *>::Fn
+  (Flags, char const **var, char const *param)
+{
+  if (var)
+    *var = param;
+  return true;
+}
+
+bool Option::Parser<std::string>::Fn
+  (Flags, std::string *var, char const *param)
+{
+  if (var)
+    *var = param;
+  return true;
+}
+
+bool Option::Parser<std::string_view>::Fn
+  (Flags, std::string_view *var, char const *param)
+{
+  if (var)
+    *var = param;
+  return true;
 }
 
 }

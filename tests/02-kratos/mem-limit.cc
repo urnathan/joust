@@ -17,15 +17,17 @@
 
 int main (int argc, char *argv[])
 {
-  NMS::SignalHandlers ();
+  using namespace NMS;
+
+  SignalHandlers ();
 
   bool map = false;
-  static constexpr NMS::Option const options[] =
+  static constexpr Option const options[] =
     {
-      {"map", 'm', 0, nullptr, nullptr, "MMap", nullptr},
-      {nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr}
+      {"map", 'm', 0, OPTION_FN (Option::Parser<bool>::Fn), "MMap"},
+      {}
     };
-  options->Process (argc, argv, &map);
+  options->Parse (argc, argv, &map);
 
   size_t MB = 1024 * 1024;
 

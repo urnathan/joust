@@ -90,43 +90,20 @@ int main
     char const *out = "";
     char const *dir = nullptr;
   } flags;
-  auto append = []
-    (NMS::Option const *option, char const *opt, char const *arg, void *f)
-  {
-    if (!arg[0])
-      NMS::Fatal ("option '%s' is empty", opt);
-    for (char const *p = arg; *p; p++)
-      {
-	if (*p == '='
-	    && option->offset == offsetof (Flags, defines))
-	  break;
-	if (!std::isalnum (*p))
-	  NMS::Fatal ("option '%s%s%s' is ill-formed with '%c'", opt,
-		      option->argform[0] == '+' ? "" : " ",
-		      option->argform[0] == '+' ? "" : arg, *p);
-      }
-    option->Flag<std::vector<char const *>> (f).push_back (arg);
-  };
-  static constexpr NMS::Option const options[] =
+  static constinit NMS::Option const options[] =
     {
-      {"help", 'h', offsetof (Flags, help), nullptr,
-       nullptr, "Help", nullptr},
-      {"version", 0, offsetof (Flags, version), nullptr,
-       nullptr, "Version", nullptr},
-      {"verbose", 'v', offsetof (Flags, verbose), nullptr,
-       nullptr, "Verbose", nullptr},
-      {"dir", 'C', offsetof (Flags, dir), nullptr,
-       "directory", "Set directory", nullptr},
-      {nullptr, 'D', offsetof (Flags, defines), append,
-       "+var=val", "Define", nullptr},
-      {"defines", 'd', offsetof (Flags, include), nullptr,
-       "file", "File of defines", nullptr},
-      {"out", 'o', offsetof (Flags, out), nullptr, "file", "Output", nullptr},
-      {"prefix", 'p', offsetof (Flags, prefixes), append,
-       "prefix", "Pattern prefix (repeatable)", nullptr},
-      {nullptr, 0, 0, nullptr, nullptr, nullptr, nullptr}
+      {"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
+      {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
+      {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
+      {"dir", 'C', OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
+      {nullptr, 'D', NMS::Option::F_IsConcatenated,
+       OPTION_FLDFN (Flags, defines), "VAR=VAL:Define"},
+      {"defines", 'd', OPTION_FLDFN (Flags, include), "FILE:File of defines"},
+      {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
+      {"prefix", 'p', OPTION_FLDFN (Flags, prefixes), "PREFIX:Pattern prefix"},
+      {}
     };
-  int argno = options->Process (argc, argv, &flags);
+  int argno = options->Parse (argc, argv, &flags);
   if (flags.help)
     {
       Title (stdout);
