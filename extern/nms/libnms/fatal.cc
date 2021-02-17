@@ -21,12 +21,8 @@
 #if HAVE_BFD
 #include <bfd.h>
 #endif
-#if HAVE_DEMANGLE
-// Stop libiberty declaring a broken basename fn
-#define HAVE_DECL_BASENAME 1
-#include <demangle.h>
-#endif
 #if NMS_BACKTRACE
+#include <cxxabi.h>
 #include <execinfo.h>
 #endif
 #ifdef HAVE_UCONTEXT
@@ -278,9 +274,7 @@ char *Binfo::Demangle
   ()
   noexcept
 {
-  char *demangled = 0;
-#if HAVE_DEMANGLE
-  demangled = cplus_demangle (fn, DMGL_ANSI | DMGL_PARAMS);
+  char *demangled = abi::__cxa_demangle (fn, nullptr, nullptr, nullptr);
 
   if (demangled)
     {
@@ -344,7 +338,7 @@ char *Binfo::Demangle
       *dst = 0;
       demangled = reformed;
     }
-#endif
+
   return demangled;
 }
 #endif

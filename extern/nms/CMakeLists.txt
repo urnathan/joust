@@ -30,7 +30,6 @@ message (NOTICE "NMS backtrace:${NMS_BACKTRACE}")
 
 if (NMS_BACKTRACE)
   check_library_exists (bfd bfd_init "/usr/lib" HAVE_BFD)
-  check_library_exists (iberty cplus_demangle "/usr/lib" HAVE_DEMANGLE)
   check_include_file_cxx ("ucontext.h" HAVE_UCONTEXT)
 endif ()
 
@@ -47,9 +46,6 @@ add_library (nms libnms/fatal.cc libnms/option.cc)
 
 if (HAVE_BFD)
   target_link_libraries (nms PRIVATE bfd)
-endif ()
-if (HAVE_DEMANGLE)
-  target_link_libraries (nms PRIVATE iberty)
 endif ()
 
 # exports
