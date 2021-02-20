@@ -7,10 +7,9 @@
 # Don't actually know the minimum version this'll work with, 3.18 is what I have
 cmake_minimum_required (VERSION 3.18)
 
-if (NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE Debug)
-endif ()
-message (NOTICE "Build type:${CMAKE_BUILD_TYPE}")
+list (PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+list (PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/extern/nms/cmake)
+include (NMSBuild)
 
 project (Joust VERSION 1.0 LANGUAGES CXX)
 set (PROJECT_URL "https://github.com/urnathan/joust")
@@ -21,9 +20,6 @@ include (CheckIncludeFileCXX)
 
 set (CMAKE_CXX_STANDARD 20)
 
-set (CMAKE_CXX_FLAGS_DEBUG -g3)
-set (CMAKE_CXX_FLAGS_RELWITHDEBINFO
-  "${CMAKE_CXX_FLAGS_RELEASE} ${CMAKE_CXX_FLAGS_DEBUG}")
 add_compile_options ("-W;-Wall;-Woverloaded-virtual")
 add_compile_options ("-fdiagnostics-color=always;-fno-diagnostics-show-option")
 add_compile_options ("-fno-exceptions;-fno-rtti")

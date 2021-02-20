@@ -7,9 +7,11 @@
 # Don't actually know the minimum version this'll work with, 3.18 is what I have
 cmake_minimum_required (VERSION 3.18)
 
+list (PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+include (NMSBuild)
+
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   project (NMS VERSION 1.0 LANGUAGES CXX)
-  message ("${CMAKE_BUILD_TYPE} build")
   set (CMAKE_CXX_STANDARD 20)
 endif ()
 
