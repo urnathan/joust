@@ -7,13 +7,11 @@
 // HELP-NEXT: Nested
 // HELP-NEXT: Optimized
 // HELP-NEXT: Backtraced
-// HELP-NEXT: Demangled
 // HELP-NEXT: $EOF
 // HELP-END:
 
 // RUN-REQUIRE:! $subdir$stem --optimized
 // RUN-REQUIRE: $subdir$stem --backtraced
-// RUN-REQUIRE: $subdir$stem --demangled
 // RUN-SIGNAL:ABRT $subdir$stem --inline |& ezio -p INLINE1 -p FATAL $test
 // INLINE1-OPTION: matchSol
 // INLINE1: $stem: burn it all down
@@ -21,16 +19,8 @@
 // INLINE1-NEXT: 01-0x{:[0-9a-f]+} tests/$test:{:[0-9]+} {:(main)|(InvokeHCF)}
 // INLINE1-NEXT: 01{:(.1)|(-0x[0-9a-f]+)} tests/$test:{:[0-9]+} main
 
-// RUN-REQUIRE: $subdir$stem --backtraced
-// RUN-REQUIRE:! $subdir$stem --demangled
-// RUN-SIGNAL:ABRT $subdir$stem --inline |& ezio -p INLINE2 -p FATAL $test
-// INLINE2: ^$stem: burn it all down
-// INLINE2-NEXT: ^00-0x{:[0-9a-f]+} $subdir$stem({:[^)]*})
-// INLINE2: (main
-
 // RUN-REQUIRE:! $subdir$stem --optimized
 // RUN-REQUIRE: $subdir$stem --backtraced
-// RUN-REQUIRE: $subdir$stem --demangled
 // RUN-SIGNAL:ABRT $subdir$stem --nested |& ezio -p NESTED1 -p FATAL $test
 // NESTED1-OPTION: matchSol
 // NESTED1: $stem: go boom
@@ -40,12 +30,6 @@
 // NESTED1-NEXT: 03-0x{:$ret} tests/$test:{:[0-9]+} NestedHCF (int)
 // NESTED1-NEXT: 04-0x{:$ret} tests/$test:{:[0-9]+} NestedHCF (int)
 // NESTED1-NEXT: 05-0x{:[0-9a-f]+} tests/$test:{:[0-9]+} main
-
-// RUN-REQUIRE: $subdir$stem --backtraced
-// RUN-REQUIRE:! $subdir$stem --demangled
-// RUN-SIGNAL:ABRT $subdir$stem --nested |& ezio -p NESTED2 -p FATAL $test
-// NESTED2: ^$stem: go boom
-// NESTED2-NEXT: ^00-0x{:[0-9a-f]+} $subdir$stem({:[^)]*})
 
 // FATAL-LABEL: Version
 // FATAL-NEXT: See {:.*} for more information.
@@ -84,7 +68,6 @@ int main (int argc, char *argv[])
     bool do_inline = false;
     bool do_nested = false;
     bool is_backtraced = false;
-    bool is_demangled = false;
     bool is_optimized = false;
   } flags;
   static constexpr NMS::Option const options[] =
@@ -93,7 +76,6 @@ int main (int argc, char *argv[])
       {"nested", 0, OPTION_FLDFN (Flags, do_nested), "Nested"},
       {"optimized", 0, OPTION_FLDFN (Flags, is_optimized), "Optimized"},
       {"backtraced", 0, OPTION_FLDFN (Flags, is_backtraced), "Backtraced"},
-      {"demangled", 0, OPTION_FLDFN (Flags, is_demangled), "Demangled"},
       {}
     };
   options->Parse (argc, argv, &flags);
@@ -108,9 +90,6 @@ int main (int argc, char *argv[])
 
   if (flags.is_backtraced)
     return NMS_BACKTRACE == 0;
-
-  if (flags.is_demangled)
-    return HAVE_DEMANGLE == 0;
 
   if (flags.do_inline)
     InvokeHCF ();

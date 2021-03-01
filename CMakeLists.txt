@@ -20,6 +20,7 @@ include (CheckIncludeFileCXX)
 
 set (CMAKE_CXX_STANDARD 20)
 
+add_compile_options ("-fdiagnostics-color=always;-fno-diagnostics-show-option")
 add_compile_options ("-W;-Wall;-Woverloaded-virtual")
 add_compile_options ("-fno-exceptions;-fno-rtti")
 
