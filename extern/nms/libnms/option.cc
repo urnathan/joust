@@ -71,7 +71,7 @@ void Option::Help
 	  len = 0;
 	}
 
-      len += fprintf (stream, pfx + len);
+      len += fprintf (stream, "%s", pfx + len);
       fprintf (stream, "%s\n", help);
       if (helpFn)
 	  helpFn (stream, pfx);
@@ -233,6 +233,7 @@ int Option::ParseLong
 
 bool Option::Parser<bool>::Fn
   (Flags, bool *var, char const *)
+  noexcept
 {
   if (!var)
     return false;
@@ -242,6 +243,7 @@ bool Option::Parser<bool>::Fn
 
 bool Option::ParseFalse
   (Flags, bool *var, char const *)
+  noexcept
 {
   if (!var)
     return false;
@@ -251,6 +253,7 @@ bool Option::ParseFalse
 
 bool Option::Parser<signed>::Fn
   (Flags, signed *var, char const *param)
+  noexcept
 {
   if (var)
     {
@@ -265,6 +268,7 @@ bool Option::Parser<signed>::Fn
 
 bool Option::Parser<unsigned>::Fn
   (Flags, unsigned *var, char const *param)
+  noexcept
 {
   if (var)
     {
@@ -279,6 +283,7 @@ bool Option::Parser<unsigned>::Fn
 
 bool Option::Parser<char const *>::Fn
   (Flags, char const **var, char const *param)
+  noexcept
 {
   if (var)
     *var = param;
@@ -287,6 +292,7 @@ bool Option::Parser<char const *>::Fn
 
 bool Option::Parser<std::string>::Fn
   (Flags, std::string *var, char const *param)
+  noexcept
 {
   if (var)
     *var = param;
@@ -295,6 +301,7 @@ bool Option::Parser<std::string>::Fn
 
 bool Option::Parser<std::string_view>::Fn
   (Flags, std::string_view *var, char const *param)
+  noexcept
 {
   if (var)
     *var = param;

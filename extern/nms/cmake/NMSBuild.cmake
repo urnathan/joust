@@ -31,8 +31,6 @@ ninja:
   endif ()
   message (NOTICE "Build type:${CMAKE_BUILD_TYPE}")
 
-  add_compile_options ("-fdiagnostics-color=always;-fno-diagnostics-show-option")
-
   # -g3 means we get macros
   set (CMAKE_CXX_FLAGS_DEBUG -g3)
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO

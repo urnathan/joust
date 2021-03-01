@@ -5,7 +5,7 @@
 #ifndef NMS_FATAL_HH
 
 // C++
-#if __GNUC__ >= 10
+#if __GNUC__ >= 10 || __clang_major__ >= 11
 #define NMS_LOC_BUILTIN 1
 #elif __has_include (<source_location>)
 #include <source_location>
@@ -28,18 +28,23 @@ public:
     (char const *file_
 #if NMS_LOC_BUILTIN
      = __builtin_FILE ()
+#elif !NMS_LOC_SOURCE
+     = nullptr
 #endif
      , unsigned line_
 #if NMS_LOC_BUILTIN
      = __builtin_LINE ()
+#elif !NMS_LOC_SOURCE
+     = 0
 #endif
      )
+    noexcept
     : file (file_), line (line_)
   {}
 
 #if !NMS_LOC_BUILTIN && NMS_LOC_SOURCE
   constexpr SrcLoc
-    (source_location loc == source_location::current ())
+    (source_location loc = source_location::current ())
     noexcept
     : file (loc.file ()), line (loc.line ())
   {}
