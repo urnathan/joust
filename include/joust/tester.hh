@@ -8,9 +8,13 @@
 #include <iostream>
 #include <string_view>
 
-#if __GNUC__ >= 10
+#if __GNUC__ >= 10 || __clang_major__ >= 11
 #define JOUST_FILE() __builtin_FILE ()
 #define JOUST_LINE() __builtin_LINE ()
+#elif __has_include (<source_location>)
+#include <source_location>
+#define JOUST_FILE() source_location::current ().file ()
+#define JOUST_LINE() source_location::current ().line ()
 #else
 #define JOUST_FILE() nullptr
 #define JOUST_LINE() 0
