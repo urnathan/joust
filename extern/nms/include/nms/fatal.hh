@@ -67,12 +67,6 @@ public:
   }
 };
 
-extern char const *progname;
-
-void Progname
-  (char const *argv0)
-  noexcept;
-
 void HCF
   [[noreturn]]
   (char const *msg

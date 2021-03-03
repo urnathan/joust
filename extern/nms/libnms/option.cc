@@ -7,6 +7,7 @@
 #include "nms/fatal.hh"
 #include "nms/option.hh"
 // C
+#include <cerrno>
 #include <cstring>
 
 namespace NMS
@@ -16,7 +17,8 @@ void Option::Help
   (FILE *stream, char const *args)
   const
 {
-  fprintf (stream, "Usage: %s [options] %s\n", progname, args);
+  fprintf (stream, "Usage: %s [options] %s\n",
+	   program_invocation_short_name, args);
   Help (stream);
 }
 
@@ -84,9 +86,7 @@ int Option::Parse
   (int argc, char **argv, void *flags)
   const
 {
-  int argno = 0;
-
-  Progname (argv[argno++]);
+  int argno = 1;
 
   while (argno != argc && argv[argno][0] == '-' && argv[argno][1])
     {

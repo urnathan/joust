@@ -9,6 +9,7 @@
 #include <exception>
 #include <typeinfo>
 // C
+#include <cerrno>
 #include <cinttypes>
 #include <csignal>
 #include <cstdarg>
@@ -570,7 +571,8 @@ void (HCF)
   if (busy > NMS_CHECKING)
     msg = "recursive internal error";
 
-  fprintf (stderr, "%s: %s", progname, msg ? msg : "internal error");
+  fprintf (stderr, "%s: %s", program_invocation_short_name,
+	   msg ? msg : "internal error");
   if (busy++ <= NMS_CHECKING)
     {
       if (char const *file = loc.File ())
@@ -698,7 +700,7 @@ void Fatal
   __asm__ volatile ("nop");  // Fatal Error
   va_list args;
   va_start (args, format);
-  fprintf (stderr, "%s: fatal: ", progname);
+  fprintf (stderr, "%s: fatal: ", program_invocation_short_name);
   vfprintf (stderr, format, args);
   va_end (args);
   fprintf (stderr, "\n");
