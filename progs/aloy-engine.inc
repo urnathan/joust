@@ -721,7 +721,11 @@ void Engine::Fini
 		bad_line = line;
 	    }
 	  else
-	    counts[st]++;
+	    {
+	      counts[st]++;
+	      if (st == Tester::FAIL || st == Tester::ERROR)
+		std::cout << line << '\n';
+	    }
 	  Sum () << line << '\n';
 	  sol = eol + (eol != end);
 	}
