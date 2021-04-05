@@ -1,16 +1,14 @@
 // RUN: $subdir$stem | ezio -p OUT $test |& ezio -p ERR -p OUT $test
 // RUN-END:
 
-// OUT-NEXT: PASS: {file:[^:]+}:{line1:[0-9]+}:test1
+// OUT-NEXT: PASS: {pfx:(\.\./)?}{file:[^:]+}:{line1:[0-9]+}:test1
 // ERR-NEXT: location {:.+}/$file:$line1
-// OUT-NEXT: FAIL: $file:{line2:[0-9]+}:test2
+// OUT-NEXT: FAIL: $pfx$file:{line2:[0-9]+}:test2
 // OUT-NEXT: $EOF
 
 #include "config.h"
 // Joust
 #include "joust/tester.hh"
-// C
-#include <stddef.h>
 
 int main (int, char *[])
 {

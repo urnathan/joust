@@ -1,9 +1,8 @@
 # Test Aloy forwards failing test lines immediately
-# RUN: aloy -t echo FAIL:test
-# RUN: | ezio -p OUT -p ERR $test
-# RUN: |& ezio -p ERR $test
+# RUN: aloy -t echo -o 4-out FAIL:test
+# RUN: | ezio -p OUT $test
 
+# OUT-NEVER: FAIL
 # OUT: FAIL:test
-# OUT-NEXT: FAIL:test
-# ERR: PASS 0
-# ERR-NEXT: FAIL 1
+# OUT: PASS 0
+# OUT-NEXT: FAIL 1

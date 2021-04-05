@@ -141,7 +141,7 @@ int main
     {
       engine.Spawn ();
       engine.Process ();
-      engine.Retire ();
+      engine.Retire (flags.out ? &std::cout : nullptr);
       if (show_progress)
 	{
 	  std::string text = engine.Progress ();

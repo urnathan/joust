@@ -78,9 +78,9 @@ public:
   void Process
     ();
   void Retire
-    ();
+    (std::ostream * = nullptr);
   void Fini
-    (Job const &, bool is_generator = false);
+    (Job const &, std::ostream * = nullptr, bool is_generator = false);
   void Spawn
     ();
   std::string Progress
@@ -311,7 +311,7 @@ void Engine::Init
 void Engine::Fini
   (std::ostream *summary)
 {
-  Fini (generator, true);
+  Fini (generator, summary, true);
 
   if (summary)
     *summary << "# Summary of " << retired << " test programs \n" << *this;
@@ -686,7 +686,7 @@ void Engine::Process
 }
 
 void Engine::Fini
-  (Job const &job, bool is_generator)
+  (Job const &job, std::ostream *out, bool is_generator)
 {
   if (is_generator)
     Log () << "# Test generator: " << job << '\n';
@@ -723,8 +723,9 @@ void Engine::Fini
 	  else
 	    {
 	      counts[st]++;
-	      if (st == Tester::FAIL || st == Tester::ERROR)
-		std::cout << line << '\n';
+	      if (out)
+		if (st == Tester::FAIL || st == Tester::ERROR)
+		  *out << line << '\n';
 	    }
 	  Sum () << line << '\n';
 	  sol = eol + (eol != end);
@@ -743,11 +744,11 @@ void Engine::Fini
 }
 
 void Engine::Retire
-  ()
+  (std::ostream *out)
 {
   while (completed && jobs.front ().Ready ())
     {
-      Fini (jobs.front ());
+      Fini (jobs.front (), out, false);
       jobs.pop_front ();
 
       completed--;
