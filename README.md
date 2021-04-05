@@ -1,6 +1,6 @@
 # JOUST: Journal Of User-Scripted Tests<a href="#1"><sup>1</sup></a>
 
-Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
+Copyright (C) 2020, 2021 Nathan Sidwell, nathan@acm.org
 
 Joust is a testsuite infrastructure consisting of a few components.
 These either interact directly, or via user scripts.  Typically you'll
@@ -43,12 +43,86 @@ and then matches them against the specified file or stdin.
 
 A header file and library, to allow testing from your own test program.
 
-## Example
+## CMake Example
 
-I use Make to build, along with separating the build directory tree
-from the source tree &mdash; so the source directories are unaltered by the
-build.  A project may consist of multiple source directories, but
-tests are somewhere under `tests` subdirectories within this heirarchy.
+Here are CMake snippets for using Joust.  Firstly a top-level
+CMakeLists.txt fragment to determine Joust's location:
+
+```cmake
+# We use Joust for testing.  Where is it?  Rely on the user to tell us.
+# This could be done much better.  Perhaps an optional extern?
+if (NOT JOUST)
+  find_program (ALOY aloy)
+  string (REGEX REPLACE "/bin/aloy.*$" "" JOUST ${ALOY})
+  if (ALOY EQUAL JOUST)
+    set (JOUST)
+  endif ()
+endif ()
+
+if (JOUST)
+  set (JOUST_BINARY_DIR ${JOUST}/bin)
+  set (JOUST_INCLUDE_DIR ${JOUST}/include)
+  set (JOUST_LIBRARY_DIR ${JOUST}/lib)
+  add_custom_target (check)
+  message (NOTICE "Joust testsuite:ON")
+else ()
+  message (WARNING "Joust not available, no testing, use -DJOUST={dir}")
+  add_custom_target (check
+    echo "Joust not available, configure with -DJOUST={dir}")
+endif ()
+```
+
+Then, in a tests subdirectory, some more CMakeLists.txt fragments.
+Firstly a fragment to run the tests -- I like to make this a different
+target, dependent on the main 'check' target.  Notice the
+`USES_TERMINAL` tag, as we write progress to the terminal.
+
+```cmake
+add_custom_target (check-iblis
+  srcdir=${CMAKE_CURRENT_SOURCE_DIR} PATH=${JOUST_BINARY_DIR}:$ENV{PATH}
+  JOUST=iblis.defs aloy
+  -t kratos -o iblis -g ${ZSH} -g ${CMAKE_CURRENT_SOURCE_DIR}/jouster
+  COMMENT "Jousting"
+  USES_TERMINAL)
+add_dependencies (check check-iblis)
+```
+
+You'll need to generate a defs file.  Here's such a generator:
+
+```cmake
+file (GENERATE OUTPUT iblis.defs CONTENT
+  "testdir=${CMAKE_CURRENT_SOURCE_DIR}
+OBJCOPY=${OBJCOPY}
+NM=${NM}
+GREP=${GREP}
+timelimit=60
+memlimit=0
+cpulimit=60
+filelimit=1
+SHELL=${ZSH}")
+```
+Add to that defs any other variables you need to refer to in the tests.
+
+Finally, create a 'jouster' script in the source directory:
+
+```zsh
+pushd ${0%/*}
+setopt nullglob
+for subdir in **(/) ; do
+    echo $subdir/*.cc
+done
+popd
+```
+
+And that's it!
+
+
+## Make Example
+
+I used to use Make to build, again with a separate build directory
+tree.  Here are how you can use Joust with Make.  A project may
+consist of multiple source directories, but tests are somewhere under
+`tests` subdirectories within this heirarchy.
 
 Here is a `Makefile` snippet to invoke the testsuite:
 
