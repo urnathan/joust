@@ -45,6 +45,14 @@ include_directories (${NMS_BINARY_DIR} ${NMS_INCLUDE_DIR})
 
 # The user visible library
 add_library (nms libnms/fatal.cc libnms/option.cc)
+# The signal handler needs a frame pointer
+set_source_files_properties (libnms/fatal.cc
+  PROPERTIES COMPILE_OPTIONS -fno-omit-frame-pointer)
+if (CMAKE_BUILD_TYPE MATCHES "^Rel")
+  # These care about size more than speed
+  set_source_files_properties (libnms/fatal.cc
+    PROPERTIES COMPILE_OPTIONS -Os)
+endif ()
 
 if (HAVE_BFD)
   target_link_libraries (nms PRIVATE bfd)

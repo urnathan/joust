@@ -37,11 +37,6 @@ extern char __executable_start[];
 extern char __etext[];
 #endif
 
-// We care about code size, not speed.
-#if __OPTIMIZE__
-#pragma GCC optimize "Os"
-#endif
-
 namespace NMS
 {
 
@@ -353,7 +348,6 @@ char *Binfo::Demangle
 // We try and detect stack overflow, and report that
 // distinctly.
 void SignalHandler
-  [[gnu::optimize ("-fno-omit-frame-pointer")]]
   (int sig)
   noexcept
 {
