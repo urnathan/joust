@@ -10,13 +10,13 @@ cpulimit=60
 filelimit=1
 SHELL=zsh")
 
-add_custom_target (check
-  srcdir=${CMAKE_SOURCE_DIR} PATH=${CMAKE_BINARY_DIR}:$ENV{PATH}
+add_custom_target (check-joust
+  srcdir=${CMAKE_CURRENT_SOURCE_DIR} PATH=${CMAKE_CURRENT_BINARY_DIR}/..:$ENV{PATH}
   JOUST=joust.defs aloy
   -t kratos -o joust -g ${CMAKE_CURRENT_SOURCE_DIR}/jouster
   COMMENT "Jousting"
   VERBATIM USES_TERMINAL)
-add_dependencies (check ${PROGS})
+add_dependencies (check-joust ${PROGS})
 
 function (add_test_executables)
   file (GLOB TESTSRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25,9 +25,11 @@ function (add_test_executables)
     string (REGEX REPLACE "\\.cc$" "" TESTPROG ${TESTSRC})
     add_executable (${TESTPROG} EXCLUDE_FROM_ALL ${TESTSRC})
     target_link_libraries (${TESTPROG} joust nms)
-    add_dependencies (check ${TESTPROG})
+    add_dependencies (check-joust ${TESTPROG})
   endforeach ()
 endfunction ()
 
 add_subdirectory (02-kratos)
 add_subdirectory (04-joust)
+
+add_dependencies (check check-joust)

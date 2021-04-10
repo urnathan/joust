@@ -11,6 +11,9 @@ list (PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 list (PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/extern/nms/cmake)
 include (NMSBuild)
 
+if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  message (FATAL_ERROR "Not intended as a subcomponent")
+endif ()
 project (Joust VERSION 1.0 LANGUAGES CXX)
 set (PROJECT_URL "https://github.com/urnathan/joust")
 
@@ -40,12 +43,12 @@ else ()
 endif ()
 
 add_subdirectory (extern/nms EXCLUDE_FROM_ALL)
+configure_file (gdbinit.in .gdbinit ESCAPE_QUOTES)
 
 configure_file (config.h.in config.h ESCAPE_QUOTES)
-configure_file (gdbinit.in .gdbinit ESCAPE_QUOTES)
-	       
-include_directories ("${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/include"
-  "${CMAKE_SOURCE_DIR}/extern/nms/include")
+include_directories ("${CMAKE_CURRENT_BINARY_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${NMS_INCLUDE_DIR}")
 
 # the user visible library
 file (GLOB JOUST_SRCS CONFIGURE_DEPENDS "libjoust/*.cc")
@@ -68,6 +71,8 @@ foreach (PROG ${PROGS})
   target_link_libraries (${PROG} PRIVATE joust gaige nms)
   install (TARGETS ${PROG} DESTINATION bin)
 endforeach ()
+
+add_custom_target (check)
 
 # tests
 add_subdirectory (tests)

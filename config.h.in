@@ -5,4 +5,4 @@
 #cmakedefine01 HAVE_UCONTEXT
 #cmakedefine01 USE_EPOLL
 
-#include "extern/nms/config.h"
+#include "@NMS_BINARY_DIR@/config.h"
