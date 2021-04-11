@@ -6,7 +6,7 @@
 // MAP: Segmentation fault
 // MAP-END:
 
-#include "config.h"
+#include "joustcfg.h"
 // NMS
 #include "nms/fatal.hh"
 #include "nms/option.hh"

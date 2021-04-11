@@ -45,7 +45,7 @@ endif ()
 add_subdirectory (extern/nms EXCLUDE_FROM_ALL)
 configure_file (gdbinit.in .gdbinit ESCAPE_QUOTES)
 
-configure_file (config.h.in config.h ESCAPE_QUOTES)
+configure_file (joustcfg.h.in joustcfg.h ESCAPE_QUOTES)
 include_directories ("${CMAKE_CURRENT_BINARY_DIR}"
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${NMS_INCLUDE_DIR}")

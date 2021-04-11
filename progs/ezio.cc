@@ -6,7 +6,7 @@
 // provided source and then applies those to the text provided in
 // stdin.
 
-#include "config.h"
+#include "joustcfg.h"
 // NMS
 #include "nms/fatal.hh"
 #include "nms/option.hh"

@@ -5,7 +5,7 @@
 // KRATOS is a test executor.  It looks for RUN lines in the provided
 // source and executes them, within a restricted pipeline of checking.
 
-#include "config.h"
+#include "joustcfg.h"
 // NMS
 #include "nms/fatal.hh"
 #include "nms/option.hh"

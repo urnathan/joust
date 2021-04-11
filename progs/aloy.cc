@@ -6,7 +6,7 @@
 // stdin, and then applies those to the command provided to it.  These
 // are executed in parallel under MAKEFLAGS control.
 
-#include "config.h"
+#include "joustcfg.h"
 // NMS
 #include "nms/fatal.hh"
 #include "nms/option.hh"

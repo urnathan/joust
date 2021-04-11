@@ -2,7 +2,7 @@
 // Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-#include "config.h"
+#include "joustcfg.h"
 // NMS
 #include "nms/fatal.hh"
 // Gaige

@@ -38,7 +38,7 @@ endif ()
 # Intentionally containing project root
 file (RELATIVE_PATH BIN2SRC ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 
-configure_file (config.h.in config.h ESCAPE_QUOTES @ONLY)
+configure_file (nmscfg.h.in nmscfg.h ESCAPE_QUOTES @ONLY)
 configure_file (gdbinit.in gdbinit ESCAPE_QUOTES @ONLY)
 
 include_directories (${NMS_BINARY_DIR} ${NMS_INCLUDE_DIR})

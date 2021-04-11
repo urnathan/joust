@@ -2,7 +2,7 @@
 // Copyright (C) 2019-2021 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-#include "config.h"
+#include "nmscfg.h"
 // NMS
 #include "nms/fatal.hh"
 // C++
