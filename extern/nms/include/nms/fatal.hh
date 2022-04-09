@@ -24,8 +24,8 @@ protected:
   unsigned line;
 
 public:
-  constexpr SrcLoc
-    (char const *file_
+  constexpr SrcLoc (
+      char const *file_
 #if NMS_LOC_BUILTIN
      = __builtin_FILE ()
 #elif !NMS_LOC_SOURCE
@@ -37,61 +37,51 @@ public:
 #elif !NMS_LOC_SOURCE
      = 0
 #endif
-     )
-    noexcept
+    ) noexcept
     : file (file_), line (line_)
   {}
 
 #if !NMS_LOC_BUILTIN && NMS_LOC_SOURCE
-  constexpr SrcLoc
-    (source_location loc = source_location::current ())
-    noexcept
+  constexpr SrcLoc (
+      source_location loc = source_location::current ()) noexcept
     : file (loc.file ()), line (loc.line ())
   {}
 #endif
 
 public:
-  constexpr char const *File
-    ()
-    const
-    noexcept
+  constexpr char const *File () const noexcept
   {
     return file;
   }
-  constexpr unsigned Line
-    ()
-    const
-    noexcept
+  constexpr unsigned Line () const noexcept
   {
     return line;
   }
 };
 
-void HCF
-  [[noreturn]]
-  (char const *msg
+[[noreturn]]
+void HCF (
+    char const *msg
 #if NMS_CHECKING
-   , SrcLoc const = SrcLoc ()
+    , SrcLoc const = SrcLoc ()
 #if !NMS_LOC_BUILTIN && !NMS_LOC_SOURCE
 #define HCF(M) HCF ((M), NMS::SrcLoc (__FILE__, __LINE__))
 #endif
 #endif
-   )
-  noexcept;
+  ) noexcept;
 
 #if NMS_CHECKING
-void AssertFailed
-  [[noreturn]]
-  (SrcLoc loc = SrcLoc ())
-  noexcept;
-void Unreachable
-  [[noreturn]]
-  (SrcLoc loc = SrcLoc ())
-  noexcept;
-void Unimplemented
-  [[noreturn]]
-  (SrcLoc loc = SrcLoc ())
-  noexcept;
+[[noreturn]]
+void AssertFailed (
+    SrcLoc loc = SrcLoc ()) noexcept;
+
+[[noreturn]]
+void Unreachable (
+    SrcLoc loc = SrcLoc ()) noexcept;
+
+[[noreturn]]
+void Unimplemented (
+    SrcLoc loc = SrcLoc ()) noexcept;
 #define AssertFailed() NMS::AssertFailed ()
 #define Unreachable() NMS::Unreachable ()
 #define Unimplemented() NMS::Unimplemented ()
@@ -141,16 +131,14 @@ void Unimplemented
 #define Unimplemented() __builtin_unreachable ()
 #endif
 
-void BuildNote
-  (FILE *stream)
-  noexcept;
-void Fatal
-  [[noreturn]]
-  (char const *, ...)
-  noexcept;
-void SignalHandlers
-  ()
-  noexcept;
+void BuildNote (
+    FILE *stream) noexcept;
+
+[[noreturn]]
+void Fatal (
+    char const *, ...) noexcept;
+
+void SignalHandlers () noexcept;
 }
 
 #define NMS_FATAL_HH

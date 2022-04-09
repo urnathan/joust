@@ -13,18 +13,16 @@
 namespace NMS
 {
 
-void Option::Help
-  (FILE *stream, char const *args)
-  const
+void Option::Help (
+    FILE *stream, char const *args) const
 {
   fprintf (stream, "Usage: %s [options] %s\n",
 	   program_invocation_short_name, args);
   Help (stream);
 }
 
-void Option::Help
-  (FILE *stream)
-  const
+void Option::Help (
+    FILE *stream) const
 {
   static char const pfx[]
     = "          " "          " "       ";
@@ -82,9 +80,8 @@ void Option::Help
   return this[1].Help (stream);
 }
 
-int Option::Parse
-  (int argc, char **argv, void *flags)
-  const
+int Option::Parse (
+    int argc, char **argv, void *flags) const
 {
   int argno = 1;
 
@@ -123,10 +120,8 @@ int Option::Parse
   return argno;
 }
 
-int Option::ParseShort
-  (char const *&arg, char const *next, void *vars)
-  const
-  noexcept
+int Option::ParseShort (
+    char const *&arg, char const *next, void *vars) const noexcept
 {
   if (IsEnd ())
     return -1;
@@ -172,10 +167,8 @@ int Option::ParseShort
   return this[1].ParseShort (arg, next, vars);
 }
 
-int Option::ParseLong
-  (char const *arg, char const *next, void *vars)
-  const
-  noexcept
+int Option::ParseLong (
+    char const *arg, char const *next, void *vars) const noexcept
 {
   if (IsEnd ())
     return -1;
@@ -231,9 +224,8 @@ int Option::ParseLong
   return this[1].ParseLong (arg, next, vars);
 }
 
-bool Option::Parser<bool>::Fn
-  (Flags, bool *var, char const *)
-  noexcept
+bool Option::Parser<bool>::Fn (
+    Flags, bool *var, char const *) noexcept
 {
   if (!var)
     return false;
@@ -241,9 +233,8 @@ bool Option::Parser<bool>::Fn
   return true;
 }
 
-bool Option::ParseFalse
-  (Flags, bool *var, char const *)
-  noexcept
+bool Option::ParseFalse (
+    Flags, bool *var, char const *) noexcept
 {
   if (!var)
     return false;
@@ -251,9 +242,8 @@ bool Option::ParseFalse
   return true;
 }
 
-bool Option::Parser<signed>::Fn
-  (Flags, signed *var, char const *param)
-  noexcept
+bool Option::Parser<signed>::Fn (
+    Flags, signed *var, char const *param) noexcept
 {
   if (var)
     {
@@ -266,9 +256,8 @@ bool Option::Parser<signed>::Fn
   return true;
 }
 
-bool Option::Parser<unsigned>::Fn
-  (Flags, unsigned *var, char const *param)
-  noexcept
+bool Option::Parser<unsigned>::Fn (
+    Flags, unsigned *var, char const *param) noexcept
 {
   if (var)
     {
@@ -281,27 +270,24 @@ bool Option::Parser<unsigned>::Fn
   return true;
 }
 
-bool Option::Parser<char const *>::Fn
-  (Flags, char const **var, char const *param)
-  noexcept
+bool Option::Parser<char const *>::Fn (
+    Flags, char const **var, char const *param) noexcept
 {
   if (var)
     *var = param;
   return true;
 }
 
-bool Option::Parser<std::string>::Fn
-  (Flags, std::string *var, char const *param)
-  noexcept
+bool Option::Parser<std::string>::Fn (
+    Flags, std::string *var, char const *param) noexcept
 {
   if (var)
     *var = param;
   return true;
 }
 
-bool Option::Parser<std::string_view>::Fn
-  (Flags, std::string_view *var, char const *param)
-  noexcept
+bool Option::Parser<std::string_view>::Fn (
+    Flags, std::string_view *var, char const *param) noexcept
 {
   if (var)
     *var = param;

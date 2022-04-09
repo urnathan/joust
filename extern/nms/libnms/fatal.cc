@@ -51,43 +51,28 @@ class Binfo
   using Parent = SrcLoc;
 
 #if HAVE_BFD
-  bfd *theBfd;
-  asymbol **syms;
-  bfd_vma pc;
+  bfd *theBfd = nullptr;
+  asymbol **syms = nullptr;
+  bfd_vma pc = 0;
 #endif
 public:
   char const *fn;
 
 public:
-  Binfo
-    ()
-    noexcept;
-  ~Binfo
-    ()
-    noexcept;
+  Binfo () noexcept;
+  ~Binfo () noexcept;
 
 public:
 #if NMS_BACKTRACE
-  bool FindSrcLoc
-    (void *addr, bool is_return_address)
-    noexcept;
-  bool InlineUnwind
-    ()
-    noexcept;
-  char *Demangle
-    ()
-    noexcept;
+  bool FindSrcLoc (
+      void *addr, bool is_return_address) noexcept;
+  bool InlineUnwind () noexcept;
+  char *Demangle () noexcept;
 #endif
 };
 
-Binfo::Binfo
-  ()
-  noexcept
-  :
-#if HAVE_BFD
-  Parent (nullptr, 0), theBfd (nullptr), syms (nullptr),
-#endif
-    fn (nullptr)
+Binfo::Binfo () noexcept
+  : Parent (nullptr, 0), fn (nullptr)
 {
 #if HAVE_BFD
   bfd_init ();
@@ -148,9 +133,7 @@ Binfo::Binfo
 #endif
 }
 
-Binfo::~Binfo
-  ()
-  noexcept
+Binfo::~Binfo () noexcept
 {
 #if HAVE_BFD
   free (syms);
@@ -165,9 +148,9 @@ Binfo::~Binfo
 }
 
 #if NMS_BACKTRACE
-bool Binfo::FindSrcLoc
-  (void *addr [[maybe_unused]], bool is_return_address [[maybe_unused]])
-  noexcept
+bool Binfo::FindSrcLoc (
+    void *addr [[maybe_unused]], bool is_return_address [[maybe_unused]]
+  ) noexcept
 {
   fn = nullptr;
   *static_cast <Parent *> (this) = SrcLoc (nullptr, 0);
@@ -207,9 +190,7 @@ bool Binfo::FindSrcLoc
 #endif
 
 #if NMS_BACKTRACE
-bool Binfo::InlineUnwind
-  ()
-  noexcept
+bool Binfo::InlineUnwind () noexcept
 {
 #if HAVE_BFD
   if (theBfd && bfd_find_inliner_info (theBfd, &file, &fn, &line))
@@ -220,10 +201,10 @@ bool Binfo::InlineUnwind
 }
 #endif
 
-char const *StripRootDirs
-  (char const *file)
+char const *StripRootDirs (
+    char const *file) noexcept
 {
-  char const *const roots[] = {NMS_PREFIX_DIRS, ""};
+  static char const *const roots[] = {NMS_PREFIX_DIRS, ""};
 
   for (auto dir : roots)
     {
@@ -266,9 +247,7 @@ char const *StripRootDirs
 }
 
 #if NMS_BACKTRACE
-char *Binfo::Demangle
-  ()
-  noexcept
+char *Binfo::Demangle () noexcept
 {
   char *demangled = abi::__cxa_demangle (fn, nullptr, nullptr, nullptr);
 
@@ -347,9 +326,8 @@ char *Binfo::Demangle
 // 2:Frame of interest -- on regular stack (probably)
 // We try and detect stack overflow, and report that
 // distinctly.
-void SignalHandler
-  (int sig)
-  noexcept
+void SignalHandler (
+    int sig) noexcept
 {
   static volatile bool stack_overflow = false;
 
@@ -443,9 +421,7 @@ void SignalHandler
 // here.  That's a little fragile, and as we don't use exceptions,
 // this never happens -- unlike seg faults :)
 
-void TerminateHandler
-  ()
-  noexcept
+void TerminateHandler () noexcept
 {
   (HCF) (
 #if NMS_CHECKING
@@ -456,9 +432,7 @@ void TerminateHandler
 	 );
 }
 
-void UnexpectedHandler
-  ()
-  noexcept
+void UnexpectedHandler () noexcept
 {
   (HCF) (
 #if NMS_CHECKING
@@ -469,18 +443,14 @@ void UnexpectedHandler
 	 );
 }
 
-void OutOfMemory
-  ()
-  noexcept
+void OutOfMemory () noexcept
 {
   Fatal ("out of memory");
 }
 
 }
 
-void SignalHandlers
-  ()
-  noexcept
+void SignalHandlers () noexcept
 {
   stack_t alt_stack;
   struct sigaction sig_action;
@@ -511,13 +481,12 @@ void SignalHandlers
 }
 
 // Set the program name from, typically, argv[0]
-void Progname
-  (char const *prog)
-  noexcept
+void Progname (
+    char const *prog) noexcept
 {
   if (prog)
     {
-      if (char const *name = strrchr (prog, '/'))
+      if (char const *name = std::strrchr (prog, '/'))
 	if (name[1])
 	  prog = name + 1;
       progname = prog;
@@ -525,33 +494,29 @@ void Progname
 }
 
 #if NMS_CHECKING
-void (AssertFailed)
-  (SrcLoc loc)
-  noexcept
+void (AssertFailed) (
+    SrcLoc loc) noexcept
 {
   (HCF) ("💥 assertion failed", loc);
 }
-void (Unreachable)
-  (SrcLoc loc)
-  noexcept
+void (Unreachable) (
+    SrcLoc loc) noexcept
 {
   (HCF) ("🛇 unreachable reached", loc);
 }
-void (Unimplemented)
-  (SrcLoc loc)
-  noexcept
+void (Unimplemented) (
+    SrcLoc loc) noexcept
 {
   (HCF) ("✍  unimplemented functionality", loc);
 }
 #endif
 
-void (HCF)
-  (char const *msg
+void (HCF) (
+    char const *msg
 #if NMS_CHECKING
-   , SrcLoc const loc
+    , SrcLoc const loc
 #endif
-   )
-  noexcept
+  ) noexcept
 {  __asm__ volatile ("nop"); // HCF - you goofed!
   static int busy = 0;
 
@@ -668,9 +633,8 @@ void (HCF)
   exit (2);
 }
 
-void BuildNote
-  (FILE *stream)
-  noexcept
+void BuildNote (
+    FILE *stream) noexcept
 {
   fprintf (stream, "Version %s.\n", PROJECT_NAME " " PROJECT_VERSION);
   if (PROJECT_URL[0])
@@ -687,11 +651,9 @@ void BuildNote
 }
 
 // A fatal error
-void Fatal
-  (char const *format, ...)
-  noexcept
-{ // Fatal Error
-  __asm__ volatile ("nop");  // Fatal Error
+void Fatal (
+    char const *format, ...) noexcept
+{  __asm__ volatile ("nop"); // Fatal Error
   va_list args;
   va_start (args, format);
   fprintf (stderr, "%s: fatal: ", program_invocation_short_name);
