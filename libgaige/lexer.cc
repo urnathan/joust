@@ -56,12 +56,16 @@ bool Lexer::Identifier
   ()
 {
   char c = Peek ();
-  if (!std::isalpha (c))
+  if (!(std::isalpha (c) || c == '_'))
     return false;
 
   unsigned begin = c_ix;
-  while (std::isalnum (AdvancePeek ()))
-    continue;
+  for (;;)
+    {
+      auto peek = AdvancePeek ();
+      if (!(peek == '_' || std::isalnum (peek)))
+	break;
+    }
 
   Append (Token (Token::IDENTIFIER, string.substr (begin, c_ix - begin)));
 
@@ -86,7 +90,7 @@ bool Lexer::Integer
 
   Append (Token (Token::INTEGER, long (val)));
 
-  return !std::isalpha (c);
+  return !(std::isalpha (c) || c == '_');
 }
 
 }

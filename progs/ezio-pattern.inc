@@ -179,8 +179,8 @@ public:
 // PATTERN_REGEXP is
 //   white-space: [ \t]+
 //   close-braces: }} -> return
-//   variable: $ _? :alpha: :alnum:*
-//   variable: $ { _? :alpha: :alnum:* }
+//   variable: $ [:alpha:|] [:alnum:|]*
+//   variable: $ { [:alpha:|] [:alnum:|]* }
 //   string: $$
 //   string: .+
 // Final TOKEN_CLOSE has capture count 
@@ -246,8 +246,8 @@ bool Pattern::Lexer::PatternRegexp
 	{
 	  char peek = Peek (1);
 	  bool braced = peek == '{';
-	  if (!(braced || std::isalpha (peek)))
-	    // not ${ or $[:alpha:]
+	  if (!(braced || std::isalpha (peek) || peek == '_'))
+	    // not ${ or $[:alpha:|]
 	    goto append;
 
 	  Advance (1 + braced);
@@ -299,7 +299,7 @@ bool Pattern::Lexer::Pattern
 	{
 	  char peek = Peek (1);
 
-	  bool ident = std::isalpha (peek);
+	  bool ident = std::isalpha (peek) || peek == '_';
 	  if (!(ident || peek == ':'))
 	    goto append;
 
@@ -329,8 +329,8 @@ bool Pattern::Lexer::Pattern
 	  char peek = Peek (1);
 
 	  bool braced = peek == '{';
-	  if (!(braced || std::isalpha (peek)))
-	    // not ${ or $[:alpha:]
+	  if (!(braced || std::isalpha (peek) || peek == '_'))
+	    // not ${ or $[:alpha:|]
 	    goto append;
 
 	  Advance (1 + braced);

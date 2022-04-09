@@ -37,11 +37,7 @@ int main (int argc, char *argv[])
       void *ptr = nullptr;
 
       if (map)
-	{
-	  ptr = mmap (nullptr, MB, PROT_READ | PROT_WRITE,
-		      MAP_ANONYMOUS, -1, 0);
-	  
-	}
+	ptr = mmap (nullptr, MB, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0);
       else
 	ptr = new char[MB];
       Assert (ptr);
