@@ -1,11 +1,11 @@
 // Joust/KRATOS: Kapture Run And Test Output Safely	-*- mode:c++ -*-
-// Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
+// Copyright (C) 2020-2022 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 // KRATOS is a test executor.  It looks for RUN lines in the provided
 // source and executes them, within a restricted pipeline of checking.
 
-#include "joustcfg.h"
+#include "joust/cfg.h"
 // NMS
 #include "nms/fatal.hh"
 #include "nms/option.hh"

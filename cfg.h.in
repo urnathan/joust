@@ -1,8 +1,7 @@
 
-
 #cmakedefine01 HAVE_PIPE2
 #cmakedefine01 HAVE_MREMAP
 #cmakedefine01 HAVE_UCONTEXT
 #cmakedefine01 USE_EPOLL
 
-#include "@NMS_BINARY_DIR@/nmscfg.h"
+#include "@NMS_BINARY_DIR@/nms/cfg.h"

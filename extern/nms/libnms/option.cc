@@ -1,8 +1,8 @@
 // NMS Test Suite			-*- mode:c++ -*-
-// Copyright (C) 2020-2021 Nathan Sidwell, nathan@acm.org
+// Copyright (C) 2020-2022 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-#include "nmscfg.h"
+#include "nms/cfg.h"
 // NMS
 #include "nms/fatal.hh"
 #include "nms/option.hh"

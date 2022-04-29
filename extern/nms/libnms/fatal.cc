@@ -1,8 +1,8 @@
 // NMS Test Suite			-*- mode:c++ -*-
-// Copyright (C) 2019-2021 Nathan Sidwell, nathan@acm.org
+// Copyright (C) 2019-2022 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-#include "nmscfg.h"
+#include "nms/cfg.h"
 // NMS
 #include "nms/fatal.hh"
 // C++
@@ -410,7 +410,8 @@ void SignalHandler (
     binfo.FindSrcLoc (return_addrs[2], false);
 #endif
 
-  (HCF) (stack_overflow ? "stack overflow" : strsignal (sig)
+  (HCF) (stack_overflow ? "stack overflow" : "signal",
+	 stack_overflow ? nullptr : strsignal (sig)
 #if NMS_CHECKING
 	 , binfo
 #endif
@@ -425,20 +426,20 @@ void TerminateHandler () noexcept
 {
   (HCF) (
 #if NMS_CHECKING
-	 "uncaught exception", SrcLoc (nullptr, 0)
+      "uncaught exception", nullptr, SrcLoc (nullptr, 0)
 #else
-	 nullptr
+      nullptr
 #endif
-	 );
+    );
 }
 
 void UnexpectedHandler () noexcept
 {
   (HCF) (
 #if NMS_CHECKING
-	 "unexpected exception", SrcLoc (nullptr, 0)
+      "unexpected exception", nullptr, SrcLoc (nullptr, 0)
 #else
-	 nullptr
+      nullptr
 #endif
 	 );
 }
@@ -495,24 +496,28 @@ void Progname (
 
 #if NMS_CHECKING
 void (AssertFailed) (
+    char const *msg,
     SrcLoc loc) noexcept
 {
-  (HCF) ("💥 assertion failed", loc);
+  (HCF) ("💥 assertion failed", msg, loc);
 }
 void (Unreachable) (
+    char const *msg,
     SrcLoc loc) noexcept
 {
-  (HCF) ("🛇 unreachable reached", loc);
+  (HCF) ("🛇 unreachable reached", msg, loc);
 }
 void (Unimplemented) (
+    char const *msg,
     SrcLoc loc) noexcept
 {
-  (HCF) ("✍  unimplemented functionality", loc);
+  (HCF) ("✍  unimplemented functionality", msg, loc);
 }
 #endif
 
 void (HCF) (
-    char const *msg
+    char const *msg,
+    char const *opt
 #if NMS_CHECKING
     , SrcLoc const loc
 #endif
@@ -527,11 +532,15 @@ void (HCF) (
   SrcLoc loc (nullptr, 0);
 #endif
 
-  if (busy > NMS_CHECKING)
-    msg = "recursive internal error";
+  if (busy > NMS_CHECKING) 
+    {
+      msg = "recursive internal error";
+      opt = nullptr;
+    }
 
-  fprintf (stderr, "%s: %s", program_invocation_short_name,
-	   msg ? msg : "internal error");
+  fprintf (stderr, "%s: %s%s%s%s", program_invocation_short_name,
+	   msg ? msg : "internal error",
+	   &" ("[2 * !opt], opt ? opt : "", &")"[!opt]);
   if (busy++ <= NMS_CHECKING)
     {
       if (char const *file = loc.File ())
@@ -628,8 +637,14 @@ void (HCF) (
       BuildNote (stderr);
     }
 
-  signal (SIGABRT, SIG_DFL);
-  raise (SIGABRT);
+  {
+    signal (SIGABRT, SIG_DFL);
+    sigset_t set;
+    sigemptyset (&set);
+    sigaddset (&set, SIGABRT);
+    sigprocmask (SIG_UNBLOCK, &set, nullptr);
+    raise (SIGABRT);
+  }
   exit (2);
 }
 

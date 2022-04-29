@@ -1,12 +1,12 @@
 // Joust/ALOY: Apply List, Observe Yield		-*- mode:c++ -*-
-// Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
+// Copyright (C) 2020-2022 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 // ALOY is a parallelized test execution engine.  It reads lines from
 // stdin, and then applies those to the command provided to it.  These
 // are executed in parallel under MAKEFLAGS control.
 
-#include "joustcfg.h"
+#include "joust/cfg.h"
 // NMS
 #include "nms/fatal.hh"
 #include "nms/option.hh"

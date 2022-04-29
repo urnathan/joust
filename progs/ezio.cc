@@ -1,12 +1,12 @@
 // Joust/EZIO: Expect Zero Irregularities Observed	-*- mode:c++ -*-
-// Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
+// Copyright (C) 2020-2022 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 // EZIO is a pattern matcher.  It looks for CHECK lines in the
 // provided source and then applies those to the text provided in
 // stdin.
 
-#include "joustcfg.h"
+#include "joust/cfg.h"
 // NMS
 #include "nms/fatal.hh"
 #include "nms/option.hh"

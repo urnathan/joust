@@ -1,5 +1,5 @@
 # Joust: Journal Of User-Scripted Tests	-*- mode:cmake -*-
-# Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
+# Copyright (C) 2020-2022 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
 # This happens to be my first CMake project, so it's undoubtably wonky
@@ -45,7 +45,7 @@ endif ()
 add_subdirectory (extern/nms EXCLUDE_FROM_ALL)
 configure_file (gdbinit.in .gdbinit ESCAPE_QUOTES)
 
-configure_file (joustcfg.h.in joustcfg.h ESCAPE_QUOTES)
+configure_file (cfg.h.in joust/cfg.h ESCAPE_QUOTES)
 include_directories ("${CMAKE_CURRENT_BINARY_DIR}"
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${NMS_INCLUDE_DIR}")
@@ -71,8 +71,6 @@ foreach (PROG ${PROGS})
   target_link_libraries (${PROG} PRIVATE joust gaige nms)
   install (TARGETS ${PROG} DESTINATION bin)
 endforeach ()
-
-add_custom_target (check)
 
 # tests
 add_subdirectory (tests)

@@ -6,7 +6,7 @@
 // OUT-NEXT: FAIL: $pfx$file:{line2:[0-9]+}:test2
 // OUT-NEXT: $EOF
 
-#include "joustcfg.h"
+#include "joust/cfg.h"
 // Joust
 #include "joust/tester.hh"
 

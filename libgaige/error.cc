@@ -1,8 +1,8 @@
 // Joust Test Suite			-*- mode:c++ -*-
-// Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
+// Copyright (C) 2020-2022 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
-#include "joustcfg.h"
+#include "joust/cfg.h"
 // Gaige
 #include "gaige/error.hh"
 // C++

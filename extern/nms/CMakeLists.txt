@@ -1,5 +1,5 @@
 # NMS utils
-# Copyright (C) 2020-2021 Nathan Sidwell, nathan@acm.org
+# Copyright (C) 2020-2022 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
 # This happens to be my first CMake project, so it's undoubtably wonky
@@ -38,7 +38,7 @@ endif ()
 # Intentionally containing project root
 file (RELATIVE_PATH BIN2SRC ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 
-configure_file (nmscfg.h.in nmscfg.h ESCAPE_QUOTES @ONLY)
+configure_file (cfg.h.in nms/cfg.h ESCAPE_QUOTES @ONLY)
 configure_file (gdbinit.in gdbinit ESCAPE_QUOTES @ONLY)
 
 include_directories (${NMS_BINARY_DIR} ${NMS_INCLUDE_DIR})
@@ -58,6 +58,38 @@ if (HAVE_BFD)
   target_link_libraries (nms PRIVATE bfd)
 endif ()
 
-# exports
-set (NMS_INCLUDE_DIR ${NMS_INCLUDE_DIR} PARENT_SCOPE)
-set (NMS_BINARY_DIR ${NMS_BINARY_DIR} PARENT_SCOPE)
+# We use Joust for testing.
+if (NOT JOUST)
+  find_program (ALOY aloy)
+  string (REGEX REPLACE "/bin/aloy.*$" "" JOUST ${ALOY})
+  if (ALOY STREQUAL ALOY-NOTFOUND)
+    set (JOUST)
+  endif ()
+endif ()
+
+if (JOUST)
+  find_program (ZSH zsh REQUIRED)
+  set (JOUST_BINARY_DIR ${JOUST}/bin)
+  set (JOUST_INCLUDE_DIR ${JOUST}/include)
+  set (JOUST_LIBRARY_DIR ${JOUST}/lib)
+  add_custom_target (check)
+  message (NOTICE "Joust testsuite:${JOUST}")
+  add_subdirectory (tests)
+else ()
+  message (WARNING "Joust not available, no testing, use -DJOUST={dir}")
+  add_custom_target (check
+    echo "Joust not available, configure with -DJOUST={dir}")
+endif ()
+
+if (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
+  # exports
+  set (NMS_INCLUDE_DIR ${NMS_INCLUDE_DIR} PARENT_SCOPE)
+  set (NMS_BINARY_DIR ${NMS_BINARY_DIR} PARENT_SCOPE)
+  set (JOUST ${JOUST} PARENT_SCOPE)
+  if (JOUST)
+    set (ZSH ${ZSH} PARENT_SCOPE)
+    set (JOUST_BINARY_DIR ${JOUST_BINARY_DIR} PARENT_SCOPE)
+    set (JOUST_INCLUDE_DIR ${JOUST_INCLUDE_DIR} PARENT_SCOPE)
+    set (JOUST_LIBRARY_DIR ${JOUST_LIBRARY_DIR} PARENT_SCOPE)
+  endif ()
+endif ()

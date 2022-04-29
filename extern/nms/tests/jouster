@@ -1,0 +1,10 @@
+# Joust Test Suite		-*- mode:zsh -*-
+# Copyright (C) 2022 Nathan Sidwell, nathan@acm.org
+# Not For Distribution
+
+pushd ${0%/*}
+setopt nullglob
+for subdir in **(/) ; do
+    echo $subdir/*.cc
+done
+popd

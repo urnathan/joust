@@ -37,7 +37,7 @@
 // FATAL-NEXT: $EOF
 // FATAL-END:
 
-#include "joustcfg.h"
+#include "joust/cfg.h"
 // NMS
 #include "nms/fatal.hh"
 #include "nms/option.hh"
