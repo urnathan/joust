@@ -20,7 +20,8 @@
 
 using namespace NMS;
 
-int main (int, char **argv)
+int
+main (int, char **argv)
 {
   SignalHandlers ();
 
@@ -28,10 +29,10 @@ int main (int, char **argv)
     {
     case '0':
       Assert (false);
-      // CHECK-0: assertion failed at {:.*}03-assert-fail.cc:30
+      // CHECK-0: assertion failed at {:.*}03-assert-fail.cc:31
     case '1':
       Assert (false, "one");
-      // CHECK-1: assertion failed (one) at {:.*}03-assert-fail.cc:33
+      // CHECK-1: assertion failed (one) at {:.*}03-assert-fail.cc:34
     case '2':
       Unimplemented ();
       // CHECK-2: unimplemented functionality at

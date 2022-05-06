@@ -74,8 +74,7 @@ Binfo::Binfo () noexcept
 {
 #if HAVE_BFD
   bfd_init ();
-  bfd_set_error_handler ([] (char const *, va_list)
-			 {});
+  bfd_set_error_handler ([] (char const *, va_list) {});
 
   // readlink in a loop so we can extend the buffer if needed
   unsigned prglen = 100;

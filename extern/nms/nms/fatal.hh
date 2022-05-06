@@ -47,10 +47,8 @@ public:
 #endif
 
 public:
-  constexpr char const *File () const noexcept
-  { return file; }
-  constexpr unsigned Line () const noexcept
-  { return line; }
+  constexpr char const *File () const noexcept { return file; }
+  constexpr unsigned Line () const noexcept { return line; }
 };
 
 [[noreturn]]

@@ -9,7 +9,8 @@
 
 using namespace NMS;
 
-int main ()
+int
+main ()
 {
   SignalHandlers ();
 

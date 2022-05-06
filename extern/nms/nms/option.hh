@@ -52,17 +52,18 @@ private:
 
 private:
   constexpr bool HasParameter () const noexcept
-  { return parseFn (flags, nullptr, nullptr); }
+  {
+    return parseFn (flags, nullptr, nullptr);
+  }
   constexpr bool IsConcatenated () const noexcept
-  { return flags & F_IsConcatenated; }
-  constexpr bool IsSubOptions () const noexcept
-  { return shortName == 1; }
-  constexpr bool IsEnd () const noexcept
-  { return !(shortName || longName); }
+  {
+    return flags & F_IsConcatenated;
+  }
+  constexpr bool IsSubOptions () const noexcept { return shortName == 1; }
+  constexpr bool IsEnd () const noexcept { return !(shortName || longName); }
 
 public:
-  constexpr Option () noexcept
-  {}
+  constexpr Option () noexcept {}
   constexpr Option (char const *longName_, char shortName_, Flags flags_,
 		    unsigned offset_, ParseFn<> parseFn_,
 		    char const *helpText_, HelpFn *helpFn_ = nullptr) noexcept
