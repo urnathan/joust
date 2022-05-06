@@ -9,8 +9,7 @@
 namespace Gaige
 {
 
-Token::Token
-  (Token &&from)
+Token::Token (Token &&from)
   : kind (from.kind), user (from.user)
 {
   if (kind >= INTEGER_LWM && kind < INTEGER_HWM)
@@ -24,8 +23,7 @@ Token::Token
       (std::move (from.value.capture));
 }
 
-Token::~Token
-  ()
+Token::~Token ()
 {
   if (kind >= INTEGER_LWM && kind < INTEGER_HWM)
     {
@@ -44,8 +42,8 @@ Token::~Token
     }
 }
 
-std::ostream &operator<<
-  (std::ostream &s, std::vector<Token> const &tokens)
+std::ostream &
+operator<< (std::ostream &s, std::vector<Token> const &tokens)
 {
   s << '{';
   for (auto token = tokens.begin (); token != tokens.end (); ++token)
@@ -59,8 +57,8 @@ std::ostream &operator<<
   return s;
 }
 
-std::ostream &operator<<
-  (std::ostream &s, Token const &token)
+std::ostream &
+operator<< (std::ostream &s, Token const &token)
 {
   Token::Kind kind = token.GetKind ();
 
@@ -76,8 +74,8 @@ std::ostream &operator<<
   return s;
 }
 
-std::ostream &operator<<
-  (std::ostream &s, Token const*token)
+std::ostream &
+operator<< (std::ostream &s, Token const *token)
 {
   if (token)
     s << *token;
@@ -86,4 +84,4 @@ std::ostream &operator<<
   return s;
 }
 
-}
+} // namespace Gaige

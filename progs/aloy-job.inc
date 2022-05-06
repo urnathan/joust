@@ -7,94 +7,59 @@
 class Job
 {
   std::vector<std::string> command;
-  ReadBuffer buffers[2];	// Job's stdout, stderr
-  pid_t pid = pid_t (-1);	// Job's PID
-  int exit_status = 0;		// Exit status of job
-  short make_token = -1;	// Make job-server token
+  ReadBuffer buffers[2];    // Job's stdout, stderr
+  pid_t pid = pid_t (-1);   // Job's PID
+  int exit_status = 0;	    // Exit status of job
+  short make_token = -1;    // Make job-server token
   int state = 0;
 
 public:
-  Job
-    (std::string_view const &cmd)
-  {
-    command.emplace_back (cmd);
-  }
-  Job
-    (std::string &&cmd)
-  {
-    command.emplace_back (std::move (cmd));
-  }
-  Job
-    ()
-  {
-  }
+  Job (std::string_view const &cmd)
+  { command.emplace_back (cmd); }
+  Job (std::string &&cmd)
+  { command.emplace_back (std::move (cmd)); }
+  Job ()
+  {}
 
 private:
   // We rely on object reference invariance, so ban copies
-  Job
-    (Job const &)
-    = delete;
-  Job &operator=
-    (Job const &)
-    = delete;
+  Job (Job const &)= delete;
+  Job &operator= (Job const &) = delete;
 
 public:
-  std::vector<std::string> &Command
-    ()
-  {
-    return command;
-  }
-  auto &Buffer
-    (unsigned ix)
-  {
-    return buffers[ix];
-  }
-  auto const &Buffer
-    (unsigned ix)
-    const
-  {
-    return buffers[ix];
-  }
+  std::vector<std::string> &Command ()
+  { return command; }
+
+  auto &Buffer (unsigned ix)
+  { return buffers[ix]; }
+
+  auto const &Buffer (unsigned ix) const
+  { return buffers[ix]; }
 
 public:
-  void Read
-    (Engine &, unsigned subcode, int poll_fd);
+  void Read (Engine &, unsigned subcode, int poll_fd);
 
-  bool Spawn
-    (Engine &, std::vector<std::string> const &preamble,
-     int poll_fd, int token = -1);
-  int Reap
-    (int status);
-  bool IsPid
-    (pid_t p)
-    const
-  {
-    return pid == p;
-  }
-  void Stop
-    (int signal)
+  bool Spawn (Engine &, std::vector<std::string> const &preamble,
+	      int poll_fd, int token = -1);
+  int Reap (int status);
+  bool IsPid (pid_t p) const
+  { return pid == p; }
+  void Stop (int signal)
   {
     if (pid > 0)
       kill (pid, signal);
   }
-  bool Ready
-    ()
-    const
-  {
-    return !state;
-  }
-  void ReportExit
-    (Engine &)
-    const;
+  bool Ready () const
+  { return !state; }
+  void ReportExit (Engine &) const;
 
-  friend std::ostream &operator<<
-    (std::ostream &, Job const &);
+  friend std::ostream &operator<< (std::ostream &, Job const &);
 };
 
 #else
 
-void Job::Read
-  (Engine &log, unsigned subcode, int poll_fd [[maybe_unused]])
+void
+Job::Read (Engine &log, unsigned subcode, int poll_fd [[maybe_unused]])
 {
   Assert (subcode < 2 && state > 0);
 
@@ -104,8 +69,7 @@ void Job::Read
 	{
 	  static char const *const io[] = {" stdout:", " stderr:"};
 	  log.Result (Tester::ERROR)
-	    << "failed reading "
-	    << *this << io[subcode] << strerror (done);
+	    << "failed reading " << *this << io[subcode] << strerror (done);
 	}
 
       int fd = buffers[subcode].Close ();
@@ -119,9 +83,9 @@ void Job::Read
 
 // Spawn a job, return true if we managed to spawn it.
 
-bool Job::Spawn
-  (Engine &log, std::vector<std::string> const &preamble,
-   int poll_fd [[maybe_unused]], int token)
+bool
+Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
+	    int poll_fd [[maybe_unused]], int token)
 {
   Assert (!state && buffers[0].empty () && buffers[0].empty ());
 
@@ -158,16 +122,16 @@ bool Job::Spawn
     err = errno;
   else
     {
-      auto spawn = Gaige::Spawn (null_fd, job_fds[0], job_fds[1],
-				 command, &preamble);
+      auto spawn
+	= Gaige::Spawn (null_fd, job_fds[0], job_fds[1], command, &preamble);
       pid = std::get<0> (spawn);
       err = std::get<1> (spawn);
     }
 
  fail:
   if (err)
-    log.Result (Tester::ERROR) << "failed spawning " << preamble[0]
-			       << ":" << strerror (err);
+    log.Result (Tester::ERROR)
+      << "failed spawning " << preamble[0] << ":" << strerror (err);
 
   if (pid)
     {
@@ -195,8 +159,8 @@ bool Job::Spawn
 }
 
 // Reap a completed job, returns the make token (or -1)
-int Job::Reap
-  (int status)
+int
+Job::Reap (int status)
 {
   Assert (pid >= 0 && state);
   exit_status = status;
@@ -209,9 +173,8 @@ int Job::Reap
   return r;
 }
 
-void Job::ReportExit
-  (Engine &log)
-  const
+void
+Job::ReportExit (Engine &log) const
 {
   if (WIFSIGNALED (exit_status))
     {
@@ -229,8 +192,8 @@ void Job::ReportExit
     Unreachable ();
 }
 
-std::ostream &operator<<
-  (std::ostream &s, Job const &job)
+std::ostream &
+operator<< (std::ostream &s, Job const &job)
 {
   if (!job.command.empty ())
     s << job.command[0];

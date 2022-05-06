@@ -20,30 +20,24 @@ private:
   static bool errored;
 
 public:
-  Error
-    (char const *file, unsigned line);
-  Error
-    (Error &&src)
+  Error (char const *file, unsigned line);
+  Error (Error &&src)
     : stream (src.stream)
   {
     src.stream = nullptr;
   }
-  ~Error
-    ()
+  ~Error ()
   {
     if (stream)
       *stream << '\n';
   };
 
 private:
-  Error &operator=
-    (Error &&)
-    = delete;
+  Error &operator= (Error &&) = delete;
 
 public:
-  template<typename T>
-  Error &operator<<
-    (T &&obj)
+  template <typename T>
+  Error &operator<< (T &&obj)
   {
     *stream << std::forward<T> (obj);
 
@@ -51,14 +45,13 @@ public:
   }
 
 public:
-  static bool Errors
-    ()
+  static bool Errors ()
   {
     return errored;
   }
 };
 
-}
+} // namespace Gaige
 
 #define GAIGE_ERROR_HH
 #endif

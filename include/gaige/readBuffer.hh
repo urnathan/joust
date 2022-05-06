@@ -20,34 +20,23 @@ private:
 
 private:
   int fd = -1;
-  
+
 public:
   // Read from fd, return errno on error, -1 on eof, 0 otherwise
-  int Read
-    ();
+  int Read ();
 
 public:
-  bool IsOpen
-    ()
-    const
-  {
-    return fd >= 0;
-  }
+  bool IsOpen () const
+  { return fd >= 0; }
 
 public:
-  int GetFD
-    ()
-    const
-  {
-    return fd;
-  }
-  void Open
-    (int f)
-  {
-    fd = f;
-  }
-  int Close
-    ()
+  int GetFD () const
+  { return fd; }
+
+  void Open (int f)
+  { fd = f; }
+
+  int Close ()
   {
     int f = fd;
     fd = -1;
@@ -55,7 +44,7 @@ public:
   }
 };
 
-}
+} // namespace Gaige
 
 #define GAIGE_READBUFFER_HH
 #endif

@@ -31,62 +31,58 @@
 #include <stddef.h>
 // OS
 #include <fcntl.h>
-#include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 using namespace Joust;
 using namespace Gaige;
 
 namespace
 {
-
 class Engine;
 #include "ezio-parser.inc"
 #include "ezio-pattern.inc"
 #include "ezio-engine.inc"
 #include "ezio-parser.inc"
+} // namespace
 
-}
-
-static void Title
-  (FILE *stream)
+static void
+Title (FILE *stream)
 {
   fprintf (stream, "EZIO: Expect Zero Irregularities Observed\n");
   fprintf (stream, "Copyright 2020 Nathan Sidwell, nathan@acm.org\n");
 }
 
-int main
-  (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
   NMS::SignalHandlers ();
 
-  struct Flags 
+  struct Flags
   {
     bool help = false;
     bool version = false;
     bool verbose = false;
     std::vector<char const *> prefixes; // Pattern prefixes
     std::vector<char const *> defines;  // Var defines
-    char const *include = nullptr;  // File of var defines
+    char const *include = nullptr;      // File of var defines
     char const *in = "";
     char const *out = "";
     char const *dir = nullptr;
   } flags;
-  static constinit NMS::Option const options[] =
-    {
-      {"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
-      {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
-      {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
-      {"dir", 'C', NMS::Option::F_IsConcatenated,
-       OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
-      {nullptr, 'D', OPTION_FLDFN (Flags, defines), "VAR=VAL:Define"},
-      {"defines", 'd', OPTION_FLDFN (Flags, include), "FILE:File of defines"},
-      {"in", 'i', OPTION_FLDFN (Flags, in), "FILE:Input"},
-      {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
-      {"prefix", 'p', OPTION_FLDFN (Flags, prefixes), "PREFIX:Pattern prefix"},
-      {}
-    };
+  static constinit NMS::Option const options[]
+    = {{"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
+       {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
+       {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
+       {"dir", 'C', NMS::Option::F_IsConcatenated,
+	OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
+       {nullptr, 'D', OPTION_FLDFN (Flags, defines), "VAR=VAL:Define"},
+       {"defines", 'd', OPTION_FLDFN (Flags, include), "FILE:File of defines"},
+       {"in", 'i', OPTION_FLDFN (Flags, in), "FILE:Input"},
+       {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
+       {"prefix", 'p', OPTION_FLDFN (Flags, prefixes), "PREFIX:Pattern prefix"},
+       {}};
   int argno = options->Parse (argc, argv, &flags);
   if (flags.help)
     {

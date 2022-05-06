@@ -30,8 +30,7 @@ class Token
     TOKEN_KIND_FROB (REGEX_CAPTURE, "regex-capture")
 #define TOKEN_KIND_FROB(KIND, STRING) KIND
 public:
-  enum Kind
-    : unsigned char
+  enum Kind : unsigned char
   {
     TOKEN_KINDS,
     TOKEN_HWM,
@@ -48,9 +47,7 @@ public:
 public:
   static constexpr char const *kinds[]
 #define TOKEN_KIND_FROB(KIND,STRING) STRING
-    = {
-    TOKEN_KINDS
-  };
+    = {TOKEN_KINDS};
 #undef TOKEN_KIND_FROB
 #undef TOKEN_KINDS
 
@@ -61,11 +58,9 @@ private:
     std::string string;
     std::vector<Token> capture;
 
-    Value
-      ()
+    Value ()
     {}
-    ~Value
-      ()
+    ~Value ()
     {}
   };
   Value value;
@@ -73,8 +68,7 @@ private:
   unsigned char user = 0;
 
 public:
-  Token
-    (Kind kind_ = EMPTY)
+  Token (Kind kind_ = EMPTY)
     : kind (kind_)
   {
     if (kind >= INTEGER_LWM && kind < INTEGER_HWM)
@@ -84,27 +78,22 @@ public:
     else if (kind >= CAPTURE_LWM && kind < CAPTURE_HWM)
       new (&value.capture) decltype (value.capture) ();
   }
-  Token
-    (Kind kind_, unsigned long integer)
+  Token (Kind kind_, unsigned long integer)
     : Token (kind_)
   {
     Assert (kind >= INTEGER_LWM && kind < INTEGER_HWM);
     new (&value.integer) decltype (value.integer) (std::move (integer));
   }
-  Token
-    (Kind kind_, std::string &&string)
+  Token (Kind kind_, std::string &&string)
     : Token (kind_)
   {
     Assert (kind_ >= STRING_LWM && kind_ < STRING_HWM);
     new (&value.string) decltype (value.string) (std::move (string));
   }
-  Token
-    (Kind kind_, std::string_view const &string)
+  Token (Kind kind_, std::string_view const &string)
     : Token (kind_, std::string (string))
-  {
-  }
-  Token
-    (Kind kind_, std::vector<Token> &&capture)
+  {}
+  Token (Kind kind_, std::vector<Token> &&capture)
     : Token (kind_)
   {
     Assert (kind_ >= CAPTURE_LWM && kind_ < CAPTURE_HWM);
@@ -112,13 +101,10 @@ public:
   }
 
 public:
-  Token
-    (Token &&from);
-  ~Token
-    ();
+  Token (Token &&from);
+  ~Token ();
   
-  Token &operator=
-    (Token &&from)
+  Token &operator= (Token &&from)
   {
     if (this != &from)
       {
@@ -129,72 +115,50 @@ public:
   }
 
 public:
-  Kind GetKind
-    ()
-    const
-  {
-    return kind;
-  }
+  Kind GetKind () const
+  { return kind; }
 
 public:
-  unsigned GetUser
-    ()
-    const
-  {
-    return user;
-  }
-  void SetUser
-    (unsigned u)
-  {
-    user = u;
-  }
+  unsigned GetUser () const
+  { return user; }
+  void SetUser (unsigned u)
+  { user = u; }
 
 public:
-  unsigned long GetInteger
-    ()
-    const
+  unsigned long GetInteger () const
   {
     Assert (kind >= INTEGER_LWM && kind < INTEGER_HWM);
     return value.integer;
   }
-  std::string const &GetString
-    ()
-    const
+  std::string const &GetString () const
   {
     Assert (kind >= STRING_LWM && kind < STRING_HWM);
     return value.string;
   }
-  std::string &GetString
-    ()
+  std::string &GetString ()
   {
     Assert (kind >= STRING_LWM && kind < STRING_HWM);
     return value.string;
   }
-  std::vector<Token> const &GetCapture
-    ()
-    const
+  std::vector<Token> const &GetCapture () const
   {
     Assert (kind >= CAPTURE_LWM && kind < CAPTURE_HWM);
     return value.capture;
   }
-  std::vector<Token> &GetCapture
-    ()
+  std::vector<Token> &GetCapture ()
   {
     Assert (kind >= CAPTURE_LWM && kind < CAPTURE_HWM);
     return value.capture;
   }
 
 public:
-  friend std::ostream &operator<<
-    (std::ostream &s, std::vector<Token> const &tokens);
-  friend std::ostream &operator<<
-    (std::ostream &s, Token const &token);
-  friend std::ostream &operator<<
-    (std::ostream &s, Token const*token);
+  friend std::ostream &operator<< (std::ostream &s,
+				   std::vector<Token> const &tokens);
+  friend std::ostream &operator<< (std::ostream &s, Token const &token);
+  friend std::ostream &operator<< (std::ostream &s, Token const *token);
 };
 
-
-}
+} // namespace Gaige
 
 #define GAIGE_TOKEN_HH
 #endif

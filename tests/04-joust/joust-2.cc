@@ -10,7 +10,8 @@
 // Joust
 #include "joust/tester.hh"
 
-int main (int, char *[])
+int
+main (int, char *[])
 {
   Joust::Tester log {};
 

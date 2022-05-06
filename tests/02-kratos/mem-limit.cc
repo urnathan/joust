@@ -15,18 +15,17 @@
 // OS
 #include <sys/mman.h>
 
-int main (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
   using namespace NMS;
 
   SignalHandlers ();
 
   bool map = false;
-  static constexpr Option const options[] =
-    {
-      {"map", 'm', 0, OPTION_FN (Option::Parser<bool>::Fn), "MMap"},
-      {}
-    };
+  static constexpr Option const options[]
+    = {{"map", 'm', 0, OPTION_FN (Option::Parser<bool>::Fn), "MMap"},
+       {}};
   options->Parse (argc, argv, &map);
 
   size_t MB = 1024 * 1024;

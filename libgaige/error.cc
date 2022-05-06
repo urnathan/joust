@@ -13,11 +13,10 @@ namespace Gaige
 
 bool Error::errored;
 
-Error::Error
-  (char const *file, unsigned line)
+Error::Error (char const *file, unsigned line)
   : stream (&std::cerr)
-  {
-    errored = true;
-    *stream << file << ':' << line << ": error: ";
-  }
+{
+  errored = true;
+  *stream << file << ':' << line << ": error: ";
 }
+} // namespace Gaige

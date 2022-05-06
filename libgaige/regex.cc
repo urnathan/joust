@@ -14,8 +14,8 @@ namespace Gaige::Regex
 // Escape characters in STRING that are significant to regex
 // extended POSIX, Base Definitions and Headers, Section 9.4
 
-void Protect
-  (std::string &dst, std::string_view const &src)
+void
+Protect (std::string &dst, std::string_view const &src)
 {
   // ) needs escaping, } must not be escaped, ] seems either way
   constexpr std::string_view meta (R"([{()*+?.\^$|)");
@@ -30,10 +30,8 @@ void Protect
     }
 }
 
-
-Result Create
-  (std::regex &regex, std::string_view const &text, int &error)
-  noexcept
+Result
+Create (std::regex &regex, std::string_view const &text, int &error) noexcept
 {
   try
     {
@@ -49,16 +47,14 @@ Result Create
     }
 }
 
-Result Search
-  (std::regex const &regex, std::string_view const &text,
-   std::cmatch &match, int &error)
-  noexcept
+Result
+Search (std::regex const &regex, std::string_view const &text,
+	std::cmatch &match, int &error) noexcept
 {
   try
     {
       std::cmatch m;
-      bool found =
-	std::regex_search (text.begin (), text.end (), m, regex);
+      bool found = std::regex_search (text.begin (), text.end (), m, regex);
       match = std::move (m);
       return found ? FOUND : NOTFOUND;
     }
@@ -69,8 +65,8 @@ Result Search
     }
 }
 
-char const *Error
-  (int error)
+char const *
+Error (int error)
 {
   using namespace std::regex_constants;
   switch (error)
@@ -93,5 +89,4 @@ char const *Error
     }
 }
 
-}
-
+} // namespace Gaige::Regex

@@ -13,9 +13,7 @@
 namespace Joust
 {
 
-Tester::Tester
-  ()
-  noexcept
+Tester::Tester () noexcept
   : Tester (std::cerr)
 {
   /* If one of the std streams is not a tty, then enable sum stream
@@ -24,9 +22,8 @@ Tester::Tester
     sum = &std::cout;
 }
 
-Tester::Status Tester::DecodeStatus
-  (std::string_view const &line)
-  noexcept
+Tester::Status
+Tester::DecodeStatus (std::string_view const &line) noexcept
 {
   for (unsigned ix = STATUS_HWM; ix--;)
     if (line.size () > statuses[ix].size ()
@@ -37,9 +34,8 @@ Tester::Status Tester::DecodeStatus
   return STATUS_HWM;
 }
 
-Tester::Streamer Tester::Result
-  (Status status, char const *file, unsigned line)
-  noexcept
+Tester::Streamer
+Tester::Result (Status status, char const *file, unsigned line) noexcept
 {
   Streamer result (this);
 
@@ -52,7 +48,7 @@ Tester::Streamer Tester::Result
 	  // Strip off a leading $srcdir from the filename -- if it
 	  // came from __FILE__ it'll have that in it, which is
 	  // unnecessary
-	  for (size_t pos = 0; ; pos++)
+	  for (size_t pos = 0;; pos++)
 	    {
 	      if (char c = srcdir[pos])
 		{
@@ -76,4 +72,4 @@ Tester::Streamer Tester::Result
   return result;
 }
 
-}
+} // namespace Joust

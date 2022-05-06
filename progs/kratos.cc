@@ -59,50 +59,46 @@ using namespace Gaige;
 
 namespace
 {
-
 #include "kratos-command.inc"
 #include "kratos-pipeline.inc"
 #include "kratos-command.inc"
 #include "kratos-parser.inc"
+} // namespace
 
-}
-
-static void Title
-  (FILE *stream)
+static void
+Title (FILE *stream)
 {
   fprintf (stream, "KRATOS: Kapture Run And Test Output Safely\n");
   fprintf (stream, "Copyright 2020 Nathan Sidwell, nathan@acm.org\n");
 }
 
-int main
-  (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
   NMS::SignalHandlers ();
 
-  struct Flags 
+  struct Flags
   {
     bool help = false;
     bool version = false;
     bool verbose = false;
     std::vector<char const *> prefixes; // Pattern prefixes
     std::vector<char const *> defines;  // Var defines
-    char const *include = nullptr;  // file of var defines
+    char const *include = nullptr;      // file of var defines
     char const *out = "";
     char const *dir = nullptr;
   } flags;
-  static constinit NMS::Option const options[] =
-    {
-      {"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
-      {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
-      {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
-      {"dir", 'C', OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
-      {nullptr, 'D', NMS::Option::F_IsConcatenated,
-       OPTION_FLDFN (Flags, defines), "VAR=VAL:Define"},
-      {"defines", 'd', OPTION_FLDFN (Flags, include), "FILE:File of defines"},
-      {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
-      {"prefix", 'p', OPTION_FLDFN (Flags, prefixes), "PREFIX:Pattern prefix"},
-      {}
-    };
+  static constinit NMS::Option const options[]
+    = {{"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
+       {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
+       {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
+       {"dir", 'C', OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
+       {nullptr, 'D', NMS::Option::F_IsConcatenated,
+	OPTION_FLDFN (Flags, defines), "VAR=VAL:Define"},
+       {"defines", 'd', OPTION_FLDFN (Flags, include), "FILE:File of defines"},
+       {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
+       {"prefix", 'p', OPTION_FLDFN (Flags, prefixes), "PREFIX:Pattern prefix"},
+       {}};
   int argno = options->Parse (argc, argv, &flags);
   if (flags.help)
     {
@@ -213,7 +209,6 @@ int main
 
 	  if (e && pipe.GetKind () == Pipeline::REQUIRE)
 	    skipping = true;
-
 	}
       else
 	switch (pipe.GetKind ())

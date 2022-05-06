@@ -22,17 +22,17 @@
 #include <deque>
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <sstream>
+#include <string>
 #include <string_view>
 // C
 #include <cstring>
 // OS
-#include <time.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <sys/fcntl.h>
+#include <time.h>
+#include <unistd.h>
 #ifdef USE_EPOLL
 #include <sys/epoll.h>
 #include <sys/signalfd.h>
@@ -48,28 +48,26 @@ using namespace Gaige;
 
 namespace
 {
-
 class Engine;
 #include "aloy-job.inc"
 #include "aloy-engine.inc"
 #include "aloy-job.inc"
 #include "aloy-engine.inc"
+} // namespace
 
-}
-
-static void Title
-  (FILE *stream)
+static void
+Title (FILE *stream)
 {
   fprintf (stream, "ALOY: Apply List, Observe Yield\n");
   fprintf (stream, "Copyright 2020 Nathan Sidwell, nathan@acm.org\n");
 }
 
-int main
-  (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
   NMS::SignalHandlers ();
 
-  struct Flags 
+  struct Flags
   {
     bool help = false;
     bool version = false;
@@ -80,19 +78,17 @@ int main
     char const *out = "";
     char const *dir = nullptr;
   } flags;
-  static constinit NMS::Option const options[] =
-    {
-      {"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
-      {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
-      {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
-      {"dir", 'C', OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
-      {"jobs", 'j', NMS::Option::F_IsConcatenated,
-       OPTION_FLDFN (Flags, jobs), "N:Concurrency"},
-      {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
-      {"gen", 'g', OPTION_FLDFN (Flags, gen), "PROGRAM:Generator"},
-      {"tester", 't', OPTION_FLDFN (Flags, tester), "PROGRAM:Tester"},
-      {}
-    };
+  static constinit NMS::Option const options[]
+    = {{"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
+       {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
+       {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
+       {"dir", 'C', OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
+       {"jobs", 'j', NMS::Option::F_IsConcatenated,
+	OPTION_FLDFN (Flags, jobs), "N:Concurrency"},
+       {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
+       {"gen", 'g', OPTION_FLDFN (Flags, gen), "PROGRAM:Generator"},
+       {"tester", 't', OPTION_FLDFN (Flags, tester), "PROGRAM:Tester"},
+       {}};
   int argno = options->Parse (argc, argv, &flags);
   if (flags.help)
     {
@@ -133,7 +129,7 @@ int main
 
   engine.Init (flags.tester, flags.gen.empty () ? nullptr : &flags.gen,
 	       argc - argno, argv + argno);
-  bool show_progress = flags.out && isatty (1);;
+  bool show_progress = flags.out && isatty (1);
   size_t progress_size = 0;
 
   // MainLoop

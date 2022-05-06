@@ -15,8 +15,8 @@
 namespace Gaige
 {
 
-int ReadBuffer::Read
-  ()
+int
+ReadBuffer::Read ()
 {
   Assert (fd >= 0);
 
@@ -37,4 +37,4 @@ int ReadBuffer::Read
   return res;
 }
 
-}
+} // namespace Gaige

@@ -12,10 +12,10 @@
 // C
 #include <cstring>
 // OS
-#include <unistd.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace Gaige
 {
@@ -24,8 +24,9 @@ namespace Gaige
 // everything after the prefix, up to \n is the pattern.
 // Lines must match the regexp [^:alnum:]prefix(-opt)?: to be recognized
 
-bool Scanner::ScanFile
-  (std::string const &fname, std::vector<char const *> const &prefixes)
+bool
+Scanner::ScanFile (std::string const &fname,
+		   std::vector<char const *> const &prefixes)
 {
   int fd = open (fname.c_str (), O_RDONLY | O_CLOEXEC);
   if (fd < 0)
@@ -45,8 +46,8 @@ bool Scanner::ScanFile
 
   size_t page_size = sysconf (_SC_PAGE_SIZE);
   size_t alloc = (len + page_size) & ~(page_size - 1);
-  void *buffer = mmap (nullptr, alloc, PROT_READ | PROT_WRITE,
-		       MAP_PRIVATE, fd, 0);
+  void *buffer
+    = mmap (nullptr, alloc, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
   if (buffer == MAP_FAILED)
     goto fatal;
   // It is safe to close a mapped file
@@ -55,18 +56,18 @@ bool Scanner::ScanFile
   // Don't really care about error code
   madvise (buffer, alloc, MADV_SEQUENTIAL);
 
-  auto *begin = reinterpret_cast <char const *> (buffer);
+  auto *begin = reinterpret_cast<char const *> (buffer);
   auto *end = begin + len;
 
   // Ensure the template ends in a newline
   if (end[-1] != '\n')
-    *const_cast <char *> (end++) = '\n';
+    *const_cast<char *> (end++) = '\n';
 
   Assert (prefixes.size ());
 
   std::vector<unsigned> lengths;
   lengths.reserve (prefixes.size ());
-  
+
   std::string initial_chars;
   std::vector<char const *> initial_points;
 
@@ -84,7 +85,7 @@ bool Scanner::ScanFile
 
   line = 1;
   bool ended = false;
-  for (char const *base = begin; ;)
+  for (char const *base = begin;;)
     {
       // Advance any initial points that are before BEGIN, and
       // determine the earliest potential start
@@ -165,11 +166,11 @@ bool Scanner::ScanFile
   return ended;
 }
 
-bool Scanner::ProcessLine
-  (std::string_view const &variant, std::string_view const &)
+bool
+Scanner::ProcessLine (std::string_view const &variant, std::string_view const &)
 {
   Error () << "unrecognized command variant '" << variant << '\'';
   return true;
 }
 
-}
+} // namespace Gaige

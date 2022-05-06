@@ -20,43 +20,30 @@ private:
   unsigned line = 0;
   
 public:
-  Scanner
-    (char const *file_)
+  Scanner (char const *file_)
     : file (file_)
-  {
-  }
+  {}
 
 public:
-  char const *GetFile
-    ()
-    const 
-  {
-    return file;
-  }
-  unsigned GetLine
-    ()
-    const
-  {
-    return line;
-  }
+  char const *GetFile () const
+  { return file; }
+
+  unsigned GetLine () const
+  { return line; }
 
 public:
-  auto Error
-    ()
-  {
-    return Gaige::Error (file, line);
-  }
+  auto Error ()
+  { return Gaige::Error (file, line); }
 
 public:
-  bool ScanFile
-    (std::string const &, std::vector<char const *> const &prefixes);
+  bool ScanFile (std::string const &, std::vector<char const *> const &prefixes);
 
 protected:
-  virtual bool ProcessLine
-    (std::string_view const &variant, std::string_view const &line);
+  virtual bool ProcessLine (std::string_view const &variant,
+			    std::string_view const &line);
 };
 
-}
+} // namespace Gaige
 
 #define GAIGE_SCANNER_HH
 #endif

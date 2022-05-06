@@ -4,8 +4,7 @@
 
 #if !defined (ALOY_ENGINE)
 #define ALOY_ENGINE
-class Engine
-  : public Tester
+class Engine : public Tester
 {
 public:
   using Parent = Tester;
@@ -22,7 +21,7 @@ private:
 private:
   std::deque<Job> jobs;
   std::vector<std::string> command;
-  std::string used_tokens; // tokens to send back to make
+  std::string used_tokens;  // tokens to send back to make
   std::string ready_tokens; // tokens we've got from make
   Job generator;
 
@@ -46,85 +45,61 @@ private:
   bool stopping = false;
 
 private:
-  unsigned retired = 0; // Jobs written out
-  unsigned completed = 0;// Jobs completed, but waiting to write
-  unsigned running = 0;	// Jobs running
-  unsigned pending = 0;	// Jobs waiting to run
+  unsigned retired = 0;   // Jobs written out
+  unsigned completed = 0; // Jobs completed, but waiting to write
+  unsigned running = 0;	  // Jobs running
+  unsigned pending = 0;	  // Jobs waiting to run
 
 private:
   unsigned counts[STATUS_HWM];
 
 public:
-  Engine
-    (unsigned limit, std::ostream &sum, std::ostream &log);
-  ~Engine
-    ();
+  Engine (unsigned limit, std::ostream &sum, std::ostream &log);
+  ~Engine ();
 
 public:
-  bool IsLive
-    ()
-    const
+  bool IsLive () const
   {
     return !generator.Ready () || !jobs.empty ()
       || !used_tokens.empty () || !ready_tokens.empty ();
   }
-  void Init
-    (char const *tester, std::vector<std::string> *genner,
-     int argc, char const *const argv[]);
-  void Fini
-    (std::ostream * = nullptr);
-  void Stop
-    (int sig);
-  void Process
-    ();
-  void Retire
-    (std::ostream * = nullptr);
-  void Fini
-    (Job const &, std::ostream * = nullptr, bool is_generator = false);
-  void Spawn
-    ();
-  std::string Progress
-    ();
+  void Init (char const *tester, std::vector<std::string> *genner,
+	     int argc, char const *const argv[]);
+  void Fini (std::ostream * = nullptr);
+  void Stop (int sig);
+  void Process ();
+  void Retire (std::ostream * = nullptr);
+  void Fini (Job const &, std::ostream * = nullptr, bool is_generator = false);
+  void Spawn ();
+  std::string Progress ();
 
 public:
-  auto Result
-    (Status status)
+  auto Result (Status status)
   {
     counts[status]++;
     return Parent::Result (status, nullptr, 0);
   }
 
 private:
-  void ReadGenerator
-    ();
-  void HandleSignal
-    (int sig);
+  void ReadGenerator ();
+  void HandleSignal (int sig);
 
 private:
-  void StopMake
-    (int);
-  void WantMake
-    ();
-  void ReadMake
-    ();
-  void WriteMake
-    ();
-  void QueueMake
-    (int token);
+  void StopMake (int);
+  void WantMake ();
+  void ReadMake ();
+  void WriteMake ();
+  void QueueMake (int token);
 
-  friend std::ostream &operator<<
-    (std::ostream &, Engine const &);
+  friend std::ostream &operator<< (std::ostream &, Engine const &);
 };
 
 #else
 
 static constexpr unsigned char sigs[]
-  = {
-  SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGTERM
-};
+  = {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGTERM};
 
-Engine::Engine
-  (unsigned limit, std::ostream &sum_, std::ostream &log_)
+Engine::Engine (unsigned limit, std::ostream &sum_, std::ostream &log_)
   : Parent (sum_, log_), job_limit (limit)
 {
   for (unsigned ix = STATUS_HWM; ix--;)
@@ -160,10 +135,8 @@ Engine::Engine
 	      Lexer lexer (option);
 	      struct stat stat_buf;
 
-	      if (!lexer.Integer ()
-		  || lexer.PeekAdvance () != ','
-		  || !lexer.Integer ()
-		  || lexer.Peek ()
+	      if (!lexer.Integer () || lexer.PeekAdvance () != ','
+		  || !lexer.Integer () || lexer.Peek ()
 		  || (make_in = lexer.GetToken ()->GetInteger (),
 		      make_out = lexer.GetToken ()->GetInteger (),
 		      fstat (make_in, &stat_buf) < 0
@@ -195,13 +168,11 @@ Engine::Engine
     job_limit = 1;
 }
 
-Engine::~Engine
-  ()
-{
-}
+Engine::~Engine ()
+{}
 
-std::ostream &operator<<
-  (std::ostream &s, Engine const &self)
+std::ostream &
+operator<< (std::ostream &s, Engine const &self)
 {
   for (unsigned ix = 0; ix != Tester::STATUS_HWM; ix++)
     if (ix == Tester::PASS || self.counts[ix])
@@ -214,8 +185,8 @@ std::ostream &operator<<
 // Signals we saw
 volatile unsigned sigs_seen;
 
-void NoteSignal
-  (int signal)
+void
+NoteSignal (int signal)
 {
   for (unsigned ix = sizeof (sigs); ix--;)
     if (signal == sigs[ix])
@@ -226,9 +197,9 @@ void NoteSignal
 }
 #endif
 
-void Engine::Init
-  (char const *tester, std::vector<std::string> *genner,
-   int argc, char const *const argv[])
+void
+Engine::Init (char const *tester, std::vector<std::string> *genner,
+	      int argc, char const *const argv[])
 {
   auto now = time (nullptr);
   *this << "Test run: " << ctime (&now) << "\n";
@@ -252,7 +223,7 @@ void Engine::Init
 	generator.Command ().emplace_back (arg);
     }
 
-  // Signal fd and block sigchild 
+  // Signal fd and block sigchild
   sigset_t sigmask;
   sigemptyset (&sigmask);
   for (unsigned ix = sizeof (sigs); ix--;)
@@ -308,8 +279,8 @@ void Engine::Init
     }
 }
 
-void Engine::Fini
-  (std::ostream *summary)
+void
+Engine::Fini (std::ostream *summary)
 {
   Fini (generator, summary, true);
 
@@ -335,8 +306,8 @@ void Engine::Fini
 #endif
 }
 
-void Engine::ReadGenerator
-  ()
+void
+Engine::ReadGenerator ()
 {
   // Lex
   auto &buffer = generator.Buffer (0);
@@ -377,8 +348,8 @@ void Engine::ReadGenerator
   WantMake ();
 }
 
-void Engine::HandleSignal
-  (int sig)
+void
+Engine::HandleSignal (int sig)
 {
   switch (sig)
     {
@@ -431,15 +402,15 @@ void Engine::HandleSignal
     case SIGTERM:
       Stop (sig);
       break;
-      
+
     case SIGPIPE:
     default:
       Unreachable ();
     }
 }
 
-void Engine::Stop
-  (int sig)
+void
+Engine::Stop (int sig)
 {
   stopping = true;
   generator.Stop (sig);
@@ -451,8 +422,8 @@ void Engine::Stop
     iter->Stop (sig);
 }
 
-void Engine::WantMake
-  ()
+void
+Engine::WantMake ()
 {
   if (make_in >= 0)
     {
@@ -486,8 +457,8 @@ void Engine::WantMake
     }
 }
 
-void Engine::StopMake
-  (int err)
+void
+Engine::StopMake (int err)
 {
   Assert (make_out >= 0 && make_in >= 0);
 #ifdef USE_EPOLL
@@ -499,12 +470,12 @@ void Engine::StopMake
   Result (Tester::ERROR) << " terminating jobserver:" << strerror (err);
 }
 
-void Engine::ReadMake
-  ()
+void
+Engine::ReadMake ()
 {
   unsigned const block_size = 16;
   char buffer[block_size];
-  
+
   unsigned want = make_want < block_size ? make_want : block_size;
   ssize_t got = read (make_in, buffer, want);
   if (got < 0)
@@ -520,8 +491,8 @@ void Engine::ReadMake
 
 // Write the token back to jobcontrol to
 // allow other processes a chance.
-void Engine::QueueMake
-  (int token)
+void
+Engine::QueueMake (int token)
 {
 #ifdef USE_EPOLL
   if (used_tokens.empty ())
@@ -538,8 +509,8 @@ void Engine::QueueMake
 
 // Able to write something to the make pipe.  Do it.
 
-void Engine::WriteMake
-  ()
+void
+Engine::WriteMake ()
 {
   ssize_t wrote = write (make_out, used_tokens.data (), used_tokens.size ());
   if (wrote < 0)
@@ -561,8 +532,8 @@ void Engine::WriteMake
     used_tokens.erase (0, wrote);
 }
 
-void Engine::Process
-  ()
+void
+Engine::Process ()
 {
 #ifdef USE_EPOLL
   constexpr int max_events = 20;
@@ -602,8 +573,7 @@ void Engine::Process
 
 	  job->Read (*this, cookie & 7, poll_fd);
 
-	  if (!stopping
-	      && !(cookie & 7) && job == &generator)
+	  if (!stopping && !(cookie & 7) && job == &generator)
 	    ReadGenerator ();
 	}
 	break;
@@ -664,7 +634,7 @@ void Engine::Process
 		if (!stopping && !ix)
 		  ReadGenerator ();
 	      }
-      }
+	  }
       for (auto iter = jobs.begin (); iter != jobs.end (); ++iter)
 	for (unsigned ix = 0; ix != 2; ix++)
 	  if (iter->Buffer (ix).IsOpen ())
@@ -685,8 +655,8 @@ void Engine::Process
 #endif
 }
 
-void Engine::Fini
-  (Job const &job, std::ostream *out, bool is_generator)
+void
+Engine::Fini (Job const &job, std::ostream *out, bool is_generator)
 {
   if (is_generator)
     Log () << "# Test generator: " << job << '\n';
@@ -732,8 +702,8 @@ void Engine::Fini
 	}
       if (bad_count)
 	{
-	  Result (Tester::ERROR) << job << ": unexpected summary line '"
-				 << bad_line << '\'';
+	  Result (Tester::ERROR)
+	    << job << ": unexpected summary line '" << bad_line << '\'';
 	  counts[Tester::ERROR]++;
 	}
     }
@@ -743,8 +713,8 @@ void Engine::Fini
   Log () << '\n';
 }
 
-void Engine::Retire
-  (std::ostream *out)
+void
+Engine::Retire (std::ostream *out)
 {
   while (completed && jobs.front ().Ready ())
     {
@@ -756,8 +726,8 @@ void Engine::Retire
     }
 }
 
-void Engine::Spawn
-  ()
+void
+Engine::Spawn ()
 {
   for (auto iter = jobs.begin () + (completed + running); pending; ++iter)
     {
@@ -796,20 +766,19 @@ void Engine::Spawn
   WantMake ();
 }
 
-std::string Engine::Progress
-  ()
+std::string
+Engine::Progress ()
 {
   unsigned done = retired + completed;
   unsigned total = done + running + pending;
   std::ostringstream progress;
-	  
+
   progress << "[" << retired;
   if (completed)
     progress << "(&" << completed << ')';
   if (running)
     progress << '+' << running;
-  progress << '/' << total
-	   << "] " << done * 100 / (total + !total) << '%';
+  progress << '/' << total << "] " << done * 100 / (total + !total) << '%';
   if (!jobs.empty ())
     progress << ' ' << jobs.front ();
   else if (!generator.Ready ())

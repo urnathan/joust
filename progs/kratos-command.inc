@@ -7,15 +7,14 @@
 class Command
 {
 public:
-  enum Redirect
-    : char 
+  enum Redirect : char
   {
     R_NORMAL,
     R_FILE,
   };
 
 private:
-  std::vector<std::string> words;  // parsed line
+  std::vector<std::string> words; // parsed line
   char const *file = nullptr;
   unsigned line = 0;
   int stdin = -1;
@@ -23,70 +22,45 @@ private:
   Redirect redirect = R_NORMAL;
 
 public:
-  auto Error
-    ()
-  {
-    return Gaige::Error (file, line);
-  }
+  auto Error ()
+  { return Gaige::Error (file, line); }
 
 public:
-  void FileLine
-    (char const *f, unsigned l)
+  void FileLine (char const *f, unsigned l)
   {
     file = f;
     line = l;
   }
-  auto File
-    ()
-    const
-  {
-    return file;
-  }
-  auto Line
-    ()
-    const
-  {
-    return line;
-  }
+  auto File () const
+  { return file; }
+  auto Line () const
+  { return line; }
 
 public:
-  auto RedirectType
-    ()
-    const
-  {
-    return redirect;
-  }
-  void RedirectType
-    (Redirect r)
+  auto RedirectType () const
+  { return redirect; }
+  void RedirectType (Redirect r)
   {
     Assert (redirect == R_NORMAL);
     redirect = r;
   }
 
 public:
-  auto Empty
-    ()
-    const
-  {
-    return words.empty ();
-  }
+  auto Empty () const
+  { return words.empty (); }
 
 public:
-  bool Execute
-    (int, int, unsigned const *limits = nullptr);
-  void Stop
-    (int sig)
+  bool Execute (int, int, unsigned const *limits = nullptr);
+  void Stop (int sig)
   {
     if (pid > 0)
       kill (pid, sig);
   }
 
 private:
-  void Shellify
-    (Symbols const &);
+  void Shellify (Symbols const &);
 
-  friend std::ostream &operator<<
-    (std::ostream &, Command const &);
+  friend std::ostream &operator<< (std::ostream &, Command const &);
 
   friend class Pipeline;
   friend class Parser;
@@ -94,8 +68,8 @@ private:
 
 #else
 
-void Command::Shellify
-  (Symbols const &syms)
+void
+Command::Shellify (Symbols const &syms)
 {
   bool active = false;
   size_t len = 0;
@@ -120,7 +94,7 @@ void Command::Shellify
       // We found a shell-active character.  Make a single string
       std::string concat;
       concat.reserve (len);
-      
+
       for (auto iter = words.begin (); iter != words.end (); ++iter)
 	{
 	  if (iter != words.begin ())
@@ -143,8 +117,8 @@ void Command::Shellify
     }
 }
 
-bool Command::Execute
-  (int fd_out, int fd_err, unsigned const *limits)
+bool
+Command::Execute (int fd_out, int fd_err, unsigned const *limits)
 {
   auto spawn = Spawn (stdin, fd_out, fd_err, words, nullptr, limits);
 
@@ -156,8 +130,8 @@ bool Command::Execute
   return std::get<0> (spawn);
 }
 
-std::ostream &operator<<
-  (std::ostream &s, Command const &cmd)
+std::ostream &
+operator<< (std::ostream &s, Command const &cmd)
 {
   for (auto witer = cmd.words.begin (); witer != cmd.words.end (); ++witer)
     {
