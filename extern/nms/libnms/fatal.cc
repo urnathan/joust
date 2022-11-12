@@ -45,17 +45,17 @@ char const *progname = "$PROG";
 namespace
 {
 
-class Binfo : public SrcLoc
+class Binfo
 {
-  using Parent = SrcLoc;
-
 #if HAVE_BFD
   bfd *theBfd = nullptr;
   asymbol **syms = nullptr;
   bfd_vma pc = 0;
 #endif
 public:
-  char const *fn;
+  char const *file = nullptr;
+  char const *fn = nullptr;
+  unsigned line = 0;
 
 public:
   Binfo () noexcept;
@@ -70,7 +70,6 @@ public:
 };
 
 Binfo::Binfo () noexcept
-  : Parent (nullptr, 0), fn (nullptr)
 {
 #if HAVE_BFD
   bfd_init ();
@@ -150,8 +149,9 @@ bool
 Binfo::FindSrcLoc (void *addr [[maybe_unused]],
 		   bool is_return_address [[maybe_unused]]) noexcept
 {
+  file = nullptr;
   fn = nullptr;
-  *static_cast<Parent *> (this) = SrcLoc (nullptr, 0);
+  line = 0;
 
 #if HAVE_BFD
   pc = reinterpret_cast<bfd_vma> (addr) - is_return_address;
@@ -161,7 +161,7 @@ Binfo::FindSrcLoc (void *addr [[maybe_unused]],
       {
 	Binfo *self = static_cast<Binfo *> (data_);
 
-	if (self->File ())
+	if (self->file)
 	  return;
 
 	if (!(bfd_section_flags (section) & SEC_ALLOC))
@@ -183,7 +183,7 @@ Binfo::FindSrcLoc (void *addr [[maybe_unused]],
   if (theBfd && addr >= &__executable_start && addr < &__etext)
     bfd_map_over_sections (theBfd, find_line, this);
 #endif
-  return File () != nullptr;
+  return file != nullptr;
 }
 #endif
 
@@ -410,7 +410,7 @@ SignalHandler (int sig) noexcept
   (HCF) (stack_overflow ? "stack overflow" : "signal",
 	 stack_overflow ? nullptr : strsignal (sig)
 #if NMS_CHECKING
-	 , binfo
+	 , std::source_location ()
 #endif
          );
 }
@@ -424,23 +424,11 @@ TerminateHandler () noexcept
 {
   (HCF) (
 #if NMS_CHECKING
-         "uncaught exception", nullptr, SrcLoc (nullptr, 0)
+      "uncaught exception", nullptr, std::source_location ()
 #else
 	 nullptr
 #endif
          );
-}
-
-void
-UnexpectedHandler () noexcept
-{
-  (HCF) (
-#if NMS_CHECKING
-         "unexpected exception", nullptr, SrcLoc (nullptr, 0)
-#else
-	 nullptr
-#endif
-	 );
 }
 
 void
@@ -477,7 +465,6 @@ SignalHandlers () noexcept
   signal (SIGBUS, &SignalHandler);
   signal (SIGTRAP, &SignalHandler);
 
-  std::set_unexpected (UnexpectedHandler);
   std::set_terminate (TerminateHandler);
   std::set_new_handler (OutOfMemory);
 }
@@ -497,17 +484,17 @@ Progname (char const *prog) noexcept
 
 #if NMS_CHECKING
 void
-(AssertFailed) (char const *msg, SrcLoc loc) noexcept
+(AssertFailed) (char const *msg, std::source_location loc) noexcept
 {
   (HCF) ("💥 assertion failed", msg, loc);
 }
 void
-(Unreachable) (char const *msg, SrcLoc loc) noexcept
+(Unreachable) (char const *msg, std::source_location loc) noexcept
 {
   (HCF) ("🛇 unreachable reached", msg, loc);
 }
 void
-(Unimplemented) (char const *msg, SrcLoc loc) noexcept
+(Unimplemented) (char const *msg, std::source_location loc) noexcept
 {
   (HCF) ("✍  unimplemented functionality", msg, loc);
 }
@@ -516,7 +503,7 @@ void
 void
 (HCF) (char const *msg, char const *opt
 #if NMS_CHECKING
-       , SrcLoc const loc
+       , std::source_location const loc
 #endif
        ) noexcept
 { __asm__ volatile ("nop"); // HCF - you goofed!
@@ -540,8 +527,8 @@ void
 	   &" ("[2 * !opt], opt ? opt : "", &")"[!opt]);
   if (busy++ <= NMS_CHECKING)
     {
-      if (char const *file = loc.File ())
-	fprintf (stderr, " at %s:%u", StripRootDirs (file), loc.Line ());
+      if (char const *file = loc.file_name ())
+	fprintf (stderr, " at %s:%u", StripRootDirs (file), loc.line ());
       fprintf (stderr, " 🤮\n");
 
 #if NMS_BACKTRACE
@@ -594,7 +581,7 @@ void
 
 		    inliner++;
 		    fprintf (stderr, "%s %s:%u", pfx,
-			     StripRootDirs (binfo.File ()), binfo.Line ());
+			     StripRootDirs (binfo.file), binfo.line);
 		    if (binfo.fn)
 		      {
 			char *demangled = binfo.Demangle ();
@@ -648,9 +635,12 @@ void
 void
 BuildNote (FILE *stream) noexcept
 {
-  fprintf (stream, "Version %s.\n", PROJECT_NAME " " PROJECT_VERSION);
+  fprintf (stream, "Version %s.", PROJECT_NAME " " PROJECT_VERSION);
   if (PROJECT_URL[0])
-    fprintf (stream, "See %s for more information.\n", PROJECT_URL);
+    fprintf (stream, " See %s for more information.", PROJECT_URL);
+  fprintf (stream, "\n%s\n",
+#include "ident.inc"
+    );
   fprintf (stream, "Build is %s & %s.\n",
 #if !NMS_CHECKING
 	   "un"

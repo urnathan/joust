@@ -43,11 +43,23 @@ configure_file (gdbinit.in gdbinit ESCAPE_QUOTES @ONLY)
 
 include_directories (${NMS_BINARY_DIR} ${NMS_INCLUDE_DIR})
 
+add_custom_command (OUTPUT ident.inc
+  COMMAND ${ZSH} ${CMAKE_CURRENT_SOURCE_DIR}/git-ident.sh ${CMAKE_SOURCE_DIR}
+  ident.inc.new
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ident.inc.new ident.inc
+  COMMAND ${CMAKE_COMMAND} -E rm ident.inc.new
+  MAIN_DEPENDENCY git-ident.sh
+  DEPENDS ${CMAKE_SOURCE_DIR}
+  COMMENT "Determining VCS Ident" VERBATIM)
+set_source_files_properties (ident.inc
+  PROPERTIES GENERATED TRUE HEADER_FILE_ONLY TRUE)
+
 # The user visible library
-add_library (nms libnms/fatal.cc libnms/option.cc)
+add_library (nms libnms/fatal.cc libnms/option.cc ident.inc)
 # The signal handler needs a frame pointer
 set_source_files_properties (libnms/fatal.cc
   PROPERTIES COMPILE_OPTIONS -fno-omit-frame-pointer)
+
 if (CMAKE_BUILD_TYPE MATCHES "^Rel")
   # These care about size more than speed
   set_source_files_properties (libnms/fatal.cc
