@@ -15,23 +15,33 @@ INFO=$(echo "$STATUS" | head -1)
 UPSTREAM=$(echo "$INFO" | sed 's/.*\.\.\.\([^ ]*\).*/\1/')
 if test "$INFO" = "$UPSTREAM" ; then
     OUTPUT="$(hostname):$(pwd)"
+    REMOTEBRANCH=""
 elif URL=$(git remote get-url "${UPSTREAM%%/*}" 2>/dev/null) ; then
-    OUTPUT="$URL(${UPSTREAM#*/})"
+    OUTPUT="$URL"
+    REMOTEBRANCH="${UPSTREAM#*/}"
 else
-    OUTPUT="$(hostname):$(pwd)($UPSTREAM)"
+    OUTPUT="$(hostname):$(pwd)"
+    REMOTEBRANCH=${UPSTREAM}
 fi
-OUTPUT+=" "
 LOCALBRANCH="$(echo "$INFO" | sed 's/## \([^ ]*\) \?.*/\1/')"
 if test "$LOCALBRANCH" != "$INFO" ; then
-    OUTPUT+="${LOCALBRANCH%%...*}:$HEAD"
+    LOCALBRANCH="${LOCALBRANCH%%...*}"
 else
-    OUTPUT+="$HEAD"
+    LOCALBRANCH=""
 fi
+if test "$REMOTEBRANCH" && test "$REMOTEBRANCH" != "${LOCALBRANCH}" ; then
+    OUTPUT+="($REMOTEBRANCH)"
+fi
+OUTPUT+=" "
+if test "${LOCALBRANCH}"; then
+    OUTPUT+="${LOCALBRANCH%}:"
+fi
+OUTPUT+="$HEAD"
 
 AHEAD=$(echo "$INFO" | sed 's/.*\[ahead \([0-9]\)\+].*/\1/')
 if test "$INFO" != "$AHEAD" ; then
-    if test "$INFO" != "$UPSTREAM" &&
-	    ORG=$(git rev-parse --short=8 $UPSTREAM 2>/dev/null) ; then
+    if test "$UPSTREAM" &&
+	    ORG=$(git rev-parse --short=8 "$UPSTREAM" 2>/dev/null) ; then
 	OUTPUT+=" [$ORG+$AHEAD]"
     else
 	OUTPUT+=" [$AHEAD ahead]"
