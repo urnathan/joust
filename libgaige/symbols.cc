@@ -7,6 +7,8 @@
 #include "nms/fatal.hh"
 // Gaige
 #include "gaige/symbols.hh"
+// C++
+#include <algorithm>
 // OS
 #include <fcntl.h>
 #include <sys/mman.h>

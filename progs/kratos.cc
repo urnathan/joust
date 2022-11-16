@@ -20,6 +20,7 @@
 // Joust
 #include "joust/tester.hh"
 // C++
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>

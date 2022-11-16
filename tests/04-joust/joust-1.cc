@@ -32,8 +32,7 @@
 // NESTED1-NEXT: 05-0x{:[0-9a-f]+} tests/$test:{:[0-9]+} main
 
 // FATAL-LABEL: Version
-// FATAL-NEXT: See {:.*} for more information.
-// FATAL-NEXT: Build is
+// FATAL: Build is
 // FATAL-NEXT: $EOF
 // FATAL-END:
 

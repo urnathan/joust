@@ -8,6 +8,7 @@
 // Gaige
 #include "gaige/scanner.hh"
 // C++
+#include <algorithm>
 #include <iostream>
 // C
 #include <cstring>
