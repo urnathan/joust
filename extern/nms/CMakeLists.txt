@@ -45,12 +45,12 @@ include_directories (${NMS_BINARY_DIR} ${NMS_INCLUDE_DIR})
 
 add_custom_command (OUTPUT ident.inc
   COMMAND ${ZSH} ${CMAKE_CURRENT_SOURCE_DIR}/git-ident.sh ${CMAKE_SOURCE_DIR}
-  ident.inc.new
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ident.inc.new ident.inc
-  COMMAND ${CMAKE_COMMAND} -E rm ident.inc.new
+  ident.inc.tmp
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ident.inc.tmp ident.inc
+  COMMAND ${CMAKE_COMMAND} -E rm ident.inc.tmp
   MAIN_DEPENDENCY git-ident.sh
-  DEPENDS ${CMAKE_SOURCE_DIR}
-  COMMENT "Determining VCS Ident" VERBATIM)
+  DEPENDS ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/.git
+  COMMENT "Determining GIT Ident" VERBATIM)
 set_source_files_properties (ident.inc
   PROPERTIES GENERATED TRUE HEADER_FILE_ONLY TRUE)
 

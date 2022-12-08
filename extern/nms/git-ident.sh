@@ -38,7 +38,7 @@ if test "${LOCALBRANCH}"; then
 fi
 OUTPUT+="$HEAD"
 
-AHEAD=$(echo "$INFO" | sed 's/.*\[ahead \([0-9]\)\+].*/\1/')
+AHEAD=$(echo "$INFO" | sed 's/.*\[ahead \([0-9]\+\)].*/\1/')
 if test "$INFO" != "$AHEAD" ; then
     if test "$UPSTREAM" &&
 	    ORG=$(git rev-parse --short=8 "$UPSTREAM" 2>/dev/null) ; then
@@ -50,4 +50,5 @@ fi
 if test "$INFO" != "$STATUS" ; then
     OUTPUT+=" dirty"
 fi
+OUTPUT+=" ($(date +%F))"
 echo \""$OUTPUT"\"

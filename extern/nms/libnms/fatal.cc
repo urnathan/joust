@@ -45,21 +45,30 @@ char const *progname = "$PROG";
 namespace
 {
 
-class Binfo
+class Binfo : public SrcLoc
 {
+  using Parent = SrcLoc;
+
 #if HAVE_BFD
   bfd *theBfd = nullptr;
   asymbol **syms = nullptr;
   bfd_vma pc = 0;
 #endif
 public:
-  char const *file = nullptr;
   char const *fn = nullptr;
-  unsigned line = 0;
 
 public:
   Binfo () noexcept;
   ~Binfo () noexcept;
+
+public:
+  void Clear () noexcept
+  {
+    Parent::operator= (Parent ());
+    fn = nullptr;
+  }
+  char const *Fn () const noexcept
+  { return fn; }
 
 public:
 #if NMS_BACKTRACE
@@ -149,9 +158,7 @@ bool
 Binfo::FindSrcLoc (void *addr [[maybe_unused]],
 		   bool is_return_address [[maybe_unused]]) noexcept
 {
-  file = nullptr;
-  fn = nullptr;
-  line = 0;
+  Clear ();
 
 #if HAVE_BFD
   pc = reinterpret_cast<bfd_vma> (addr) - is_return_address;
@@ -161,7 +168,7 @@ Binfo::FindSrcLoc (void *addr [[maybe_unused]],
       {
 	Binfo *self = static_cast<Binfo *> (data_);
 
-	if (self->file)
+	if (self->File ())
 	  return;
 
 	if (!(bfd_section_flags (section) & SEC_ALLOC))
@@ -183,7 +190,7 @@ Binfo::FindSrcLoc (void *addr [[maybe_unused]],
   if (theBfd && addr >= &__executable_start && addr < &__etext)
     bfd_map_over_sections (theBfd, find_line, this);
 #endif
-  return file != nullptr;
+  return File () != nullptr;
 }
 #endif
 
@@ -324,53 +331,34 @@ Binfo::Demangle () noexcept
 // We try and detect stack overflow, and report that
 // distinctly.
 void
-SignalHandler (int sig) noexcept
+SignalHandlerImpl (int sig, siginfo_t *, void *ucontext) noexcept
 {
   static volatile bool stack_overflow = false;
 
   if (sig == SIGSEGV)
     {
       // We get a segv if we've run out of stack.  Distinguish that
-      // from other segvs by probing the stack.  While the CFA is
-      // canonical across architectures, _b_f_a returns bottom of
-      // frame on some and top of frame on others.
-      char *frame = reinterpret_cast<char *> (__builtin_frame_address (0));
-
+      // from other segvs by probing the stack.
       {
 #if __x86_64__
-	// frame is top of incoming stack.
-	frame += 0x10;
 #define UCTX_GET_SP(UCTX) ((UCTX)->uc_mcontext.gregs[REG_RSP])
 #define UCTX_SET_PC(UCTX, PC) ((UCTX)->uc_mcontext.gregs[REG_RIP] = (PC))
+	// mov $0xf,%rax; syscall
+#define SNIFF 0x48, 0xc7, 0xc0, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05
 #elif __aarch64__
-	// frame is bottom of current frame, unwind once
-	uint32_t opcode = *reinterpret_cast<uint32_t *> (SignalHandler);
-
-	// stp r29,r30,[sp,#-N]!
-	if ((opcode & 0xffe07fff) == 0xa9a07bfd)
-	  {
-	    unsigned frame_size = (0x40 - ((opcode >> 15) & 0x3f)) * 8;
-	    frame += frame_size;
-	    frame += 0x80;
-	  }
-	else
-	  frame = 0;
 #define UCTX_GET_SP(UCTX) ((UCTX)->uc_mcontext.sp)
 #define UCTX_SET_PC(UCTX, PC) ((UCTX)->uc_mcontext.pc = (PC))
 #elif __powerpc64__
-	// frame is bottom of current frame, unwind once
-	frame = *reinterpret_cast<char **> (frame);
-	frame += 0x80;
 #define UCTX_GET_SP(UCTX) ((UCTX)->uc_mcontext.gp_regs[1])
 #define UCTX_SET_PC(UCTX, PC) ((UCTX)->uc_mcontext.gp_regs[32] = (PC))
 #else
-	frame = 0;
+	ucontext = nullptr;
 #define UCTX_GET_SP(UCTX) (void (UCTX), 0)
 #define UCTX_SET_PC(UCTX, PC) (void (UCTX), void (PC))
 #endif
       }
 
-      if (ucontext_t *uctx = reinterpret_cast<ucontext_t *> (frame))
+      if (ucontext_t *uctx = reinterpret_cast<ucontext_t *> (ucontext))
 	{
 	  if (stack_overflow)
 	    {
@@ -401,18 +389,28 @@ SignalHandler (int sig) noexcept
     }
 
   Binfo binfo;
-#if NMS_BACKTRACE && NMS_CHECKING && HAVE_BFD
-  void *return_addrs[3];
-  if (backtrace (return_addrs, 3) == 3)
-    binfo.FindSrcLoc (return_addrs[2], false);
+#if NMS_BACKTRACE && NMS_CHECKING && HAVE_BFD && defined (SNIFF)
+  {
+    // Find the frame that invoked the signal by discovering the
+    // restorer function. We find this by sniffing bytes at the
+    // returned-to location.
+    void *return_addrs[10];
+    if (auto count = backtrace (return_addrs, 10))
+      for (int ix = 0; ix < count - 1; ix++)
+	{
+	  static unsigned char const sniff[] = {SNIFF};
+	  if (!std::memcmp (return_addrs[ix], sniff, sizeof (sniff)))
+	    {
+	      binfo.FindSrcLoc (return_addrs[++ix], false);
+	      break;
+	    }
+	}
+  }
 #endif
+#undef SNIFF
 
   (HCF) (stack_overflow ? "stack overflow" : "signal",
-	 stack_overflow ? nullptr : strsignal (sig)
-#if NMS_CHECKING
-	 , std::source_location ()
-#endif
-         );
+	 stack_overflow ? nullptr : strsignal (sig), binfo);
 }
 
 // An unexpected exception.  We don't try and locate the errant throw
@@ -422,13 +420,7 @@ SignalHandler (int sig) noexcept
 void
 TerminateHandler () noexcept
 {
-  (HCF) (
-#if NMS_CHECKING
-      "uncaught exception", nullptr, std::source_location ()
-#else
-	 nullptr
-#endif
-         );
+  (HCF) ("uncaught exception");
 }
 
 void
@@ -439,11 +431,16 @@ OutOfMemory () noexcept
 
 } // namespace
 
+// A stub to avoid exposing <signal.h> in the header file
+void SignalHandler (int sig, void *info, void *ucontext) noexcept
+{
+  SignalHandlerImpl (sig, static_cast<siginfo_t *> (info), ucontext);
+}
+
 void
 SignalHandlers () noexcept
 {
   stack_t alt_stack;
-  struct sigaction sig_action;
 
   // The default SIGSTKSZ is not big enough :( 3 additional pages
   // seems to suffice.
@@ -451,19 +448,17 @@ SignalHandlers () noexcept
   alt_stack.ss_flags = 0;
   alt_stack.ss_sp = malloc (alt_stack.ss_size);
 
+  struct sigaction sig_action;
+  sig_action.sa_sigaction = &SignalHandlerImpl;
   sigemptyset (&sig_action.sa_mask);
-  sig_action.sa_flags = SA_NODEFER;
+  sig_action.sa_flags = SA_NODEFER | SA_SIGINFO;
   if (alt_stack.ss_sp && !sigaltstack (&alt_stack, 0))
     sig_action.sa_flags |= SA_ONSTACK;
 
-  sig_action.sa_handler = &SignalHandler;
-  sigaction (SIGSEGV, &sig_action, 0);
-  signal (SIGQUIT, &SignalHandler);
-  signal (SIGILL, &SignalHandler);
-  signal (SIGFPE, &SignalHandler);
-  signal (SIGABRT, &SignalHandler);
-  signal (SIGBUS, &SignalHandler);
-  signal (SIGTRAP, &SignalHandler);
+  static constinit int const signals[]
+    = {SIGSEGV, SIGQUIT, SIGILL, SIGFPE, SIGABRT, SIGBUS, SIGTRAP};
+  for (auto sig : signals)
+    sigaction (sig, &sig_action, 0);
 
   std::set_terminate (TerminateHandler);
   std::set_new_handler (OutOfMemory);
@@ -484,28 +479,24 @@ Progname (char const *prog) noexcept
 
 #if NMS_CHECKING
 void
-(AssertFailed) (char const *msg, std::source_location loc) noexcept
+(AssertFailed) (char const *msg, SrcLoc loc) noexcept
 {
   (HCF) ("💥 assertion failed", msg, loc);
 }
 void
-(Unreachable) (char const *msg, std::source_location loc) noexcept
+(Unreachable) (char const *msg, SrcLoc loc) noexcept
 {
   (HCF) ("🛇 unreachable reached", msg, loc);
 }
 void
-(Unimplemented) (char const *msg, std::source_location loc) noexcept
+(Unimplemented) (char const *msg, SrcLoc loc) noexcept
 {
   (HCF) ("✍  unimplemented functionality", msg, loc);
 }
 #endif
 
 void
-(HCF) (char const *msg, char const *opt
-#if NMS_CHECKING
-       , std::source_location const loc
-#endif
-       ) noexcept
+(HCF) (char const *msg, char const *opt, SrcLoc loc) noexcept
 { __asm__ volatile ("nop"); // HCF - you goofed!
   static int busy = 0;
 
@@ -527,8 +518,8 @@ void
 	   &" ("[2 * !opt], opt ? opt : "", &")"[!opt]);
   if (busy++ <= NMS_CHECKING)
     {
-      if (char const *file = loc.file_name ())
-	fprintf (stderr, " at %s:%u", StripRootDirs (file), loc.line ());
+      if (char const *file = loc.File ())
+	fprintf (stderr, " at %s:%u", StripRootDirs (file), loc.Line ());
       fprintf (stderr, " 🤮\n");
 
 #if NMS_BACKTRACE
@@ -581,7 +572,7 @@ void
 
 		    inliner++;
 		    fprintf (stderr, "%s %s:%u", pfx,
-			     StripRootDirs (binfo.file), binfo.line);
+			     StripRootDirs (binfo.File ()), binfo.Line ());
 		    if (binfo.fn)
 		      {
 			char *demangled = binfo.Demangle ();
