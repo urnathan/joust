@@ -1,5 +1,5 @@
 // Joust/KRATOS: Kapture Run And Test Output Safely	-*- mode:c++ -*-
-// Copyright (C) 2020 Nathan Sidwell, nathan@acm.org
+// Copyright (C) 2020-2022 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 class Parser : public Scanner
@@ -276,8 +276,7 @@ Parser::ProcessLine (std::string_view const &variant,
 
       if (!c || ((c == ' ' || c == '\t')
 		 && !depth && !escape
-		 && state != REDIRECT_HERE
-		 && (c == ' ' || c == '\t')))
+		 && state != REDIRECT_HERE))
 	{
 	  // end of word
 	  if (word.size () || state == REDIRECT_HERE)
@@ -364,8 +363,10 @@ Parser::ProcessLine (std::string_view const &variant,
 	}
       else if (c == '\\')
 	{
+	  if (!depth && state == REDIRECT_HERE)
+	    goto append;
 	  escape = true;
-	  goto append;
+	  goto advance;
 	}
       else if (c == '{')
 	{

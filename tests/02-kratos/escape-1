@@ -1,0 +1,7 @@
+# test kratos processes escape (\) correctly
+
+# RUN: echo \\a\ b | ezio $test
+# RUN-END:
+
+CHECK: ^\a b$
+CHECK-END:
