@@ -1,5 +1,5 @@
 // Joust/ALOY: Apply List, Observe Yield		-*- mode:c++ -*-
-// Copyright (C) 2020-2022 Nathan Sidwell, nathan@acm.org
+// Copyright (C) 2020-2023 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 // ALOY is a parallelized test execution engine.  It reads lines from
@@ -59,7 +59,7 @@ static void
 Title (FILE *stream)
 {
   fprintf (stream, "ALOY: Apply List, Observe Yield\n");
-  fprintf (stream, "Copyright 2020 Nathan Sidwell, nathan@acm.org\n");
+  fprintf (stream, "Copyright 2020-2023 Nathan Sidwell, nathan@acm.org\n");
 }
 
 int

@@ -1,5 +1,5 @@
 # Joust: Journal Of User-Scripted Tests	-*- mode:cmake -*-
-# Copyright (C) 2020-2022 Nathan Sidwell, nathan@acm.org
+# Copyright (C) 2020-2023 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
 # This happens to be my first CMake project, so it's undoubtably wonky

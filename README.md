@@ -1,6 +1,6 @@
 # JOUST: Journal Of User-Scripted Tests<a href="#1"><sup>1</sup></a>
 
-Copyright (C) 2020, 2021 Nathan Sidwell, nathan@acm.org
+Copyright (C) 2020-2023 Nathan Sidwell, nathan@acm.org
 
 Joust is a testsuite infrastructure consisting of a few components.
 These either interact directly, or via user scripts.  Typically you'll

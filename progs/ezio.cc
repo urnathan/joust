@@ -1,5 +1,5 @@
 // Joust/EZIO: Expect Zero Irregularities Observed	-*- mode:c++ -*-
-// Copyright (C) 2020-2022 Nathan Sidwell, nathan@acm.org
+// Copyright (C) 2020-2023 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 // EZIO is a pattern matcher.  It looks for CHECK lines in the
@@ -51,7 +51,7 @@ static void
 Title (FILE *stream)
 {
   fprintf (stream, "EZIO: Expect Zero Irregularities Observed\n");
-  fprintf (stream, "Copyright 2020 Nathan Sidwell, nathan@acm.org\n");
+  fprintf (stream, "Copyright 2020-2023 Nathan Sidwell, nathan@acm.org\n");
 }
 
 int
