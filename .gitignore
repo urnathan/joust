@@ -1,3 +1,6 @@
+# Copyright (C) 2019-2023 Nathan Sidwell, nathan@acm.org
+# License: Apache v2.0
+
 # ignore backups
 *~
 
@@ -6,9 +9,14 @@
 
 # ignore merge files created by git.
 *.orig
+*.rej
+
+# don't care about blame
+*.blame
+
+# ignore patches and diffs
+*.diff
+*.patch
 
 # ignore nested build directory
 /build*
-
-# ignore automate cache
-autom4te.cache
