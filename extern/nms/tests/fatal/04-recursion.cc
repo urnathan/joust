@@ -1,5 +1,5 @@
-// NMS Test Suite			-*- mode:c++ -*-
-// Copyright (C) 2022 Nathan Sidwell, nathan@acm.org
+// NMS Utilities			-*- mode:c++ -*-
+// Copyright (C) 2022-2023 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 // RUN-REQUIRE: test 0 -ne ${NMS_BACKTRACE}
@@ -11,7 +11,7 @@
 // CHECK: 0{:.}-0x{:.*} {:.*}04-recursion.cc:{:[0-9]+} Recurse
 // CHECK: 0{:.}-0x{:.*} {:.*}04-recursion.cc:{:[0-9]+} Recurse
 // CHECK-NEXT: 0{:.}-0x{:.*} repeat frame {:[0-9]+}...
-// CHECK: Version 
+// CHECK: version 
 // CHECK: Build is
 
 #include "nms/cfg.h"
@@ -51,8 +51,9 @@ SegFault (int sig, siginfo_t *info, void *ucontext)
 }
 
 int
-main (int argc, char **)
+main (int argc, char **argv)
 {
+  SetBuild (argv[0]);
   SignalHandlers ();
   if (argc > 1)
     {

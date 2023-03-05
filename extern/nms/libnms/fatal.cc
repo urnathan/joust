@@ -1,5 +1,5 @@
-// NMS Test Suite			-*- mode:c++ -*-
-// Copyright (C) 2019-2022 Nathan Sidwell, nathan@acm.org
+// NMS Utilities			-*- mode:c++ -*-
+// Copyright (C) 2019-2023 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 #include "nms/cfg.h"
@@ -8,6 +8,7 @@
 // C++
 #include <exception>
 #include <typeinfo>
+#include <vector>
 // C
 #include <cerrno>
 #include <cinttypes>
@@ -40,10 +41,16 @@ extern char __etext[];
 namespace NMS
 {
 
-char const *progname = "$PROG";
-
 namespace
 {
+
+char const *progName = nullptr;
+char const *projectName = nullptr;
+char const *projectVersion = nullptr;
+char const *projectURL = nullptr;
+char const *sourceIdent = nullptr;
+bool buildChecked = false;
+bool buildOptimized = false;
 
 class Binfo : public SrcLoc
 {
@@ -207,12 +214,12 @@ Binfo::InlineUnwind () noexcept
 }
 #endif
 
+std::vector<char const *> rootDirs;
+
 char const *
 StripRootDirs (char const *file) noexcept
 {
-  static char const *const roots[] = {NMS_PREFIX_DIRS, ""};
-
-  for (auto dir : roots)
+  for (auto dir : rootDirs)
     {
       size_t l = strlen (dir);
 
@@ -464,20 +471,6 @@ SignalHandlers () noexcept
   std::set_new_handler (OutOfMemory);
 }
 
-// Set the program name from, typically, argv[0]
-void
-Progname (char const *prog) noexcept
-{
-  if (prog)
-    {
-      if (char const *name = std::strrchr (prog, '/'))
-	if (name[1])
-	  prog = name + 1;
-      progname = prog;
-    }
-}
-
-#if NMS_CHECKING
 void
 (AssertFailed) (char const *msg, SrcLoc loc) noexcept
 {
@@ -493,7 +486,6 @@ void
 {
   (HCF) ("✍  unimplemented functionality", msg, loc);
 }
-#endif
 
 void
 (HCF) (char const *msg, char const *opt, SrcLoc loc) noexcept
@@ -503,11 +495,7 @@ void
   fflush (stdout);
   fflush (stderr);
 
-#if !NMS_CHECKING
-  SrcLoc loc (nullptr, 0);
-#endif
-
-  if (busy > NMS_CHECKING)
+  if (busy > 1)
     {
       msg = "recursive internal error";
       opt = nullptr;
@@ -516,7 +504,7 @@ void
   fprintf (stderr, "%s: %s%s%s%s", program_invocation_short_name,
 	   msg ? msg : "internal error",
 	   &" ("[2 * !opt], opt ? opt : "", &")"[!opt]);
-  if (busy++ <= NMS_CHECKING)
+  if (busy++ <= 1)
     {
       if (char const *file = loc.File ())
 	fprintf (stderr, " at %s:%u", StripRootDirs (file), loc.Line ());
@@ -624,23 +612,56 @@ void
 }
 
 void
+AddPrefixDir (char const *src, char const *bin) noexcept
+{
+  rootDirs.emplace_back (src);
+  if (bin)
+    rootDirs.emplace_back (bin);
+}
+
+// Set the program name from, typically, argv[0]
+void
+SetBuild (char const *prog,
+	  char const *name, char const *version, char const *url,
+	  char const *ident, bool isChecked, bool isOptimized) noexcept
+{
+  AddPrefixDir (NMS_PREFIX_DIRS);
+  if (prog)
+    {
+      if (char const *name = std::strrchr (prog, '/'))
+	if (name[1])
+	  prog = name + 1;
+      progName = prog;
+    }
+
+  projectName = name;
+  projectVersion = version;
+  projectURL = url;
+  sourceIdent = ident;
+  buildChecked = isChecked;
+  buildOptimized = isOptimized;
+}
+
+void
 BuildNote (FILE *stream) noexcept
 {
-  fprintf (stream, "Version %s.", PROJECT_NAME " " PROJECT_VERSION);
-  if (PROJECT_URL[0])
-    fprintf (stream, " See %s for more information.", PROJECT_URL);
-  fprintf (stream, "\n%s\n",
-#include "ident.inc"
-    );
+  if (projectName)
+    {
+      if (progName)
+	fprintf (stream, "%s ", progName);
+      fprintf (stream, "%s", projectName);
+      if (projectVersion)
+	fprintf (stream, " version %s", projectVersion);
+      fprintf (stream, ".");
+    }
+  if (projectURL && projectURL[0])
+    fprintf (stream, " See %s for more information.", projectURL);
+  fprintf (stream, "\n");
+  if (sourceIdent && sourceIdent[0])
+    fprintf (stream, "Ident %s\n", sourceIdent);
   fprintf (stream, "Build is %s & %s.\n",
-#if !NMS_CHECKING
-	   "un"
-#endif
-	   "checked",
-#if !__OPTIMIZE__
-	   "un"
-#endif
-	   "optimized");
+	   buildChecked ? "checked" : "unchecked",
+	   buildOptimized ? "optimized" : "unoptimized");
 }
 
 // A fatal error
@@ -649,7 +670,8 @@ Fatal (char const *format, ...) noexcept
 {  __asm__ volatile ("nop"); // Fatal Error
   va_list args;
   va_start (args, format);
-  fprintf (stderr, "%s: fatal: ", program_invocation_short_name);
+  fprintf (stderr, "%s: fatal: ",
+	   progName ? progName : program_invocation_short_name);
   vfprintf (stderr, format, args);
   va_end (args);
   fprintf (stderr, "\n");

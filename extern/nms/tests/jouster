@@ -1,5 +1,5 @@
-# Joust Test Suite		-*- mode:zsh -*-
-# Copyright (C) 2022 Nathan Sidwell, nathan@acm.org
+# NMS Utilities		-*- mode:zsh -*-
+# Copyright (C) 2022-2023 Nathan Sidwell, nathan@acm.org
 # Not For Distribution
 
 pushd ${0%/*}

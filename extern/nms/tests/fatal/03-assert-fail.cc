@@ -1,5 +1,5 @@
-// NMS Test Suite			-*- mode:c++ -*-
-// Copyright (C) 2022 Nathan Sidwell, nathan@acm.org
+// NMS Utilities			-*- mode:c++ -*-
+// Copyright (C) 2022-2023 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 // RUN-REQUIRE: test 0 -ne ${NMS_CHECKING}
@@ -23,16 +23,17 @@ using namespace NMS;
 int
 main (int, char **argv)
 {
+  SetBuild (argv[0]);
   SignalHandlers ();
 
   switch (argv[1][0])
     {
     case '0':
       Assert (false);
-      // CHECK-0: assertion failed at {:.*}03-assert-fail.cc:31
+      // CHECK-0: assertion failed at {:.*}03-assert-fail.cc:32
     case '1':
       Assert (false, "one");
-      // CHECK-1: assertion failed (one) at {:.*}03-assert-fail.cc:34
+      // CHECK-1: assertion failed (one) at {:.*}03-assert-fail.cc:35
     case '2':
       Unimplemented ();
       // CHECK-2: unimplemented functionality at

@@ -1,5 +1,5 @@
-// NMS Test Suite			-*- mode:c++ -*-
-// Copyright (C) 2022 Nathan Sidwell, nathan@acm.org
+// NMS Utilities			-*- mode:c++ -*-
+// Copyright (C) 2022-2023 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 // RUN: ${subdir}${stem}

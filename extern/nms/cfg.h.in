@@ -5,7 +5,7 @@
 #define PROJECT_URL "@PROJECT_URL@"
 
 // Intentionally project roots
-#define NMS_PREFIX_DIRS "@BIN2SRC@", "@CMAKE_BINARY_DIR@/", "@CMAKE_SOURCE_DIR@/"
+#define NMS_PREFIX_DIRS "@CMAKE_BINARY_DIR@/", "@CMAKE_SOURCE_DIR@/"
 
 // Control assert behaviour and backtracing
 #cmakedefine01 NMS_CHECKING

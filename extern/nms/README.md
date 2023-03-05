@@ -1,6 +1,6 @@
 # Nathan's Utilities
 
-Copyright (C) 2019-2022 Nathan Sidwell, nathan@acm.org
+Copyright (C) 2019-2023 Nathan Sidwell, nathan@acm.org
 
 License: Affero GPL 3
 

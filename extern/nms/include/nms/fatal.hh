@@ -1,59 +1,39 @@
-// NMS Test Suite			-*- mode:c++ -*-
-// Copyright (C) 2019-2022 Nathan Sidwell, nathan@acm.org
+// NMS Utilities			-*- mode:c++ -*-
+// Copyright (C) 2019-2023 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 #ifndef NMS_FATAL_HH
 
+// NMS
+#include "nms/srcloc.hh"
 // C
 #include <cstdio>
 
 namespace NMS
 {
 
-class SrcLoc
-{
-  // Sadly, std::source_location doesn't permit user-constructed
-  // arbitrary source locations.  And we want that functionality
-  // for signal handling.
-
-protected:
-  char const *file = nullptr;
-  unsigned line = 0;
-
-public:
-  constexpr SrcLoc () noexcept = default;
-  constexpr SrcLoc (char const *file_, unsigned line_) noexcept
-    : file (file_), line (line_)
-  {}
-
-public:
-  constexpr char const *File () const noexcept
-  { return file; }
-  constexpr unsigned Line () const noexcept
-  { return line; }
-};
-
-#if __GNUC__ >= 10 || __clang_major__ >= 11
-#define NMS_LOC_HERE() SrcLoc (__builtin_FILE (), __builtin_LINE ())
+#if NMS_CHECKING
+#define NMS_HERE() SrcLoc::Here ()
 #else
-#define NMS_LOC_HERE() SrcLoc (nullptr, 0)
+#define NMS_HERE() SrcLoc (nullptr, 0)
 #endif
 
 [[noreturn]]
 void HCF (char const *msg, char const *optional = nullptr,
-	  SrcLoc = NMS_LOC_HERE ()) noexcept;
+	  SrcLoc = NMS_HERE ()) noexcept;
+
+[[noreturn]]
+void AssertFailed (char const *msg = nullptr, SrcLoc = NMS_HERE ()) noexcept;
+
+[[noreturn]]
+void Unreachable (char const *msg = nullptr, SrcLoc = NMS_HERE ()) noexcept;
+
+[[noreturn]]
+void Unimplemented (char const *msg = nullptr, SrcLoc = NMS_HERE ()) noexcept;
+
+#undef NMS_HERE
 
 #if NMS_CHECKING
-[[noreturn]]
-void AssertFailed (char const *msg = nullptr, SrcLoc = NMS_LOC_HERE ()) noexcept;
-
-[[noreturn]]
-void Unreachable (char const *msg = nullptr, SrcLoc = NMS_LOC_HERE ()) noexcept;
-
-[[noreturn]]
-void Unimplemented (char const *msg = nullptr,
-		    SrcLoc = NMS_LOC_HERE ()) noexcept;
-
 #define Unreachable(MSG) NMS::Unreachable (MSG)
 #define Unimplemented(MSG) NMS::Unimplemented (MSG)
 
@@ -69,10 +49,53 @@ void Unimplemented (char const *msg = nullptr,
 // Not asserting, use EXPR in an unevaluated context
 #define Assert(EXPR, ...) (void (sizeof (bool (EXPR))))
 #endif
+
 #define Unreachable(...) __builtin_unreachable ()
 #define Unimplemented(...) __builtin_trap ()
 #endif
-#undef NMS_LOC_HERE
+
+void SetBuild (char const *progname,
+	       char const *projectName
+#if defined (PROJECT_NAME) && defined (PROJECT_VERSION)
+	       = PROJECT_NAME
+#endif
+	       ,
+	       char const *projectVersion
+#if defined (PROJECT_VERSION)
+	       = PROJECT_VERSION
+#endif
+	       ,
+	       char const *projectURL
+#if defined (PROJECT_URL)
+	       = PROJECT_URL
+#else
+	       = nullptr
+#endif
+	       ,
+	       char const *sourceIdent
+#if __has_include ("nms_ident.inc")
+	       =
+#include "nms_ident.inc"
+#elif defined (NMS_IDENT)
+	       = NMS_IDENT
+#else
+	       = nullptr
+#endif
+	       ,
+	       bool isChecked
+#if NMS_CHECKING
+	       = true
+#else
+	       = false
+#endif
+	       ,
+	       bool isOptimized
+#if __OPTIMIZE__
+	       = true
+#else
+	       = false
+#endif
+  ) noexcept;
 
 void BuildNote (FILE *stream) noexcept;
 

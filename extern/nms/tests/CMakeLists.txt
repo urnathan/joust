@@ -1,5 +1,5 @@
 # NMS utils
-# Copyright (C) 2022 Nathan Sidwell, nathan@acm.org
+# Copyright (C) 2022-2023 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
 add_custom_target (check-nms

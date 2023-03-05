@@ -1,5 +1,5 @@
 # Joust: Journal Of User-Scripted Tests	-*- mode:text -*-
-# Copyright (C) 2020-2021 Nathan Sidwell, nathan@acm.org
+# Copyright (C) 2020-2023 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
 # some default breakpoints, to catch the fatal exit
