@@ -4,6 +4,8 @@
 
 #ifndef GAIGE_ERROR_HH
 
+// NMS
+#include "nms/srcloc.hh"
 // C++
 #include <ostream>
 #include <utility>
@@ -20,7 +22,7 @@ private:
   static bool errored;
 
 public:
-  Error (char const *file, unsigned line);
+  Error (NMS::SrcLoc);
   Error (Error &&src)
     : stream (src.stream)
   {

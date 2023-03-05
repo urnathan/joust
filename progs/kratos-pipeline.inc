@@ -79,16 +79,16 @@ operator<< (std::ostream &s, Pipeline const &pipe)
 	  {
 	    eol = pipe.src.find_first_of ('\n', base);
 	    Assert (eol != pipe.src.npos);
-	    s << cmd.File () << ':' << cmd.Line ()
+	    s << cmd.Loc ().File () << ':' << cmd.Loc ().Line ()
 	      << " in<<" << std::string_view (&pipe.src[base], eol - base)
 	      << '\n';
 	  }
       }
     else if (!pipe.src.empty ())
-      s << cmd.File () << ':' << cmd.Line ()
+      s << cmd.Loc ().File () << ':' << cmd.Loc ().Line ()
 	<< " in< " << pipe.src << '\n';
   
-    s << cmd.File () << ':' << cmd.Line () << " "
+    s << cmd.Loc ().File () << ':' << cmd.Loc ().Line () << " "
       << Pipeline::kinds[pipe.kind] << ':';
     if (pipe.expected_exit)
       s << pipe.expected_exit;
@@ -103,7 +103,8 @@ operator<< (std::ostream &s, Pipeline const &pipe)
       auto &filter = pipe.commands[ix];
       if (!filter.Empty ())
 	{
-	  s << filter.File () << ':' << filter.Line () << outs[ix - 1];
+	  s << filter.Loc ().File () << ':'
+	    << filter.Loc ().Line () << outs[ix - 1];
 	  s << (filter.RedirectType () == Command::R_FILE ? '>' : '|');
 	  if (ix == 2)
 	    s << '&';
@@ -615,14 +616,15 @@ Pipeline::Execute (Tester &logger, unsigned const *limits)
 		{
 		  s = &std::cerr;
 		  auto &cmd = commands[0];
-		  logger.Result (Tester::ERROR, cmd.File (), cmd.Line ())
+		  logger.Result (Tester::ERROR, cmd.Loc ())
 		    << "# Unexpected" << io_streams[ix - 1]
 		    << cmd;
 		}
 	      else if (io)
 		{
 		  s = &std::cerr;
-		  *s << "# Checker " << filt.File () << ':' << filt.Line ()
+		  *s << "# Checker " << filt.Loc ().File ()
+		     << ':' << filt.Loc ().Line ()
 		     << filt << '\n';
 		}
 	      *s << std::string_view (stream.data (), size);
@@ -655,7 +657,7 @@ void
 Pipeline::Result (Tester &logger, Tester::Status status)
 {
   auto const &cmd = commands.front ();
-  auto l = logger.Result (status, cmd.file, cmd.line);
+  auto l = logger.Result (status, cmd.Loc ());
 
   l << kinds[kind];
   if (expect_inverted || expected_exit)

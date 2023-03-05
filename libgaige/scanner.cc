@@ -84,7 +84,7 @@ Scanner::ScanFile (std::string const &fname,
 	}
     }
 
-  line = 1;
+  loc.NextLine ();
   bool ended = false;
   for (char const *base = begin;;)
     {
@@ -145,7 +145,7 @@ Scanner::ScanFile (std::string const &fname,
 	  if (eol > colon)
 	    break;
 	  begin = eol + 1;
-	  line++;
+	  loc.NextLine ();
 	}
 
       // Process the pattern
@@ -159,7 +159,7 @@ Scanner::ScanFile (std::string const &fname,
 	}
 
       base = begin = eol + 1;
-      line++;
+      loc.NextLine ();
     }
 
   munmap (buffer, alloc);

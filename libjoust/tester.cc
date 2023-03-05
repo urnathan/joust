@@ -35,13 +35,13 @@ Tester::DecodeStatus (std::string_view const &line) noexcept
 }
 
 Tester::Streamer
-Tester::Result (Status status, char const *file, unsigned line) noexcept
+Tester::Result (Status status, NMS::SrcLoc loc) noexcept
 {
   Streamer result (this);
 
   result << statuses[status] << ": ";
 
-  if (file)
+  if (auto const *file = loc.File ())
     {
       if (char const *srcdir = getenv ("srcdir"))
 	{
@@ -65,7 +65,7 @@ Tester::Result (Status status, char const *file, unsigned line) noexcept
 	}
 
       result << file << ':';
-      if (line)
+      if (auto line = loc.Line ())
 	result << line << ':';
     }
 

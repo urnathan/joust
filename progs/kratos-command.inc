@@ -15,26 +15,20 @@ public:
 
 private:
   std::vector<std::string> words; // parsed line
-  char const *file = nullptr;
-  unsigned line = 0;
+  NMS::SrcLoc loc;
   int stdin = -1;
   pid_t pid = 0;
   Redirect redirect = R_NORMAL;
 
 public:
   auto Error ()
-  { return Gaige::Error (file, line); }
+  { return Gaige::Error (loc); }
 
 public:
-  void FileLine (char const *f, unsigned l)
-  {
-    file = f;
-    line = l;
-  }
-  auto File () const
-  { return file; }
-  auto Line () const
-  { return line; }
+  auto const &Loc () const 
+  { return loc; }
+  void Loc (NMS::SrcLoc l)
+  { loc = l; }
 
 public:
   auto RedirectType () const

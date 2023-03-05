@@ -13,10 +13,10 @@ namespace Gaige
 
 bool Error::errored;
 
-Error::Error (char const *file, unsigned line)
+Error::Error (NMS::SrcLoc loc)
   : stream (&std::cerr)
 {
   errored = true;
-  *stream << file << ':' << line << ": error: ";
+  *stream << loc.File () << ':' << loc.Line () << ": error: ";
 }
 } // namespace Gaige

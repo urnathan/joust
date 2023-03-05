@@ -4,21 +4,15 @@
 
 #ifndef JOUST_TESTER_HH
 
+// NMS
+#if __has_include ("nms/srcloc.hh")
+#include "nms/srcloc.hh"
+#else
+#include "joust/srcloc.hh"
+#endif
 // C++
 #include <iostream>
 #include <string_view>
-
-#if __GNUC__ >= 10 || __clang_major__ >= 11
-#define JOUST_FILE() __builtin_FILE ()
-#define JOUST_LINE() __builtin_LINE ()
-#elif __has_include (<source_location>)
-#include <source_location>
-#define JOUST_FILE() source_location::current ().file ()
-#define JOUST_LINE() source_location::current ().line ()
-#else
-#define JOUST_FILE() nullptr
-#define JOUST_LINE() 0
-#endif
 
 namespace Joust
 {
@@ -124,14 +118,10 @@ protected:
   Status DecodeStatus (std::string_view const &) noexcept;
 
 public:
-  Streamer Result (Status status, char const *file = JOUST_FILE (),
-		   unsigned line = JOUST_LINE ()) noexcept;
+  Streamer Result (Status status, NMS::SrcLoc = NMS::SrcLoc::Here ()) noexcept;
   Streamer Result (bool pass, bool xfail = false,
-		   char const *file = JOUST_FILE (),
-		   unsigned line = JOUST_LINE ()) noexcept
-  {
-    return Result (PassFail (pass, xfail), file, line);
-  }
+		   NMS::SrcLoc loc = NMS::SrcLoc::Here ()) noexcept
+  { return Result (PassFail (pass, xfail), loc); }
 
 public:
   template <typename T>

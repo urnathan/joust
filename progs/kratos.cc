@@ -197,7 +197,7 @@ main (int argc, char *argv[])
     }
 
   if (pipes.empty ())
-    logger.Result (Tester::PASS, testFile, 0) << "No tests to test";
+    logger.Result (Tester::PASS, NMS::SrcLoc (testFile)) << "No tests to test";
 
   for (auto &pipe : pipes)
     {

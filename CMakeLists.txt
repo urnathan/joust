@@ -13,6 +13,7 @@ include (NMSBuild)
 include (NMSIdent)
 
 if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  # it'd be nice to remove this restriction
   message (FATAL_ERROR "Not intended as a subcomponent")
 endif ()
 project (Joust VERSION 1.0 LANGUAGES CXX)
@@ -57,6 +58,7 @@ file (GLOB JOUST_HDRS CONFIGURE_DEPENDS "include/joust/*.hh")
 add_library (joust ${JOUST_SRCS})
 install (TARGETS joust DESTINATION lib)
 install (FILES ${JOUST_HDRS} DESTINATION include/joust)
+install (FILES extern/nms/include/nms/srcloc.hh DESTINATION include/joust)
 
 # gaige Group All Internal Gizmo Elements
 file (GLOB GAIGE_SRCS CONFIGURE_DEPENDS "libgaige/*.cc")

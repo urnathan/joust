@@ -43,8 +43,7 @@ public:
 #undef PATTERN_KIND_FROB
 
 private:
-  char const *file;
-  unsigned line;
+  NMS::SrcLoc loc;
 
 private:
   Kind kind;
@@ -69,8 +68,7 @@ private:
 
 protected:
   Pattern (Kind kind_, Parser const *parser, std::string_view const &text)
-    : file (parser->GetFile ()), line (parser->GetLine ()),
-      kind (kind_), original (text)
+    : loc (parser->Loc ()), kind (kind_), original (text)
   {
     if (parser->GetMatchSol ())
       matchSol = true;
@@ -319,13 +317,13 @@ Error
 Pattern::Error ()
 {
   has_error = true;
-  return Gaige::Error (file, line);
+  return Gaige::Error (loc);
 }
 
 std::ostream &
 operator<< (std::ostream &s, Pattern const &p)
 {
-  return s << p.file << ':' << p.line << ":"
+  return s << p.loc.File () << ':' << p.loc.Line () << ":"
 	   << p.kinds[p.GetKind ()] << ", " << p.atoms << '\n';
 }
 
@@ -697,7 +695,7 @@ Pattern::Compare (Symbols &symbols, std::string_view const &text, bool eof)
 void
 Pattern::Result (Tester &logger, Tester::Status s) const
 {
-  logger.Result (s, file, line) << kinds[GetKind ()] << ' ' << original;
+  logger.Result (s, loc) << kinds[GetKind ()] << ' ' << original;
 }
 
 /* Emit result for a skipped-over pattern.  */

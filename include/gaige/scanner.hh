@@ -16,24 +16,20 @@ namespace Gaige
 class Scanner
 {
 private:
-  char const *file;
-  unsigned line = 0;
+  NMS::SrcLoc loc;
   
 public:
   Scanner (char const *file_)
-    : file (file_)
+    : loc (file_)
   {}
 
 public:
-  char const *GetFile () const
-  { return file; }
-
-  unsigned GetLine () const
-  { return line; }
+  auto const &Loc () const
+  { return loc; }
 
 public:
   auto Error ()
-  { return Gaige::Error (file, line); }
+  { return Gaige::Error (loc); }
 
 public:
   bool ScanFile (std::string const &, std::vector<char const *> const &prefixes);

@@ -77,7 +77,7 @@ public:
   auto Result (Status status)
   {
     counts[status]++;
-    return Parent::Result (status, nullptr, 0);
+    return Parent::Result (status, NMS::SrcLoc ());
   }
 
 private:

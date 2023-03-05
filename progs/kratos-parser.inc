@@ -350,8 +350,7 @@ Parser::ProcessLine (std::string_view const &variant,
       if (state >= ACTIVE_LWM
 	  && word.empty ()
 	  && pipes.back ().commands[state - ACTIVE_LWM].Empty ())
-	pipes.back ().commands[state - ACTIVE_LWM].FileLine
-	  (GetFile (), GetLine ());
+	pipes.back ().commands[state - ACTIVE_LWM].Loc (Loc ());
       
       if (escape)
 	{
