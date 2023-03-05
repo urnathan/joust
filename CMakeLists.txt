@@ -10,6 +10,7 @@ cmake_minimum_required (VERSION 3.18)
 list (PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 list (PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/extern/nms/cmake)
 include (NMSBuild)
+include (NMSIdent)
 
 if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   message (FATAL_ERROR "Not intended as a subcomponent")
@@ -71,6 +72,8 @@ foreach (PROG ${PROGS})
   target_link_libraries (${PROG} PRIVATE joust gaige nms)
   install (TARGETS ${PROG} DESTINATION bin)
 endforeach ()
+
+nms_ident (${PROGS})
 
 # tests
 add_subdirectory (tests)

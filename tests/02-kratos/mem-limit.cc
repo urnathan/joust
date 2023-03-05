@@ -20,6 +20,7 @@ main (int argc, char *argv[])
 {
   using namespace NMS;
 
+  SetBuild (argv[0]);
   SignalHandlers ();
 
   bool map = false;

@@ -65,6 +65,7 @@ Title (FILE *stream)
 int
 main (int argc, char *argv[])
 {
+  NMS::SetBuild (argv[0]);
   NMS::SignalHandlers ();
 
   struct Flags
