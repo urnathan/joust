@@ -1,9 +1,0 @@
-# Joust: Journal Of User-Scripted Tests	-*- mode:text -*-
-# Copyright (C) 2020-2023 Nathan Sidwell, nathan@acm.org
-# License: Affero GPL v3.0
-
-# some default breakpoints, to catch the fatal exit
-set breakpoint pending on
-break NMS::Fatal
-break NMS::HCF
-set breakpoint pending off

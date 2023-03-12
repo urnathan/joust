@@ -76,7 +76,8 @@ Title (FILE *stream)
 int
 main (int argc, char *argv[])
 {
-  NMS::SetBuild (argv[0]);
+#include "joust/project-ident.inc"
+  NMS::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
   NMS::SignalHandlers ();
 
   struct Flags
@@ -189,7 +190,7 @@ main (int argc, char *argv[])
 	  Lexer lexer (*limit);
 
 	  if (!lexer.Integer () || lexer.Peek ())
-	    logger.Result (Tester::ERROR, testFile, 0)
+	    logger.Result (Tester::ERROR, testFile)
 	      << "limit '" << vars[ix] << "=" << *limit << "' invalid";
 	  else
 	    limits[ix] = lexer.GetToken ()->GetInteger ();

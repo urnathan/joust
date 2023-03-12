@@ -1,7 +1,10 @@
 
+#define JOUST_PROJECT_TAG @PROJECT_TAG@
+#define JOUST_PROJECT_IDENTS @PROJECT_IDENTS@
+
 #cmakedefine01 HAVE_PIPE2
 #cmakedefine01 HAVE_MREMAP
 #cmakedefine01 HAVE_UCONTEXT
 #cmakedefine01 USE_EPOLL
 
-#include "@NMS_BINARY_DIR@/nms/cfg.h"
+#include "nms/cfg.h"

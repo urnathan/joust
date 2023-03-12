@@ -2,28 +2,32 @@
 # Copyright (C) 2020-2023 Nathan Sidwell, nathan@acm.org
 # License: Affero GPL v3.0
 
-# This happens to be my first CMake project, so it's undoubtably wonky
+cmake_minimum_required (VERSION 3.21)
 
-# Don't actually know the minimum version this'll work with, 3.18 is what I have
-cmake_minimum_required (VERSION 3.18)
+project (Joust VERSION 1.0
+  HOMEPAGE_URL "https://github.com/urnathan/joust"
+  DESCRIPTION "A testsuite framework"
+  LANGUAGES CXX)
 
-list (PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-list (PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/extern/nms/cmake)
-include (NMSBuild)
-include (NMSIdent)
-
-if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  # it'd be nice to remove this restriction
-  message (FATAL_ERROR "Not intended as a subcomponent")
+if (PROJECT_IS_TOP_LEVEL)
+  if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/extern/nms/CMakeLists.txt")
+    message (FATAL_ERROR
+      "git submodules not downloaded, try git submodule update")
+  endif ()
+  set (CMAKE_CXX_STANDARD 20)
+  list (PREPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/extern/nms/cmake)
+  include (NMSUtils)
+  nms_build_defaults ()
+  add_custom_target (check)
+  add_subdirectory (extern/nms EXCLUDE_FROM_ALL)
 endif ()
-project (Joust VERSION 1.0 LANGUAGES CXX)
-set (PROJECT_URL "https://github.com/urnathan/joust")
+
+add_custom_target (joust)
+nms_ident (NMS)
 
 include (CheckLibraryExists)
 include (CheckSymbolExists)
 include (CheckIncludeFileCXX)
-
-set (CMAKE_CXX_STANDARD 20)
 
 add_compile_options ("-fdiagnostics-color=always;-fno-diagnostics-show-option")
 add_compile_options ("-W;-Wall;-Woverloaded-virtual")
@@ -44,38 +48,38 @@ else ()
   endif ()
 endif ()
 
-add_subdirectory (extern/nms EXCLUDE_FROM_ALL)
 configure_file (gdbinit.in .gdbinit ESCAPE_QUOTES)
+configure_file (cfg.h.in include/joust/cfg.h @ONLY)
 
-configure_file (cfg.h.in joust/cfg.h ESCAPE_QUOTES)
-include_directories ("${CMAKE_CURRENT_BINARY_DIR}"
-  "${CMAKE_CURRENT_SOURCE_DIR}/include"
-  "${NMS_INCLUDE_DIR}")
+# user visible library
+file (GLOB JOUST_SRCS CONFIGURE_DEPENDS "joust/*.cc")
+add_library (libjoust ${JOUST_SRCS})
+add_dependencies (joust libjoust)
+set_property(TARGET libjoust PROPERTY OUTPUT_NAME joust)
+target_include_directories (libjoust
+  PUBLIC include ${Joust_BINARY_DIR}/include)
+target_link_libraries (libjoust PUBLIC libnms)
 
-# the user visible library
-file (GLOB JOUST_SRCS CONFIGURE_DEPENDS "libjoust/*.cc")
-file (GLOB JOUST_HDRS CONFIGURE_DEPENDS "include/joust/*.hh")
-add_library (joust ${JOUST_SRCS})
-install (TARGETS joust DESTINATION lib)
-install (FILES ${JOUST_HDRS} DESTINATION include/joust)
-install (FILES extern/nms/include/nms/srcloc.hh DESTINATION include/joust)
-
-# gaige Group All Internal Gizmo Elements
-file (GLOB GAIGE_SRCS CONFIGURE_DEPENDS "libgaige/*.cc")
-add_library (gaige STATIC ${GAIGE_SRCS})
-set_source_files_properties (libgaige/regex.cc PROPERTIES COMPILE_OPTIONS
+# Internal library, gaige Group All Internal Gizmo Elements
+file (GLOB GAIGE_SRCS CONFIGURE_DEPENDS "gaige/*.cc")
+add_library (libgaige STATIC ${GAIGE_SRCS})
+add_dependencies (joust libgaige)
+set_property(TARGET libgaige PROPERTY OUTPUT_NAME gaige)
+target_include_directories (libgaige
+  PUBLIC include ${Joust_BINARY_DIR}/include)
+set_source_files_properties (gaige/regex.cc PROPERTIES COMPILE_OPTIONS
   "-fexceptions;-frtti")
-target_link_libraries (gaige PRIVATE nms)
+target_link_libraries (libgaige PRIVATE libnms)
 
 # our executables
 set (PROGS aloy ezio kratos)
 foreach (PROG ${PROGS})
   add_executable (${PROG} progs/${PROG}.cc)
-  target_link_libraries (${PROG} PRIVATE joust gaige nms)
-  install (TARGETS ${PROG} DESTINATION bin)
+  target_link_libraries (${PROG} PRIVATE libjoust libgaige libnms)
+  add_dependencies (joust ${PROG})
 endforeach ()
 
-nms_ident (${PROGS})
+nms_ident_dependency (${PROGS})
 
 # tests
 add_subdirectory (tests)

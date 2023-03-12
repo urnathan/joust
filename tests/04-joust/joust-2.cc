@@ -7,12 +7,18 @@
 // OUT-NEXT: $EOF
 
 #include "joust/cfg.h"
+// NMS
+#include "nms/fatal.hh"
 // Joust
 #include "joust/tester.hh"
 
 int
-main (int, char *[])
+main (int, char *argv[])
 {
+#include "joust/project-ident.inc"
+  NMS::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
+  NMS::SignalHandlers ();
+
   Joust::Tester log {};
 
   log.Result (Joust::Tester::PASS) << "test1";

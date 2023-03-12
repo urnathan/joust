@@ -57,7 +57,8 @@ Title (FILE *stream)
 int
 main (int argc, char *argv[])
 {
-  NMS::SetBuild (argv[0]);
+#include "joust/project-ident.inc"
+  NMS::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
   NMS::SignalHandlers ();
 
   struct Flags

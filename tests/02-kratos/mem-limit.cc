@@ -19,8 +19,8 @@ int
 main (int argc, char *argv[])
 {
   using namespace NMS;
-
-  SetBuild (argv[0]);
+#include "joust/project-ident.inc"
+  SetBuild (argv[0], JOUST_PROJECT_IDENTS);
   SignalHandlers ();
 
   bool map = false;

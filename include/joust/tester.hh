@@ -68,6 +68,9 @@ public:
     STATUS_HWM
   };
 #undef JOUST_STATUS_FROB
+#ifndef JOUST_STATUS_KEEP
+#undef JOUST_STATUSES
+#endif
 
 public:
   static constexpr std::string_view statuses[STATUS_HWM]
@@ -118,6 +121,8 @@ protected:
   Status DecodeStatus (std::string_view const &) noexcept;
 
 public:
+  Streamer Result (Status status, char const *filename) noexcept
+  { return Result (status, NMS::SrcLoc (filename)); }
   Streamer Result (Status status, NMS::SrcLoc = NMS::SrcLoc::Here ()) noexcept;
   Streamer Result (bool pass, bool xfail = false,
 		   NMS::SrcLoc loc = NMS::SrcLoc::Here ()) noexcept

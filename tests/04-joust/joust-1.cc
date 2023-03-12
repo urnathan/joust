@@ -16,8 +16,8 @@
 // INLINE1-OPTION: matchSol
 // INLINE1: $stem: burn it all down
 // INLINE1-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} NMS::HCF (char const *,
-// INLINE1-NEXT: 01-0x{:[0-9a-f]+} tests/$test:{:[0-9]+} {:(main)|(InvokeHCF)}
-// INLINE1-NEXT: 01{:(.1)|(-0x[0-9a-f]+)} tests/$test:{:[0-9]+} main
+// INLINE1-NEXT: 01-0x{:[0-9a-f]+} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:main|.anon.::InvokeHCF}
+// INLINE1-NEXT: 01.1{: *} {:(extern/joust/)?}tests/$test:{:[0-9]+} main
 
 // RUN-REQUIRE:! $subdir$stem --optimized
 // RUN-REQUIRE: $subdir$stem --backtraced
@@ -25,14 +25,20 @@
 // NESTED1-OPTION: matchSol
 // NESTED1: $stem: go boom
 // NESTED1-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} NMS::HCF (char const *,
-// NESTED1-NEXT: 01-0x{:[0-9a-f]+} tests/$test:{:[0-9]+} NestedHCF (int)
-// NESTED1-NEXT: 02-0x{ret:[0-9a-f]+} tests/$test:{:[0-9]+} NestedHCF (int)
-// NESTED1-NEXT: 03-0x{:$ret} tests/$test:{:[0-9]+} NestedHCF (int)
-// NESTED1-NEXT: 04-0x{:$ret} tests/$test:{:[0-9]+} NestedHCF (int)
-// NESTED1-NEXT: 05-0x{:[0-9a-f]+} tests/$test:{:[0-9]+} main
+// NESTED1-NEXT: 01-0x{:[0-9a-f]+} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:.}anon}::NestedHCF (int)
+// NESTED1-NEXT: 02-0x{ret1:[0-9a-f]+} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:.}anon}::TrampHCF (int)
+// NESTED1-NEXT: 03-0x{ret2:[0-9a-f]+} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:.}anon}::NestedHCF (int)
+// NESTED1-NEXT: 04-0x{:$ret1} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:.}anon}::TrampHCF (int)
+// NESTED1-NEXT: 05-0x{:$ret2} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:.}anon}::NestedHCF (int)
+// NESTED1-NEXT: 06-0x{:$ret1} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:.}anon}::TrampHCF (int)
+// NESTED1-NEXT: 07-0x{:$ret2} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:.}anon}::NestedHCF (int)
+// NESTED1-NEXT: 08-0x{:[0-9a-f]+} {:(extern/joust/)?}tests/$test:{:[0-9]+} main
 
-// FATAL-LABEL: Version
-// FATAL: Build is
+// FATAL-LABEL: joust-1: Joust
+// FATAL-NEXT: {:  }Src:
+// FATAL-NEXT: Inc: NMS
+// FATAL-NEXT: {:  }Src:
+// FATAL-NEXT: Build:
 // FATAL-NEXT: $EOF
 // FATAL-END:
 
@@ -43,23 +49,39 @@
 // C
 #include <stddef.h>
 
+namespace 
+{
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
-static void InvokeHCF [[gnu::always_inlne]] ()
-{
-  NMS::HCF ("burn it all down");
-}
+[[gnu::always_inline]] void
+InvokeHCF ()
+{ NMS::HCF ("burn it all down"); }
 #pragma GCC diagnostic pop
 
-static void NestedHCF [[gnu::noinline]] (int ix = 3)
+void NestedHCF (int ix);
+
+// Trampoline needed to avoid recursion warning (yes, I know, that't
+// the point)
+[[gnu::noinline]] void
+TrampHCF (int ix)
+{ NestedHCF (ix); }
+
+[[gnu::noinline]] void
+NestedHCF (int ix = 4)
 {
-  if (ix--)
-    NestedHCF (ix);
+  asm volatile ("");
+  if (--ix)
+    TrampHCF (ix);
   NMS::HCF ("go boom!");
 }
 
+} // namespace
+
 int main (int argc, char *argv[])
 {
+#include "joust/project-ident.inc"
+  NMS::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
   NMS::SignalHandlers ();
 
   struct Flags 

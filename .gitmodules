@@ -1,0 +1,3 @@
+[submodule "extern/nms"]
+	path = extern/nms
+	url = ../nms.git

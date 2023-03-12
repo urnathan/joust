@@ -20,3 +20,4 @@
 
 # ignore nested build directory
 /build*
+/extern/build*

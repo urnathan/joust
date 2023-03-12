@@ -7,11 +7,11 @@
 # INNER: $SHELL $testdir/$test
 # INNER-END:
 
-# ERR: $test:{:[0-9]+} RUN:  zsh $testdir/$test
+# ERR: $test:{:[0-9]+} RUN:  {:[^ ]*}zsh $testdir/$test
 # ERR-NEXT: $test:{:[0-9]+}: error: TIMEOUT after 1 seconds
-# OUT-NEXT: ERROR: $test:{:[0-9]+}:RUN zsh
+# OUT-NEXT: ERROR: $test:{:[0-9]+}:RUN {:[^ ]*}zsh
 # ERR-NEXT: zsh exited with signal
-# OUT-NEXT: FAIL: $test:7:RUN zsh
+# OUT-NEXT: FAIL: $test:7:RUN {:[^ ]*}zsh
 # OUT-NEXT: $EOF
 
 # consume time

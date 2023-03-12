@@ -7,9 +7,9 @@
 # INNER: $SHELL $testdir/$test
 # INNER-END:
 
-# ERR: $test:{:[0-9]+} RUN:  zsh $testdir/$test
+# ERR: $test:{:[0-9]+} RUN:  {:[^ ]*}zsh $testdir/$test
 # ERR-NEXT: zsh exited with signal 9
-# OUT-NEXT: FAIL: $test:{:[0-9]+}:RUN zsh
+# OUT-NEXT: FAIL: $test:{:[0-9]+}:RUN {:[^ ]*}zsh
 # OUT-NEXT: $EOF
 
 # eat cpu
