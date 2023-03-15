@@ -4,6 +4,8 @@
 // OUT-NEXT: PASS: {pfx:(\.\./)?}{file:[^:]+}:{line1:[0-9]+}:test1
 // ERR-NEXT: location {:.+}/$file:$line1
 // OUT-NEXT: FAIL: $pfx$file:{line2:[0-9]+}:test2
+// OUT-NEXT: MSG: $pfx$file:{:[0-9]+}:message1
+// OUT-NEXT: MSG: $pfx$file:{:[0-9]+}:message2
 // OUT-NEXT: $EOF
 
 #include "joust/cfg.h"
@@ -24,6 +26,9 @@ main (int, char *argv[])
   log.Result (Joust::Tester::PASS) << "test1";
   log.Log () << "location " << __FILE__ << ':' << __LINE__ - 1 << '\n';
   log.Result (Joust::Tester::FAIL) << "test2";
+
+  log.Result (Joust::Tester::MSG) << "message1";
+  log.Message () << "message2";
 
   return 0;
 }

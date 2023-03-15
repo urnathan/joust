@@ -690,12 +690,11 @@ Engine::Fini (Job const &job, std::ostream *out, bool is_generator)
 	      if (!bad_line.size ())
 		bad_line = line;
 	    }
-	  else
+	  else if (st < Tester::STATUS_REPORT)
 	    {
 	      counts[st]++;
-	      if (out)
-		if (st == Tester::FAIL || st == Tester::ERROR)
-		  *out << line << '\n';
+	      if (out && (st == Tester::FAIL || st == Tester::ERROR))
+		*out << line << '\n';
 	    }
 	  Sum () << line << '\n';
 	  sol = eol + (eol != end);

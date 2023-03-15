@@ -4,6 +4,7 @@
 
 #include "joust/cfg.h"
 // Joust
+#define JOUST_STATUS_KEEP
 #include "joust/tester.hh"
 // C
 #include <cstdlib>
@@ -12,6 +13,10 @@
 
 namespace Joust
 {
+std::string_view const Tester::statuses[]
+#define JOUST_STATUS_FROB(STATUS) std::string_view (#STATUS)
+    = {JOUST_STATUSES};
+#undef JOUST_STATUS_FROB
 
 Tester::Tester () noexcept
   : Tester (std::cerr)

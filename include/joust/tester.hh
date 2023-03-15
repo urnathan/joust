@@ -56,16 +56,18 @@ private:
 public:  
 #define JOUST_STATUSES				\
   JOUST_STATUS_FROB(PASS),			\
-    JOUST_STATUS_FROB(FAIL),			\
-    JOUST_STATUS_FROB(XPASS),			\
-    JOUST_STATUS_FROB(XFAIL),			\
-    JOUST_STATUS_FROB(ERROR),			\
-    JOUST_STATUS_FROB(UNSUPPORTED)
+  JOUST_STATUS_FROB(FAIL),			\
+  JOUST_STATUS_FROB(XPASS),			\
+  JOUST_STATUS_FROB(XFAIL),			\
+  JOUST_STATUS_FROB(ERROR),			\
+  JOUST_STATUS_FROB(UNSUPPORTED),		\
+  JOUST_STATUS_FROB(MSG)
 #define JOUST_STATUS_FROB(STATUS) STATUS
   enum Status
   {
     JOUST_STATUSES,
-    STATUS_HWM
+    STATUS_HWM,
+    STATUS_REPORT = MSG
   };
 #undef JOUST_STATUS_FROB
 #ifndef JOUST_STATUS_KEEP
@@ -73,11 +75,7 @@ public:
 #endif
 
 public:
-  static constexpr std::string_view statuses[STATUS_HWM]
-#define JOUST_STATUS_FROB(STATUS) std::string_view (#STATUS)
-    = {JOUST_STATUSES};
-#undef JOUST_STATUS_FROB
-#undef JOUST_STATUSES
+  static std::string_view const statuses[STATUS_HWM];
 
 private:
   std::ostream *sum;
@@ -127,6 +125,8 @@ public:
   Streamer Result (bool pass, bool xfail = false,
 		   NMS::SrcLoc loc = NMS::SrcLoc::Here ()) noexcept
   { return Result (PassFail (pass, xfail), loc); }
+  Streamer Message (NMS::SrcLoc loc = NMS::SrcLoc::Here ()) noexcept
+  { return Result (MSG, loc); }
 
 public:
   template <typename T>
