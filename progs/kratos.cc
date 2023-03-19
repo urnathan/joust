@@ -175,7 +175,6 @@ main (int argc, char *argv[])
 	logger.Sum () << ix << pipes[ix];
     }
 
-  bool skipping = false;
   unsigned limits[PL_HWM + 1];
 
   for (unsigned ix = PL_HWM + 1; ix--;)
@@ -200,6 +199,7 @@ main (int argc, char *argv[])
   if (pipes.empty ())
     logger.Result (Tester::PASS, NMS::SrcLoc (testFile)) << "No tests to test";
 
+  bool skipping = false;
   for (auto &pipe : pipes)
     {
       if (!skipping)
@@ -213,17 +213,11 @@ main (int argc, char *argv[])
 	  if (e && pipe.GetKind () == Pipeline::REQUIRE)
 	    skipping = true;
 	}
-      else
-	switch (pipe.GetKind ())
-	  {
-	  case Pipeline::REQUIRE:
-	    break;
-
-	  default:
-	    pipe.Result (logger, Tester::UNSUPPORTED);
-	    skipping = false;
-	    break;
-	  }
+      else if (pipe.GetKind () != Pipeline::REQUIRE)
+	{
+	  pipe.Result (logger, Tester::UNSUPPORTED);
+	  skipping = false;
+	}
     }
 
   return Error::Errors ();
