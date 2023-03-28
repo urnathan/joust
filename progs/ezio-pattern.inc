@@ -21,26 +21,16 @@ class Pattern
   };
 
 public:
-#define PATTERN_KINDS							\
-  PATTERN_KIND_FROB(MATCH), PATTERN_KIND_FROB(NEXT),			\
-  PATTERN_KIND_FROB(DAG), PATTERN_KIND_FROB(LABEL),			\
-  PATTERN_KIND_FROB(NOT),						\
-  PATTERN_KIND_FROB(NEVER), PATTERN_KIND_FROB(NONE),			\
-  PATTERN_KIND_FROB(UNKNOWN)
-#define PATTERN_KIND_FROB(KIND) KIND
+#define PATTERN_KINDS MATCH, NEXT, DAG, LABEL, NOT, NEVER, NONE, UNKNOWN
   enum Kind : unsigned char
   {
-    PATTERN_KINDS,
+    NMS_LIST (NMS_IDENT, PATTERN_KINDS),
     PATTERN_HWM,
     CAPTURE_HWM = NOT,
   };
-#undef PATTERN_KIND_FROB
 
 public:
-  static constexpr char const *kinds[PATTERN_HWM]
-#define PATTERN_KIND_FROB(KIND) #KIND
-    = {PATTERN_KINDS};
-#undef PATTERN_KIND_FROB
+  static char const *const kinds[PATTERN_HWM];
 
 private:
   NMS::SrcLoc loc;
@@ -129,6 +119,9 @@ public:
 
   friend std::ostream &operator<< (std::ostream &s, Pattern const &p);
 };
+
+constinit char const *const Pattern::kinds[PATTERN_HWM]
+= {NMS_LIST (NMS_STRING, PATTERN_KINDS)};
 
 // PATTERN_REGEXP is
 //   white-space: [ \t]+

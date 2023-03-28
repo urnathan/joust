@@ -8,6 +8,8 @@
 
 namespace Gaige
 {
+constinit char const *const Token::kinds[TOKEN_HWM]
+= {NMS_LIST (NMS_2ND, TOKEN_KINDS)};
 
 Token::Token (Token &&from)
   : kind (from.kind), user (from.user)

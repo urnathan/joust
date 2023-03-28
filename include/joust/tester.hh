@@ -5,11 +5,8 @@
 #ifndef JOUST_TESTER_HH
 
 // NMS
-#if __has_include ("nms/srcloc.hh")
+#include "nms/macros.hh"
 #include "nms/srcloc.hh"
-#else
-#include "joust/srcloc.hh"
-#endif
 // C++
 #include <iostream>
 #include <string_view>
@@ -54,25 +51,13 @@ private:
   };
 
 public:  
-#define JOUST_STATUSES				\
-  JOUST_STATUS_FROB(PASS),			\
-  JOUST_STATUS_FROB(FAIL),			\
-  JOUST_STATUS_FROB(XPASS),			\
-  JOUST_STATUS_FROB(XFAIL),			\
-  JOUST_STATUS_FROB(ERROR),			\
-  JOUST_STATUS_FROB(UNSUPPORTED),		\
-  JOUST_STATUS_FROB(MSG)
-#define JOUST_STATUS_FROB(STATUS) STATUS
+#define JOUST_STATUSES PASS, FAIL, XPASS, XFAIL, ERROR, UNSUPPORTED, MSG
   enum Status
   {
-    JOUST_STATUSES,
+    NMS_LIST (NMS_IDENT, JOUST_STATUSES),
     STATUS_HWM,
     STATUS_REPORT = MSG
   };
-#undef JOUST_STATUS_FROB
-#ifndef JOUST_STATUS_KEEP
-#undef JOUST_STATUSES
-#endif
 
 public:
   static std::string_view const statuses[STATUS_HWM];

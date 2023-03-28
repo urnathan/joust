@@ -5,25 +5,16 @@
 class Pipeline
 {
 public:
-#define PIPELINE_KINDS				\
-  PIPELINE_KIND_FROB(RUN),			\
-  PIPELINE_KIND_FROB(SIGNAL),			\
-  PIPELINE_KIND_FROB(REQUIRE),			\
-  PIPELINE_KIND_FROB(END)
-#define PIPELINE_KIND_FROB(KIND) KIND
+#define PIPELINE_KINDS RUN, SIGNAL, REQUIRE, END
   enum Kind : unsigned char
   {
-    PIPELINE_KINDS,
+    NMS_LIST (NMS_IDENT, PIPELINE_KINDS),
     PIPELINE_HWM,
     PIPE_HWM = REQUIRE
   };
-#undef PIPELINE_KIND_FROB
 
 public:
-  static constexpr char const *kinds[PIPELINE_HWM]
-#define PIPELINE_KIND_FROB(KIND) #KIND
-    = {PIPELINE_KINDS};
-#undef PIPELINE_KIND_FROB
+  static char const *const kinds[PIPELINE_HWM];
 
 private:
   std::vector<Command> commands;
@@ -64,7 +55,10 @@ private:
   friend class Parser;
 };
 
-static constexpr unsigned char sigs[]
+constinit char const *const Pipeline::kinds[PIPELINE_HWM]
+= {NMS_LIST (NMS_STRING, PIPELINE_KINDS)};
+
+static constinit unsigned char const sigs[]
   = {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGALRM, SIGTERM};
 
 std::ostream &

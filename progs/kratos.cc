@@ -8,6 +8,7 @@
 #include "joust/cfg.h"
 // NMS
 #include "nms/fatal.hh"
+#include "nms/macros.hh"
 #include "nms/option.hh"
 // Gaige
 #include "gaige/error.hh"

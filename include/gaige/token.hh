@@ -6,6 +6,7 @@
 
 // NMS
 #include "nms/fatal.hh"
+#include "nms/macros.hh"
 // C++
 #include <ostream>
 #include <string>
@@ -18,21 +19,20 @@ namespace Gaige
 class Token
 {
 #define TOKEN_KINDS							\
-  TOKEN_KIND_FROB (EMPTY, "empty"),					\
-    TOKEN_KIND_FROB (OPEN, "{"),					\
-    TOKEN_KIND_FROB (CLOSE, "}"),					\
-    TOKEN_KIND_FROB (COLON, ":"),					\
-    TOKEN_KIND_FROB (INTEGER, "integer"),				\
-    TOKEN_KIND_FROB (FORMAT, "format"),					\
-    TOKEN_KIND_FROB (STRING, "string"),					\
-    TOKEN_KIND_FROB (IDENTIFIER, "identifier"),				\
-    TOKEN_KIND_FROB (WHITESPACE, "whitespace"),				\
-    TOKEN_KIND_FROB (REGEX_CAPTURE, "regex-capture")
-#define TOKEN_KIND_FROB(KIND, STRING) KIND
+  (EMPTY, "empty"),					\
+  (OPEN, "{"),						\
+  (CLOSE, "}"),						\
+  (COLON, ":"),						\
+  (INTEGER, "integer"),					\
+  (FORMAT, "format"),					\
+  (STRING, "string"),					\
+  (IDENTIFIER, "identifier"),				\
+  (WHITESPACE, "whitespace"),				\
+  (REGEX_CAPTURE, "regex-capture")
 public:
   enum Kind : unsigned char
   {
-    TOKEN_KINDS,
+    NMS_LIST (NMS_1ST, TOKEN_KINDS),
     TOKEN_HWM,
     KEYWORD_HWM = INTEGER,
     INTEGER_LWM = INTEGER,
@@ -42,14 +42,9 @@ public:
     CAPTURE_LWM = REGEX_CAPTURE,
     CAPTURE_HWM = TOKEN_HWM
   };
-#undef TOKEN_KIND_FROB
 
 public:
-  static constexpr char const *kinds[]
-#define TOKEN_KIND_FROB(KIND,STRING) STRING
-    = {TOKEN_KINDS};
-#undef TOKEN_KIND_FROB
-#undef TOKEN_KINDS
+  static char const *const kinds[TOKEN_HWM];
 
 private:
   union Value
