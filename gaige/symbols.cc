@@ -121,22 +121,31 @@ Symbols::Read (char const *file)
   // Don't really care about error code
   madvise (buffer, alloc, MADV_SEQUENTIAL);
 
-  auto *begin = reinterpret_cast<char const *> (buffer);
+  auto *begin = reinterpret_cast<char *> (buffer);
   auto *end = begin + len;
 
   // Ensure the template ends in a newline
   if (end[-1] != '\n')
-    *const_cast<char *> (end++) = '\n';
+    *end++ = '\n';
 
   while (begin != end)
     {
       auto eol = std::find (begin, end, '\n');
+      if (eol != begin)
+	{
+	  auto eql = std::find (begin, eol, '=');
 
-      auto space = std::find (begin, eol, '=');
-      auto val = space + (space != eol);
-
-      Set (std::string_view (begin, space), std::string_view (val, eol));
-
+	  if (eql != eol)
+	    // Value
+	    Set (std::string_view (begin, eql),
+		 std::string_view (eql + 1, eol));
+	  else
+	    {
+	      // Nested file
+	      *eol = 0;
+	      Read (begin);
+	    }
+	}
       begin = eol + 1;
     }
 
