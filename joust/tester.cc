@@ -10,8 +10,8 @@
 // OS
 #include <unistd.h>
 
-namespace Joust
-{
+namespace joust {
+
 constinit std::string_view const Tester::statuses[]
 = {NMS_LIST (NMS_STRING, JOUST_STATUSES)};
 
@@ -37,7 +37,7 @@ Tester::DecodeStatus (std::string_view const &line) noexcept
 }
 
 Tester::Streamer
-Tester::Result (Status status, NMS::SrcLoc loc) noexcept
+Tester::Result (Status status, nms::SrcLoc loc) noexcept
 {
   Streamer result (this);
 
@@ -74,4 +74,4 @@ Tester::Result (Status status, NMS::SrcLoc loc) noexcept
   return result;
 }
 
-} // namespace Joust
+} // namespace joust

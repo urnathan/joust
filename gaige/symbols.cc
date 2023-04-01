@@ -15,8 +15,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-namespace Gaige
-{
+namespace gaige {
 
 std::string const *
 Symbols::Get (std::string const &var) const
@@ -99,7 +98,7 @@ Symbols::Read (char const *file)
   if (fd < 0)
     {
     fatal:
-      NMS::Fatal ("cannot read defines '%s': %m", file);
+      nms::Fatal ("cannot read defines '%s': %m", file);
     }
   size_t len = [] (int fd_)
 	       {
@@ -152,4 +151,4 @@ Symbols::Read (char const *file)
   munmap (buffer, alloc);
 }
 
-} // namespace Gaige
+} // namespace gaige

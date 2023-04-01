@@ -4,10 +4,10 @@
 
 class Pattern
 {
-  class Lexer : public Gaige::Lexer
+  class Lexer : public gaige::Lexer
   {
   public:
-    using Parent = Gaige::Lexer;
+    using Parent = gaige::Lexer;
 
   public:
     using Parent::Parent;
@@ -33,7 +33,7 @@ public:
   static char const *const kinds[PATTERN_HWM];
 
 private:
-  NMS::SrcLoc loc;
+  nms::SrcLoc loc;
 
 private:
   Kind kind;
@@ -92,17 +92,17 @@ private:
   { return atoms.size (); }
 
 public:
-  Gaige::Error Error ();
+  gaige::Error Error ();
 
 public:
   bool Canonicalize ();
 
 public:
-  Regex::Result Expand (Symbols const &);
-  Regex::Result Compare (Symbols &, std::string_view const &text, bool eof);
+  regex::Result Expand (Symbols const &);
+  regex::Result Compare (Symbols &, std::string_view const &text, bool eof);
 
 private:
-  Regex::Result DoExpand (Symbols const &);
+  regex::Result DoExpand (Symbols const &);
 
 public:
   static Pattern *Parse (Parser *, Kind kind, std::string_view const &);
@@ -310,7 +310,7 @@ Error
 Pattern::Error ()
 {
   has_error = true;
-  return Gaige::Error (loc);
+  return gaige::Error (loc);
 }
 
 std::ostream &
@@ -464,7 +464,7 @@ Pattern::Canonicalize ()
 		eol = true;
 		string.remove_suffix (1);
 	      }
-	    std::string escaped = Regex::Protect (string);
+	    std::string escaped = regex::Protect (string);
 	    acc.append (std::move (escaped));
 	    eof = -1;
 	  }
@@ -544,7 +544,7 @@ Pattern::Canonicalize ()
   return true;
 }
 
-Regex::Result
+regex::Result
 Pattern::DoExpand (Symbols const &symbols)
 {
   for (auto token = atoms.begin (); token != atoms.end (); ++token)
@@ -556,9 +556,9 @@ Pattern::DoExpand (Symbols const &symbols)
 
       case Token::IDENTIFIER:
 	if (auto *val = symbols.Get (token->GetString ()))
-	  Regex::Protect (expansion, *val);
+	  regex::Protect (expansion, *val);
 	else
-	  return Regex::NOTFOUND;
+	  return regex::NOTFOUND;
 	break;
 
       case Token::REGEX_CAPTURE:
@@ -577,9 +577,9 @@ Pattern::DoExpand (Symbols const &symbols)
 
 	      case Token::IDENTIFIER:
 		if (auto *val = symbols.Get (cap->GetString ()))
-		  Regex::Protect (expansion, *val);
+		  regex::Protect (expansion, *val);
 		else
-		  return Regex::NOTFOUND;
+		  return regex::NOTFOUND;
 		break;
 
 	      default:
@@ -594,21 +594,21 @@ Pattern::DoExpand (Symbols const &symbols)
 	Unreachable ();
       }
 
-  return Regex::FOUND;
+  return regex::FOUND;
 }
 
 // Expand tokens to expansion
-Regex::Result
+regex::Result
 Pattern::Expand (Symbols const &symbols)
 {
   if (Errored ())
-    return Regex::FAILED;
+    return regex::FAILED;
 
   if (!expansion.empty () || atoms.empty ())
     // We have a pattern already
-    return Regex::FOUND;
+    return regex::FOUND;
 
-  auto exit = Regex::FOUND;
+  auto exit = regex::FOUND;
   if (atoms.size () == 1 && atoms[0].GetKind () == Token::STRING)
     {
       // It's a single string, just use it.  We'll never be called
@@ -619,14 +619,14 @@ Pattern::Expand (Symbols const &symbols)
   else
     exit = DoExpand (symbols);
 
-  if (exit == Regex::FOUND)
+  if (exit == regex::FOUND)
     {
       int fail;
 
-      exit = Regex::Create (regex, expansion, fail);
-      if (exit == Regex::FAILED)
+      exit = regex::Create (regex, expansion, fail);
+      if (exit == regex::FAILED)
 	Error () << "regex '" << expansion << "' contains "
-		 << Regex::Error (fail);
+		 << regex::Error (fail);
     }
   else
     expansion.clear ();
@@ -634,25 +634,25 @@ Pattern::Expand (Symbols const &symbols)
   return exit;
 }
 
-Regex::Result
+regex::Result
 Pattern::Compare (Symbols &symbols, std::string_view const &text, bool eof)
 {
   if (is_eof != eof)
-    return Regex::NOTFOUND;
+    return regex::NOTFOUND;
   else if (eof)
     {
       has_matched = true;
-      return Regex::FOUND;
+      return regex::FOUND;
     }
 
   std::cmatch match;
   int error;
-  auto matched = Regex::Search (regex, text, match, error);
-  if (matched == Regex::NOTFOUND)
+  auto matched = regex::Search (regex, text, match, error);
+  if (matched == regex::NOTFOUND)
     ;
-  else if (matched == Regex::FAILED)
+  else if (matched == regex::FAILED)
     Error () << "regex '" << expansion
-	     << "' encountered " << Regex::Error (error);
+	     << "' encountered " << regex::Error (error);
   else
     {
       has_matched = true;

@@ -10,13 +10,12 @@
 #include <string_view>
 #include <vector>
 
-namespace Gaige
-{
+namespace gaige {
 
 class Scanner
 {
 private:
-  NMS::SrcLoc loc;
+  nms::SrcLoc loc;
   
 public:
   Scanner (char const *file_)
@@ -29,7 +28,7 @@ public:
 
 public:
   auto Error ()
-  { return Gaige::Error (loc); }
+  { return gaige::Error (loc); }
 
 public:
   bool ScanFile (std::string const &, std::vector<char const *> const &prefixes);
@@ -39,7 +38,7 @@ protected:
 			    std::string_view const &line);
 };
 
-} // namespace Gaige
+} // namespace gaige
 
 #define GAIGE_SCANNER_HH
 #endif

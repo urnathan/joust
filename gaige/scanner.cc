@@ -18,8 +18,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-namespace Gaige
-{
+namespace gaige {
 
 // Read the pattern file.  These are lines containing one of PREFIXES,
 // everything after the prefix, up to \n is the pattern.
@@ -174,4 +173,4 @@ Scanner::ProcessLine (std::string_view const &variant, std::string_view const &)
   return true;
 }
 
-} // namespace Gaige
+} // namespace gaige

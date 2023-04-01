@@ -6,8 +6,8 @@
 // Gaige
 #include "gaige/token.hh"
 
-namespace Gaige
-{
+namespace gaige {
+
 constinit char const *const Token::kinds[TOKEN_HWM]
 = {NMS_LIST (NMS_2ND, TOKEN_KINDS)};
 
@@ -86,4 +86,4 @@ operator<< (std::ostream &s, Token const *token)
   return s;
 }
 
-} // namespace Gaige
+} // namespace gaige

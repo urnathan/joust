@@ -15,19 +15,19 @@ public:
 
 private:
   std::vector<std::string> words; // parsed line
-  NMS::SrcLoc loc;
+  nms::SrcLoc loc;
   int stdin = -1;
   pid_t pid = 0;
   Redirect redirect = R_NORMAL;
 
 public:
   auto Error ()
-  { return Gaige::Error (loc); }
+  { return gaige::Error (loc); }
 
 public:
   auto const &Loc () const 
   { return loc; }
-  void Loc (NMS::SrcLoc l)
+  void Loc (nms::SrcLoc l)
   { loc = l; }
 
 public:

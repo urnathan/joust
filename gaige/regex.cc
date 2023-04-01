@@ -8,8 +8,7 @@
 // Gaige
 #include "gaige/regex.hh"
 
-namespace Gaige::Regex
-{
+namespace gaige::regex {
 
 // Escape characters in STRING that are significant to regex
 // extended POSIX, Base Definitions and Headers, Section 9.4
@@ -89,4 +88,4 @@ Error (int error)
     }
 }
 
-} // namespace Gaige::Regex
+} // namespace gaige::regex

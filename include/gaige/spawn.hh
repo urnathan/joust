@@ -12,8 +12,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-namespace Gaige
-{
+namespace gaige {
 
 enum ProcLimits
 {
@@ -40,7 +39,7 @@ MakePipe (int pipes[2])
 }
 #endif
 
-} // namespace Gaige
+} // namespace gaige
 
 #define GAIGE_SPAWN_HH
 #endif

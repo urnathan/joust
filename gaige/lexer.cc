@@ -6,8 +6,7 @@
 // Gaige
 #include "gaige/lexer.hh"
 
-namespace Gaige
-{
+namespace gaige {
 
 std::string_view
 Lexer::Before () const
@@ -91,4 +90,4 @@ Lexer::Integer ()
   return !(std::isalpha (c) || c == '_');
 }
 
-} // namespace Gaige
+} // namespace gaige

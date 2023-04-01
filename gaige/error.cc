@@ -8,15 +8,15 @@
 // C++
 #include <iostream>
 
-namespace Gaige
-{
+namespace gaige {
 
 bool Error::errored;
 
-Error::Error (NMS::SrcLoc loc)
+Error::Error (nms::SrcLoc loc)
   : stream (&std::cerr)
 {
   errored = true;
   *stream << loc.File () << ':' << loc.Line () << ": error: ";
 }
-} // namespace Gaige
+
+} // namespace gaige

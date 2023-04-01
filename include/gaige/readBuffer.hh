@@ -7,8 +7,7 @@
 // C++
 #include <vector>
 
-namespace Gaige
-{
+namespace gaige {
 
 class ReadBuffer
   : public std::vector<char>
@@ -44,7 +43,7 @@ public:
   }
 };
 
-} // namespace Gaige
+} // namespace gaige
 
 #define GAIGE_READBUFFER_HH
 #endif

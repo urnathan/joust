@@ -10,8 +10,7 @@
 #include <ostream>
 #include <utility>
 
-namespace Gaige
-{
+namespace gaige {
 
 class Error
 {
@@ -22,7 +21,7 @@ private:
   static bool errored;
 
 public:
-  Error (NMS::SrcLoc);
+  Error (nms::SrcLoc);
   Error (Error &&src)
     : stream (src.stream)
   {
@@ -53,7 +52,7 @@ public:
   }
 };
 
-} // namespace Gaige
+} // namespace gaige
 
 #define GAIGE_ERROR_HH
 #endif

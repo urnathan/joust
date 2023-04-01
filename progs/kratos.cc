@@ -43,8 +43,8 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 
-using namespace Joust;
-using namespace Gaige;
+using namespace joust;
+using namespace gaige;
 
 // Not (yet) supported (because I don't have a need for it):
 
@@ -59,12 +59,13 @@ using namespace Gaige;
 // RUN-REQUIRE inside a loop would continue to the next iteration of
 // the loop.
 
-namespace
-{
+namespace {
+
 #include "kratos-command.inc"
 #include "kratos-pipeline.inc"
 #include "kratos-command.inc"
 #include "kratos-parser.inc"
+
 } // namespace
 
 static void
@@ -78,8 +79,8 @@ int
 main (int argc, char *argv[])
 {
 #include "joust/project-ident.inc"
-  NMS::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
-  NMS::SignalHandlers ();
+  nms::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
+  nms::SignalHandlers ();
 
   struct Flags
   {
@@ -92,12 +93,12 @@ main (int argc, char *argv[])
     char const *out = "";
     char const *dir = nullptr;
   } flags;
-  static constinit NMS::Option const options[]
+  static constinit nms::Option const options[]
     = {{"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
        {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
        {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
        {"dir", 'C', OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
-       {nullptr, 'D', NMS::Option::F_IsConcatenated,
+       {nullptr, 'D', nms::Option::F_IsConcatenated,
 	OPTION_FLDFN (Flags, defines), "VAR=VAL:Define"},
        {"defines", 'd', OPTION_FLDFN (Flags, include), "FILE:File of defines"},
        {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
@@ -113,15 +114,15 @@ main (int argc, char *argv[])
   if (flags.version)
     {
       Title (stdout);
-      NMS::BuildNote (stdout);
+      nms::BuildNote (stdout);
       return 0;
     }
   if (flags.dir)
     if (chdir (flags.dir) < 0)
-      NMS::Fatal ("cannot chdir '%s': %m", flags.dir);
+      nms::Fatal ("cannot chdir '%s': %m", flags.dir);
 
   if (argno == argc)
-    NMS::Fatal ("expected test filename");
+    nms::Fatal ("expected test filename");
   char const *testFile = argv[argno++];
 
   if (!flags.prefixes.size ())
@@ -149,7 +150,7 @@ main (int argc, char *argv[])
   }
 
   if ((!ended && pipes.empty ()) || Error::Errors ())
-    NMS::Fatal ("failed to construct commands '%s'", testFile);
+    nms::Fatal ("failed to construct commands '%s'", testFile);
 
   std::ofstream sum, log;
   if (!flags.out[flags.out[0] == '-'])
@@ -161,11 +162,11 @@ main (int argc, char *argv[])
       out.append (".sum");
       sum.open (out);
       if (!sum.is_open ())
-	NMS::Fatal ("cannot write '%s': %m", out.c_str ());
+	nms::Fatal ("cannot write '%s': %m", out.c_str ());
       out.erase (len).append (".log");
       log.open (out);
       if (!log.is_open ())
-	NMS::Fatal ("cannot write '%s': %m", out.c_str ());
+	nms::Fatal ("cannot write '%s': %m", out.c_str ());
     }
 
   Tester logger (flags.out ? sum : std::cout, flags.out ? log : std::cerr);
@@ -198,7 +199,7 @@ main (int argc, char *argv[])
     }
 
   if (pipes.empty ())
-    logger.Result (Tester::PASS, NMS::SrcLoc (testFile)) << "No tests to test";
+    logger.Result (Tester::PASS, nms::SrcLoc (testFile)) << "No tests to test";
 
   bool skipping = false;
   for (auto &pipe : pipes)

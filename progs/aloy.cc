@@ -43,16 +43,17 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-using namespace Joust;
-using namespace Gaige;
+using namespace joust;
+using namespace gaige;
 
-namespace
-{
+namespace {
+
 class Engine;
 #include "aloy-job.inc"
 #include "aloy-engine.inc"
 #include "aloy-job.inc"
 #include "aloy-engine.inc"
+
 } // namespace
 
 static void
@@ -66,8 +67,8 @@ int
 main (int argc, char *argv[])
 {
 #include "joust/project-ident.inc"
-  NMS::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
-  NMS::SignalHandlers ();
+  nms::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
+  nms::SignalHandlers ();
   struct Flags
   {
     bool help = false;
@@ -79,12 +80,12 @@ main (int argc, char *argv[])
     char const *out = "";
     char const *dir = nullptr;
   } flags;
-  static constinit NMS::Option const options[]
+  static constinit nms::Option const options[]
     = {{"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
        {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
        {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
        {"dir", 'C', OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
-       {"jobs", 'j', NMS::Option::F_IsConcatenated,
+       {"jobs", 'j', nms::Option::F_IsConcatenated,
 	OPTION_FLDFN (Flags, jobs), "N:Concurrency"},
        {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
        {"gen", 'g', OPTION_FLDFN (Flags, gen), "PROGRAM:Generator"},
@@ -100,12 +101,12 @@ main (int argc, char *argv[])
   if (flags.version)
     {
       Title (stdout);
-      NMS::BuildNote (stdout);
+      nms::BuildNote (stdout);
       return 0;
     }
   if (flags.dir)
     if (chdir (flags.dir) < 0)
-      NMS::Fatal ("cannot chdir '%s': %m", flags.dir);
+      nms::Fatal ("cannot chdir '%s': %m", flags.dir);
 
   // Get the log streams
   std::ofstream sum, log;
@@ -118,11 +119,11 @@ main (int argc, char *argv[])
       out.append (".sum");
       sum.open (out);
       if (!sum.is_open ())
-	NMS::Fatal ("cannot write '%s': %m", out.c_str ());
+	nms::Fatal ("cannot write '%s': %m", out.c_str ());
       out.erase (len).append (".log");
       log.open (out);
       if (!log.is_open ())
-	NMS::Fatal ("cannot write '%s': %m", out.c_str ());
+	nms::Fatal ("cannot write '%s': %m", out.c_str ());
     }
 
   Engine engine (std::min (flags.jobs, 256u),

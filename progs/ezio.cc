@@ -36,16 +36,17 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-using namespace Joust;
-using namespace Gaige;
+using namespace joust;
+using namespace gaige;
 
-namespace
-{
+namespace {
+
 class Engine;
 #include "ezio-parser.inc"
 #include "ezio-pattern.inc"
 #include "ezio-engine.inc"
 #include "ezio-parser.inc"
+
 } // namespace
 
 static void
@@ -59,8 +60,8 @@ int
 main (int argc, char *argv[])
 {
 #include "joust/project-ident.inc"
-  NMS::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
-  NMS::SignalHandlers ();
+  nms::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
+  nms::SignalHandlers ();
 
   struct Flags
   {
@@ -74,11 +75,11 @@ main (int argc, char *argv[])
     char const *out = "";
     char const *dir = nullptr;
   } flags;
-  static constinit NMS::Option const options[]
+  static constinit nms::Option const options[]
     = {{"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
        {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
        {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
-       {"dir", 'C', NMS::Option::F_IsConcatenated,
+       {"dir", 'C', nms::Option::F_IsConcatenated,
 	OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
        {nullptr, 'D', OPTION_FLDFN (Flags, defines), "VAR=VAL:Define"},
        {"defines", 'd', OPTION_FLDFN (Flags, include), "FILE:File of defines"},
@@ -96,12 +97,12 @@ main (int argc, char *argv[])
   if (flags.version)
     {
       Title (stdout);
-      NMS::BuildNote (stdout);
+      nms::BuildNote (stdout);
       return 0;
     }
   if (flags.dir)
     if (chdir (flags.dir) < 0)
-      NMS::Fatal ("cannot chdir '%s': %m", flags.dir);
+      nms::Fatal ("cannot chdir '%s': %m", flags.dir);
 
   if (!flags.prefixes.size ())
     flags.prefixes.push_back ("CHECK");
@@ -128,11 +129,11 @@ main (int argc, char *argv[])
       out.append (".sum");
       sum.open (out);
       if (!sum.is_open ())
-	NMS::Fatal ("cannot write '%s': %m", out.c_str ());
+	nms::Fatal ("cannot write '%s': %m", out.c_str ());
       out.erase (len).append (".log");
       log.open (out);
       if (!log.is_open ())
-	NMS::Fatal ("cannot write '%s': %m", out.c_str ());
+	nms::Fatal ("cannot write '%s': %m", out.c_str ());
     }
 
   Engine engine (syms, flags.out ? sum : std::cout, flags.out ? log : std::cerr);
@@ -146,7 +147,7 @@ main (int argc, char *argv[])
       // Scan the pattern file
       parser.ScanFile (pathname, flags.prefixes);
       if (Error::Errors ())
-	NMS::Fatal ("failed to construct patterns '%s'", patternFile);
+	nms::Fatal ("failed to construct patterns '%s'", patternFile);
     }
 
   engine.Initialize ();

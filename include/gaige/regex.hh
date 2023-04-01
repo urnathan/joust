@@ -9,8 +9,7 @@
 
 // regex propagates errors via exceptions, hence this wrapper to catch
 // and contain them.
-namespace Gaige::Regex
-{
+namespace gaige::regex {
 
 enum Result
 {
@@ -33,7 +32,7 @@ Protect (std::string_view const &src)
   return dst;
 }
 
-} // namespace Gaige::Regex
+} // namespace gaige::Regex
 
 #define GAIGE_REGEX_HH
 #endif

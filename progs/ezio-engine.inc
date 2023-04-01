@@ -182,7 +182,7 @@ Engine::Initialize ()
   if (frames.empty ())
     {
       if (nevers.empty ())
-	NMS::Fatal ("nothing to check");
+	nms::Fatal ("nothing to check");
       frames.emplace_back ();
     }
   frameIter = frames.begin ();
@@ -210,23 +210,23 @@ Engine::Process (std::string_view const &text, bool eof)
 	    continue;
 
 	  auto expn = p->Expand (syms);
-	  if (expn != Regex::FOUND)
+	  if (expn != regex::FOUND)
 	    {
 	      // We couldn't compile the pattern
-	      if (!maybe_captures && expn == Regex::NOTFOUND)
+	      if (!maybe_captures && expn == regex::NOTFOUND)
 		p->Error () << Pattern::kinds[p->GetKind ()]
 			    << " contains unexpandable escape";
 	      continue;
 	    }
 
 	    auto cmp = p->Compare (syms, text, eof);
-	    if (cmp == Regex::FAILED)
+	    if (cmp == regex::FAILED)
 	      continue;
 
 	    switch (p->GetKind ())
 	      {
 	      case Pattern::DAG:
-		if (cmp == Regex::FOUND)
+		if (cmp == regex::FOUND)
 		  {
 		    p->Matched (*this);
 		    return;
@@ -237,7 +237,7 @@ Engine::Process (std::string_view const &text, bool eof)
 
 	      case Pattern::NEXT:
 	      case Pattern::MATCH:
-		if (cmp == Regex::FOUND)
+		if (cmp == regex::FOUND)
 		  {
 		    BodyAdvance (peek);
 		    p->Matched (*this);
@@ -252,7 +252,7 @@ Engine::Process (std::string_view const &text, bool eof)
 		goto no_match;
 
 	      case Pattern::NOT:
-		if (cmp == Regex::FOUND)
+		if (cmp == regex::FOUND)
 		  p->Matched (*this);
 		continue;
 
@@ -273,16 +273,16 @@ Engine::Process (std::string_view const &text, bool eof)
       Assert (p);
 
       auto expn = p->Expand (syms);
-      if (expn != Regex::FOUND)
+      if (expn != regex::FOUND)
 	{
 	  // Failed to expand it, ignore this but check if definitely
 	  // an error
-	  if (expn == Regex::NOTFOUND && !maybe_captures && first)
+	  if (expn == regex::NOTFOUND && !maybe_captures && first)
 	    p->Error () << "LABEL contains unexpandable escape";
 	  continue;
 	}
 
-      if (p->Compare (syms, text, eof) != Regex::FOUND)
+      if (p->Compare (syms, text, eof) != regex::FOUND)
 	continue;
 
       // We've found a matching LABEL, advance and be done
@@ -301,8 +301,8 @@ Engine::Process (std::string_view const &text, bool eof)
 	 iter != frameIter->none.end (); ++iter)
       {
 	auto *p = *iter;
-	if (p->Expand (syms) == Regex::FOUND
-	    && p->Compare (syms, text, eof) == Regex::FOUND)
+	if (p->Expand (syms) == regex::FOUND
+	    && p->Compare (syms, text, eof) == regex::FOUND)
 	  p->Matched (*this);
       }
 
@@ -310,8 +310,8 @@ Engine::Process (std::string_view const &text, bool eof)
   for (auto iter = nevers.begin (); iter != nevers.end (); ++iter)
     {
       auto *p = *iter;
-      if (p->Expand (syms) == Regex::FOUND
-	  && p->Compare (syms, text, eof) == Regex::FOUND)
+      if (p->Expand (syms) == regex::FOUND
+	  && p->Compare (syms, text, eof) == regex::FOUND)
 	p->Matched (*this);
     }
 }
@@ -326,7 +326,7 @@ Engine::Process (char const *file)
       if (fd < 0)
 	{
 	fatal:
-	  NMS::Fatal ("cannot read test file '%s': %m", file);
+	  nms::Fatal ("cannot read test file '%s': %m", file);
 	}
     }
 

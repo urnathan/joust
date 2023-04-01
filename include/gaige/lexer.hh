@@ -13,8 +13,7 @@
 #include <string_view>
 #include <vector>
 
-namespace Gaige
-{
+namespace gaige {
 
 class Lexer
 {
@@ -98,7 +97,7 @@ public:
   bool Integer ();
 };
 
-} // namespace Gaige
+} // namespace gaige
 
 #define GAIGE_LEXER_HH
 #endif

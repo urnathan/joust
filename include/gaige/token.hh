@@ -13,12 +13,11 @@
 #include <string_view>
 #include <vector>
 
-namespace Gaige
-{
+namespace gaige {
 
 class Token
 {
-#define TOKEN_KINDS							\
+#define TOKEN_KINDS					\
   (EMPTY, "empty"),					\
   (OPEN, "{"),						\
   (CLOSE, "}"),						\
@@ -153,7 +152,7 @@ public:
   friend std::ostream &operator<< (std::ostream &s, Token const *token);
 };
 
-} // namespace Gaige
+} // namespace gaige
 
 #define GAIGE_TOKEN_HH
 #endif

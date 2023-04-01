@@ -13,8 +13,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-namespace Gaige
-{
+namespace gaige {
 
 std::tuple<pid_t, int>
 Spawn (int fd_in, int fd_out, int fd_err,
@@ -134,4 +133,4 @@ MakePipe (int pipes[2])
 }
 #endif
 
-} // namespace Gaige
+} // namespace gaige

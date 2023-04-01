@@ -11,8 +11,7 @@
 #include <iostream>
 #include <string_view>
 
-namespace Joust
-{
+namespace joust {
 
 class Tester
 {
@@ -105,12 +104,12 @@ protected:
 
 public:
   Streamer Result (Status status, char const *filename) noexcept
-  { return Result (status, NMS::SrcLoc (filename)); }
-  Streamer Result (Status status, NMS::SrcLoc = NMS::SrcLoc::Here ()) noexcept;
+  { return Result (status, nms::SrcLoc (filename)); }
+  Streamer Result (Status status, nms::SrcLoc = nms::SrcLoc::Here ()) noexcept;
   Streamer Result (bool pass, bool xfail = false,
-		   NMS::SrcLoc loc = NMS::SrcLoc::Here ()) noexcept
+		   nms::SrcLoc loc = nms::SrcLoc::Here ()) noexcept
   { return Result (PassFail (pass, xfail), loc); }
-  Streamer Message (NMS::SrcLoc loc = NMS::SrcLoc::Here ()) noexcept
+  Streamer Message (nms::SrcLoc loc = nms::SrcLoc::Here ()) noexcept
   { return Result (MSG, loc); }
 
 public:
@@ -125,10 +124,7 @@ public:
   }
 };
 
-#undef JOUST_FILE
-#undef JOUST_LINE
-
-} // namespace Joust
+} // namespace joust
 
 #define JOUST_TESTER_HH
 #endif

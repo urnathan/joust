@@ -10,8 +10,7 @@
 #include <unordered_map>
 #include <variant>
 
-namespace Gaige
-{
+namespace gaige {
 
 class Symbols
 {
@@ -36,7 +35,7 @@ public:
   void Read (char const *file);
 };
 
-} // namespace Gaige
+} // namespace gaige
 
 #define GAIGE_SYMBOLS_HH
 #endif

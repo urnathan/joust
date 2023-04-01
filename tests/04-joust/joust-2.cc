@@ -18,16 +18,16 @@ int
 main (int, char *argv[])
 {
 #include "joust/project-ident.inc"
-  NMS::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
-  NMS::SignalHandlers ();
+  nms::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
+  nms::SignalHandlers ();
 
-  Joust::Tester log {};
+  joust::Tester log {};
 
-  log.Result (Joust::Tester::PASS) << "test1";
+  log.Result (joust::Tester::PASS) << "test1";
   log.Log () << "location " << __FILE__ << ':' << __LINE__ - 1 << '\n';
-  log.Result (Joust::Tester::FAIL) << "test2";
+  log.Result (joust::Tester::FAIL) << "test2";
 
-  log.Result (Joust::Tester::MSG) << "message1";
+  log.Result (joust::Tester::MSG) << "message1";
   log.Message () << "message2";
 
   return 0;
