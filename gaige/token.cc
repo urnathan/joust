@@ -6,7 +6,7 @@
 // Gaige
 #include "gaige/token.hh"
 
-namespace gaige {
+using namespace gaige;
 
 constinit char const *const Token::kinds[TOKEN_HWM]
 = {NMS_LIST (NMS_2ND, TOKEN_KINDS)};
@@ -45,7 +45,7 @@ Token::~Token ()
 }
 
 std::ostream &
-operator<< (std::ostream &s, std::vector<Token> const &tokens)
+gaige::operator<< (std::ostream &s, std::vector<Token> const &tokens)
 {
   s << '{';
   for (auto token = tokens.begin (); token != tokens.end (); ++token)
@@ -60,7 +60,7 @@ operator<< (std::ostream &s, std::vector<Token> const &tokens)
 }
 
 std::ostream &
-operator<< (std::ostream &s, Token const &token)
+gaige::operator<< (std::ostream &s, Token const &token)
 {
   Token::Kind kind = token.GetKind ();
 
@@ -77,7 +77,7 @@ operator<< (std::ostream &s, Token const &token)
 }
 
 std::ostream &
-operator<< (std::ostream &s, Token const *token)
+gaige::operator<< (std::ostream &s, Token const *token)
 {
   if (token)
     s << *token;
@@ -85,5 +85,3 @@ operator<< (std::ostream &s, Token const *token)
     s << "end of line";
   return s;
 }
-
-} // namespace gaige

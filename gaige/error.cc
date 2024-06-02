@@ -8,7 +8,7 @@
 // C++
 #include <iostream>
 
-namespace gaige {
+using namespace gaige;
 
 bool Error::errored;
 
@@ -18,5 +18,3 @@ Error::Error (nms::SrcLoc loc)
   errored = true;
   *stream << loc.File () << ':' << loc.Line () << ": error: ";
 }
-
-} // namespace gaige

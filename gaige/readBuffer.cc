@@ -12,7 +12,7 @@
 // OS
 #include <unistd.h>
 
-namespace gaige {
+using namespace gaige;
 
 int
 ReadBuffer::Read ()
@@ -35,5 +35,3 @@ ReadBuffer::Read ()
 
   return res;
 }
-
-} // namespace gaige

@@ -43,6 +43,7 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 
+using namespace nms;
 using namespace joust;
 using namespace gaige;
 

@@ -36,6 +36,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+using namespace nms;
 using namespace joust;
 using namespace gaige;
 

@@ -151,6 +151,9 @@ public:
   friend std::ostream &operator<< (std::ostream &s, Token const &token);
   friend std::ostream &operator<< (std::ostream &s, Token const *token);
 };
+std::ostream &operator<< (std::ostream &s, std::vector<Token> const &tokens);
+std::ostream &operator<< (std::ostream &s, Token const &token);
+std::ostream &operator<< (std::ostream &s, Token const *token);
 
 } // namespace gaige
 

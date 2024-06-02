@@ -15,7 +15,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-namespace gaige {
+using namespace gaige;
 
 std::string const *
 Symbols::Get (std::string const &var) const
@@ -150,5 +150,3 @@ Symbols::Read (char const *file)
 
   munmap (buffer, alloc);
 }
-
-} // namespace gaige
