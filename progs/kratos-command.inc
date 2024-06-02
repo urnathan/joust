@@ -62,8 +62,7 @@ private:
 
 #else
 
-void
-Command::Shellify (Symbols const &syms)
+void Command::Shellify (Symbols const &syms)
 {
   bool active = false;
   size_t len = 0;
@@ -111,8 +110,7 @@ Command::Shellify (Symbols const &syms)
     }
 }
 
-bool
-Command::Execute (int fd_out, int fd_err, unsigned const *limits)
+bool Command::Execute (int fd_out, int fd_err, unsigned const *limits)
 {
   auto spawn = Spawn (stdin, fd_out, fd_err, words, nullptr, limits);
 
@@ -124,8 +122,7 @@ Command::Execute (int fd_out, int fd_err, unsigned const *limits)
   return std::get<0> (spawn);
 }
 
-std::ostream &
-operator<< (std::ostream &s, Command const &cmd)
+std::ostream &operator<< (std::ostream &s, Command const &cmd)
 {
   for (auto witer = cmd.words.begin (); witer != cmd.words.end (); ++witer)
     {

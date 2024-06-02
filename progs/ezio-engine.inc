@@ -83,8 +83,7 @@ Engine::~Engine ()
     delete n;
 }
 
-std::ostream &
-operator<< (std::ostream &s, std::vector<Pattern *> const &vec)
+std::ostream &operator<< (std::ostream &s, std::vector<Pattern *> const &vec)
 {
   for (auto iter = vec.begin (); iter != vec.end (); ++iter)
     if (auto p = *iter)
@@ -93,8 +92,7 @@ operator<< (std::ostream &s, std::vector<Pattern *> const &vec)
   return s;
 }
 
-std::ostream &
-operator<< (std::ostream &s, std::vector<Engine::Frame> const &vec)
+std::ostream &operator<< (std::ostream &s, std::vector<Engine::Frame> const &vec)
 {
   for (auto iter = vec.begin (); iter != vec.end (); ++iter)
     s << *iter;
@@ -102,24 +100,21 @@ operator<< (std::ostream &s, std::vector<Engine::Frame> const &vec)
   return s;
 }
 
-std::ostream &
-operator<< (std::ostream &s, Engine::Frame const &f)
+std::ostream &operator<< (std::ostream &s, Engine::Frame const &f)
 {
   s << f.body << f.none;
 
   return s;
 }
 
-std::ostream &
-operator<< (std::ostream &s, Engine const &e)
+std::ostream &operator<< (std::ostream &s, Engine const &e)
 {
   s << e.frames << e.nevers;
 
   return s;
 }
 
-void
-Engine::Add (Pattern *p)
+void Engine::Add (Pattern *p)
 {
   if (!p->Errored ())
     p->Canonicalize ();
@@ -154,15 +149,13 @@ Engine::Add (Pattern *p)
     }
 }
 
-void
-Engine::BodyAdvance (BodyIter bodyIx)
+void Engine::BodyAdvance (BodyIter bodyIx)
 {
   for (; bodyIter != bodyIx; ++bodyIter)
     (*bodyIter)->Result (*this);
 }
 
-void
-Engine::FrameAdvance (FrameIter frameIx)
+void Engine::FrameAdvance (FrameIter frameIx)
 {
   while (frameIter != frameIx)
     {
@@ -176,8 +169,7 @@ Engine::FrameAdvance (FrameIter frameIx)
     }
 }
 
-void
-Engine::Initialize ()
+void Engine::Initialize ()
 {
   if (frames.empty ())
     {
@@ -191,8 +183,7 @@ Engine::Initialize ()
     ++bodyIter;
 }
 
-void
-Engine::Process (std::string_view const &text, bool eof)
+void Engine::Process (std::string_view const &text, bool eof)
 {
   bool maybe_captures = false;
 
@@ -316,8 +307,7 @@ Engine::Process (std::string_view const &text, bool eof)
     }
 }
 
-void
-Engine::Process (char const *file)
+void Engine::Process (char const *file)
 {
   int fd = 0;
   if (file[file[0] == '-'])
@@ -421,8 +411,7 @@ Engine::Process (char const *file)
   munmap (buffer, alloc);
 }
 
-void
-Engine::Finalize ()
+void Engine::Finalize ()
 {
   Process ("", true);
   FrameAdvance (frames.end ());

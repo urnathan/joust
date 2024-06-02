@@ -12,7 +12,8 @@
 
 using namespace joust;
 
-constinit std::string_view const Tester::statuses[]
+constinit
+std::string_view const Tester::statuses[]
 = {NMS_LIST (NMS_STRING, JOUST_STATUSES)};
 
 Tester::Tester () noexcept
@@ -24,8 +25,7 @@ Tester::Tester () noexcept
     sum = &std::cout;
 }
 
-Tester::Status
-Tester::DecodeStatus (std::string_view const &line) noexcept
+Tester::Status Tester::DecodeStatus (std::string_view const &line) noexcept
 {
   for (unsigned ix = STATUS_HWM; ix--;)
     if (line.size () > statuses[ix].size ()
@@ -36,8 +36,7 @@ Tester::DecodeStatus (std::string_view const &line) noexcept
   return STATUS_HWM;
 }
 
-Tester::Streamer
-Tester::Result (Status status, nms::SrcLoc loc) noexcept
+Tester::Streamer Tester::Result (Status status, nms::SrcLoc loc) noexcept
 {
   Streamer result (this);
 

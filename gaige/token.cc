@@ -8,7 +8,8 @@
 
 using namespace gaige;
 
-constinit char const *const Token::kinds[TOKEN_HWM]
+constinit
+char const *const Token::kinds[TOKEN_HWM]
 = {NMS_LIST (NMS_2ND, TOKEN_KINDS)};
 
 Token::Token (Token &&from)
@@ -44,8 +45,8 @@ Token::~Token ()
     }
 }
 
-std::ostream &
-gaige::operator<< (std::ostream &s, std::vector<Token> const &tokens)
+std::ostream &gaige::operator<< (std::ostream &s,
+				 std::vector<Token> const &tokens)
 {
   s << '{';
   for (auto token = tokens.begin (); token != tokens.end (); ++token)
@@ -59,8 +60,7 @@ gaige::operator<< (std::ostream &s, std::vector<Token> const &tokens)
   return s;
 }
 
-std::ostream &
-gaige::operator<< (std::ostream &s, Token const &token)
+std::ostream &gaige::operator<< (std::ostream &s, Token const &token)
 {
   Token::Kind kind = token.GetKind ();
 
@@ -76,8 +76,7 @@ gaige::operator<< (std::ostream &s, Token const &token)
   return s;
 }
 
-std::ostream &
-gaige::operator<< (std::ostream &s, Token const *token)
+std::ostream &gaige::operator<< (std::ostream &s, Token const *token)
 {
   if (token)
     s << *token;

@@ -120,7 +120,8 @@ public:
   friend std::ostream &operator<< (std::ostream &s, Pattern const &p);
 };
 
-constinit char const *const Pattern::kinds[PATTERN_HWM]
+constinit
+char const *const Pattern::kinds[PATTERN_HWM]
 = {NMS_LIST (NMS_STRING, PATTERN_KINDS)};
 
 // PATTERN_REGEXP is
@@ -131,8 +132,7 @@ constinit char const *const Pattern::kinds[PATTERN_HWM]
 //   string: $$
 //   string: .+
 // Final TOKEN_CLOSE has capture count
-bool
-Pattern::Lexer::PatternRegexp ()
+bool Pattern::Lexer::PatternRegexp ()
 {
   bool escape = false;
   unsigned square = 0;
@@ -230,8 +230,7 @@ Pattern::Lexer::PatternRegexp ()
   return false;
 }
 
-bool
-Pattern::Lexer::Pattern ()
+bool Pattern::Lexer::Pattern ()
 {
   while (char c = Peek ())
     switch (c)
@@ -306,15 +305,13 @@ Pattern::Lexer::Pattern ()
   return true;
 }
 
-Error
-Pattern::Error ()
+Error Pattern::Error ()
 {
   has_error = true;
   return gaige::Error (loc);
 }
 
-std::ostream &
-operator<< (std::ostream &s, Pattern const &p)
+std::ostream &operator<< (std::ostream &s, Pattern const &p)
 {
   return s << p.loc.File () << ':' << p.loc.Line () << ":"
 	   << p.kinds[p.GetKind ()] << ", " << p.atoms << '\n';
@@ -324,8 +321,7 @@ operator<< (std::ostream &s, Pattern const &p)
 // regexp-expand: regexp-expand-opt STRING
 //              | regexp-expand-opt IDENTIFIER
 
-bool
-Pattern::ParseEscape (Parser *parser, Lexer &lexer)
+bool Pattern::ParseEscape (Parser *parser, Lexer &lexer)
 {
   Token escape (Token::REGEX_CAPTURE);
   Token *next = lexer.GetToken ();
@@ -374,8 +370,7 @@ Pattern::ParseEscape (Parser *parser, Lexer &lexer)
 // match: match-opt match-word
 // match-word: STRING | IDENTIFIER | OPEN match-escape
 
-Pattern *
-Pattern::Parse (Parser *parser, Kind kind, std::string_view const &line)
+Pattern *Pattern::Parse (Parser *parser, Kind kind, std::string_view const &line)
 {
   auto p = new Pattern (kind, parser, line);
   if (kind == UNKNOWN)
@@ -421,8 +416,7 @@ Pattern::Parse (Parser *parser, Kind kind, std::string_view const &line)
 // Promote fixed regexes to strings
 // Concatenate adjacent strings & whitespace
 // Prepend ^ and postpend $, if needed
-bool
-Pattern::Canonicalize ()
+bool Pattern::Canonicalize ()
 {
   std::vector<Token> canon;
   canon.reserve (atoms.size ());
@@ -544,8 +538,7 @@ Pattern::Canonicalize ()
   return true;
 }
 
-regex::Result
-Pattern::DoExpand (Symbols const &symbols)
+regex::Result Pattern::DoExpand (Symbols const &symbols)
 {
   for (auto token = atoms.begin (); token != atoms.end (); ++token)
     switch (token->GetKind ())
@@ -598,8 +591,7 @@ Pattern::DoExpand (Symbols const &symbols)
 }
 
 // Expand tokens to expansion
-regex::Result
-Pattern::Expand (Symbols const &symbols)
+regex::Result Pattern::Expand (Symbols const &symbols)
 {
   if (Errored ())
     return regex::FAILED;
@@ -634,8 +626,8 @@ Pattern::Expand (Symbols const &symbols)
   return exit;
 }
 
-regex::Result
-Pattern::Compare (Symbols &symbols, std::string_view const &text, bool eof)
+regex::Result Pattern::Compare (Symbols &symbols, std::string_view const &text,
+				bool eof)
 {
   if (is_eof != eof)
     return regex::NOTFOUND;
@@ -685,15 +677,11 @@ Pattern::Compare (Symbols &symbols, std::string_view const &text, bool eof)
 }
 
 // Write to stdout
-void
-Pattern::Result (Tester &logger, Tester::Status s) const
-{
-  logger.Result (s, loc) << kinds[GetKind ()] << ' ' << original;
-}
+void Pattern::Result (Tester &logger, Tester::Status s) const
+{ logger.Result (s, loc) << kinds[GetKind ()] << ' ' << original; }
 
 /* Emit result for a skipped-over pattern.  */
-void
-Pattern::Result (Tester &log) const
+void Pattern::Result (Tester &log) const
 {
   if (Errored ())
     Result (log, Tester::ERROR);
@@ -701,8 +689,7 @@ Pattern::Result (Tester &log) const
     Result (log, Tester::PassFail (GetKind () >= CAPTURE_HWM, is_xfail));
 }
 
-void
-Pattern::Matched (Tester &log) const
+void Pattern::Matched (Tester &log) const
 {
   Assert (!Errored () && Matched ());
 

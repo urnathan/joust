@@ -45,8 +45,7 @@ private:
 
 #else
 
-void
-Parser::Unlexed (Lexer const &lexer, char const *ctx)
+void Parser::Unlexed (Lexer const &lexer, char const *ctx)
 {
   Error ()
     << "failed to lex " << ctx
@@ -54,14 +53,12 @@ Parser::Unlexed (Lexer const &lexer, char const *ctx)
     << "' at '" << lexer.After () << "'";
 }
 
-void
-Parser::Unparsed (char const *ctx, Token const *token)
+void Parser::Unparsed (char const *ctx, Token const *token)
 {
   Error () << "unexpected '" << token << "' parsing " << ctx;
 }
 
-void
-Parser::Options (std::string_view const &text)
+void Parser::Options (std::string_view const &text)
 {
   Lexer lexer (text);
 
@@ -124,9 +121,8 @@ Parser::Options (std::string_view const &text)
       }
 }
 
-bool
-Parser::ProcessLine (std::string_view const &variant,
-		     std::string_view const &pattern) 
+bool Parser::ProcessLine (std::string_view const &variant,
+			  std::string_view const &pattern) 
 {
   if (variant == "OPTION")
     Options (std::move (pattern));

@@ -22,17 +22,17 @@ enum Result
 Result Create (std::regex &, std::string_view const &text, int &) noexcept;
 Result Search (std::regex const &, std::string_view const &text,
 	       std::cmatch &, int &) noexcept;
-char const *Error (int);
+char const *Error (int) noexcept;
 void Protect (std::string &, std::string_view const &);
-inline std::string
-Protect (std::string_view const &src)
+inline
+std::string Protect (std::string_view const &src)
 {
   std::string dst;
   Protect (dst, src);
   return dst;
 }
 
-} // namespace gaige::Regex
+} // namespace gaige::regex
 
 #define GAIGE_REGEX_HH
 #endif

@@ -55,14 +55,15 @@ private:
   friend class Parser;
 };
 
-constinit char const *const Pipeline::kinds[PIPELINE_HWM]
+constinit
+char const *const Pipeline::kinds[PIPELINE_HWM]
 = {NMS_LIST (NMS_STRING, PIPELINE_KINDS)};
 
-static constinit unsigned char const sigs[]
-  = {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGALRM, SIGTERM};
+static constinit
+unsigned char const sigs[]
+= {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGALRM, SIGTERM};
 
-std::ostream &
-operator<< (std::ostream &s, Pipeline const &pipe)
+std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
 {
   {
     auto &cmd = pipe.commands.front ();
@@ -111,10 +112,10 @@ operator<< (std::ostream &s, Pipeline const &pipe)
 
 #ifndef USE_EPOLL
 // Signals we saw
-volatile unsigned sigs_seen;
+volatile
+unsigned sigs_seen;
 
-void
-NoteSignal (int signal)
+void NoteSignal (int signal)
 {
   for (unsigned ix = sizeof (sigs); ix--;)
     if (signal == sigs[ix])
@@ -127,8 +128,7 @@ NoteSignal (int signal)
 
 // This mucks about with signals, so expects to be single threaded
 
-int
-Pipeline::Execute (Tester &logger, unsigned const *limits)
+int Pipeline::Execute (Tester &logger, unsigned const *limits)
 {
   Assert (commands.size () == 1 || commands.size () == 3);
 
@@ -647,8 +647,7 @@ Pipeline::Execute (Tester &logger, unsigned const *limits)
   return pass ? 0 : EINVAL;
 }
 
-void
-Pipeline::Result (Tester &logger, Tester::Status status)
+void Pipeline::Result (Tester &logger, Tester::Status status)
 {
   auto const &cmd = commands.front ();
   auto l = logger.Result (status, cmd.Loc ());

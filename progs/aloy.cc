@@ -57,15 +57,13 @@ class Engine;
 
 } // namespace
 
-static void
-Title (FILE *stream)
+static void Title (FILE *stream)
 {
   fprintf (stream, "ALOY: Apply List, Observe Yield\n");
   fprintf (stream, "Copyright 2020-2024 Nathan Sidwell, nathan@acm.org\n");
 }
 
-int
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
 #include "joust/project-ident.inc"
   nms::SetBuild (argv[0], JOUST_PROJECT_IDENTS);

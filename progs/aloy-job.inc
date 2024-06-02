@@ -58,8 +58,7 @@ public:
 
 #else
 
-void
-Job::Read (Engine &log, unsigned subcode, int poll_fd [[maybe_unused]])
+void Job::Read (Engine &log, unsigned subcode, int poll_fd [[maybe_unused]])
 {
   Assert (subcode < 2 && state > 0);
 
@@ -83,9 +82,8 @@ Job::Read (Engine &log, unsigned subcode, int poll_fd [[maybe_unused]])
 
 // Spawn a job, return true if we managed to spawn it.
 
-bool
-Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
-	    int poll_fd [[maybe_unused]], int token)
+bool Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
+		 int poll_fd [[maybe_unused]], int token)
 {
   Assert (!state && buffers[0].empty () && buffers[0].empty ());
 
@@ -159,8 +157,7 @@ Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
 }
 
 // Reap a completed job, returns the make token (or -1)
-int
-Job::Reap (int status)
+int Job::Reap (int status)
 {
   Assert (pid >= 0 && state);
   exit_status = status;
@@ -173,8 +170,7 @@ Job::Reap (int status)
   return r;
 }
 
-void
-Job::ReportExit (Engine &log) const
+void Job::ReportExit (Engine &log) const
 {
   if (WIFSIGNALED (exit_status))
     {
@@ -192,8 +188,7 @@ Job::ReportExit (Engine &log) const
     Unreachable ();
 }
 
-std::ostream &
-operator<< (std::ostream &s, Job const &job)
+std::ostream &operator<< (std::ostream &s, Job const &job)
 {
   if (!job.command.empty ())
     s << job.command[0];
