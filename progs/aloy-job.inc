@@ -60,7 +60,7 @@ public:
 
 void Job::Read (Engine &log, unsigned subcode, int poll_fd [[maybe_unused]])
 {
-  Assert (subcode < 2 && state > 0);
+  assert (subcode < 2 && state > 0);
 
   if (int done = buffers[subcode].Read ())
     {
@@ -85,7 +85,7 @@ void Job::Read (Engine &log, unsigned subcode, int poll_fd [[maybe_unused]])
 bool Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
 		 int poll_fd [[maybe_unused]], int token)
 {
-  Assert (!state && buffers[0].empty () && buffers[0].empty ());
+  assert (!state && buffers[0].empty () && buffers[0].empty ());
 
   if (!preamble.size ())
     // No execute mode, we're done
@@ -111,7 +111,7 @@ bool Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
       ev.events = EPOLLIN;
       ev.data.u64 = reinterpret_cast<uint64_t> (this) | ix;
       while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe[0], &ev) < 0)
-	Assert (errno == EINTR);
+	assert (errno == EINTR);
 #endif
     }
 
@@ -159,7 +159,7 @@ bool Job::Spawn (Engine &log, std::vector<std::string> const &preamble,
 // Reap a completed job, returns the make token (or -1)
 int Job::Reap (int status)
 {
-  Assert (pid >= 0 && state);
+  assert (pid >= 0 && state);
   exit_status = status;
 
   pid = pid_t (-1);
@@ -185,7 +185,7 @@ void Job::ReportExit (Engine &log) const
 	  << *this << " exited with status " << code;
     }
   else
-    Unreachable ();
+    unreachable ();
 }
 
 std::ostream &operator<< (std::ostream &s, Job const &job)

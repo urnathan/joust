@@ -1,4 +1,4 @@
-// RUN:1 $subdir$stem |& ezio -p NEW $test
+// RUN:2 $subdir$stem |& ezio -p NEW $test
 // NEW: fatal: out of memory
 // NEW-END:
 
@@ -20,14 +20,14 @@ main (int argc, char *argv[])
 {
   using namespace nms;
 #include "joust/project-ident.inc"
-  SetBuild (argv[0], JOUST_PROJECT_IDENTS);
-  SignalHandlers ();
+  setBuildInfo (JOUST_PROJECT_IDENTS);
+  installSignalHandlers ();
 
   bool map = false;
   static constexpr Option const options[]
-    = {{"map", 'm', 0, OPTION_FN (Option::Parser<bool>::Fn), "MMap"},
+    = {{"map", 'm', 0, OPTION_FN (Option::Parser<bool>::parse), "MMap"},
        {}};
-  options->Parse (argc, argv, &map);
+  options->parseArgs (argc, argv, &map);
 
   size_t MB = 1024 * 1024;
 
@@ -40,7 +40,7 @@ main (int argc, char *argv[])
 	ptr = mmap (nullptr, MB, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0);
       else
 	ptr = new char[MB];
-      Assert (ptr);
+      assert (ptr);
       memset (ptr, 1, MB);
     }
 

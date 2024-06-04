@@ -209,7 +209,7 @@ bool Pattern::Lexer::PatternRegexp ()
 	      Advance ();
 	    }
 	  else
-	    Assert (ident);
+	    assert (ident);
 	}
 	break;
 
@@ -291,7 +291,7 @@ bool Pattern::Lexer::Pattern ()
 	      Advance ();
 	    }
 	  else
-	    Assert (ident);
+	    assert (ident);
 	}
 	break;
 
@@ -313,7 +313,7 @@ Error Pattern::Error ()
 
 std::ostream &operator<< (std::ostream &s, Pattern const &p)
 {
-  return s << p.loc.File () << ':' << p.loc.Line () << ":"
+  return s << p.loc.file () << ':' << p.loc.line () << ":"
 	   << p.kinds[p.GetKind ()] << ", " << p.atoms << '\n';
 }
 
@@ -511,7 +511,7 @@ bool Pattern::Canonicalize ()
 	  break;
 
 	default:
-	  Unreachable ();
+	  unreachable ();
 	}
     }
 
@@ -576,7 +576,7 @@ regex::Result Pattern::DoExpand (Symbols const &symbols)
 		break;
 
 	      default:
-		Unreachable ();
+		unreachable ();
 	      }
 	  if (is_capture)
 	    expansion.push_back (')');
@@ -584,7 +584,7 @@ regex::Result Pattern::DoExpand (Symbols const &symbols)
 	break;
 
       default:
-	Unreachable ();
+	unreachable ();
       }
 
   return regex::FOUND;
@@ -658,19 +658,19 @@ regex::Result Pattern::Compare (Symbols &symbols, std::string_view const &text,
 	    auto const &capture = atom_iter->GetCapture ();
 	    if (capture[0].GetKind () == Token::IDENTIFIER)
 	      {
-		Assert (match_iter->matched);
+		assert (match_iter->matched);
 		captures++;
 		auto const &var = capture[0].GetString ();
 		if (!symbols.Set (var, match_iter->str ()))
 		  Error () << "multiple definitions of '" << var << '\'';
 	      }
-	    Assert (match.end () - match_iter >= captures);
+	    assert (match.end () - match_iter >= captures);
 	    match_iter += captures;
 	  }
 
       // For some reason there can be trailing unmatched matches
       for (; match_iter != match.end (); ++match_iter)
-	Assert (!match_iter->matched);
+	assert (!match_iter->matched);
     }
 
   return matched;
@@ -691,7 +691,7 @@ void Pattern::Result (Tester &log) const
 
 void Pattern::Matched (Tester &log) const
 {
-  Assert (!Errored () && Matched ());
+  assert (!Errored () && Matched ());
 
   Result (log, Tester::PassFail (GetKind () < CAPTURE_HWM, is_xfail));
 }

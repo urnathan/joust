@@ -42,7 +42,7 @@ Tester::Streamer Tester::Result (Status status, nms::SrcLoc loc) noexcept
 
   result << statuses[status] << ": ";
 
-  if (auto const *file = loc.File ())
+  if (auto const *file = loc.file ())
     {
       if (char const *srcdir = getenv ("srcdir"))
 	{
@@ -66,7 +66,7 @@ Tester::Streamer Tester::Result (Status status, nms::SrcLoc loc) noexcept
 	}
 
       result << file << ':';
-      if (auto line = loc.Line ())
+      if (auto line = loc.line ())
 	result << line << ':';
     }
 

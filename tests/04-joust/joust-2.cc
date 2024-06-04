@@ -14,12 +14,14 @@
 // Joust
 #include "joust/tester.hh"
 
+using namespace nms;
+
 int
-main (int, char *argv[])
+main (int, char *[])
 {
 #include "joust/project-ident.inc"
-  nms::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
-  nms::SignalHandlers ();
+  setBuildInfo (JOUST_PROJECT_IDENTS);
+  installSignalHandlers ();
 
   joust::Tester log {};
 

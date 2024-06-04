@@ -189,7 +189,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 		  break;
 
 		default:
-		  Assert (state >= ACTIVE_LWM);
+		  assert (state >= ACTIVE_LWM);
 		  if (pipes.back ().commands[state - ACTIVE_LWM].Empty ())
 		    Error () << "no "
 			     << (state == ACTIVE_LWM ? "command" : "filter")
@@ -219,7 +219,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 		  break;
 
 		default:
-		  Assert (next_state > ACTIVE_LWM);
+		  assert (next_state > ACTIVE_LWM);
 		  [[fallthrough]];
 		case REDIRECT_OUT:
 		  next_cmd_index = (next_state == REDIRECT_OUT
@@ -292,7 +292,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 		}
 	      else
 		{
-		  Assert (state >= ACTIVE_LWM);
+		  assert (state >= ACTIVE_LWM);
 		  pipes.back ().commands[state - ACTIVE_LWM].words.emplace_back
 		    (std::move (word));
 		}
@@ -321,7 +321,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 			  last.src.clear ();
 			}
 
-		      Assert (last.commands.size () == 1);
+		      assert (last.commands.size () == 1);
 		      last.commands[0].Shellify (syms);
 		      last.commands.emplace_back ();
 		      last.commands.emplace_back ();

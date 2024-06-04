@@ -66,7 +66,7 @@ public:
   }
   void Advance (unsigned a = 1)
   {
-    Assert (c_ix + a <= string.size ());
+    assert (c_ix + a <= string.size ());
     c_ix += a;
   }
   char SkipWS ();

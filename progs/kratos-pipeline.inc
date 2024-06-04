@@ -73,17 +73,17 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
 	for (size_t base = 0, eol; base != pipe.src.size (); base = eol + 1)
 	  {
 	    eol = pipe.src.find_first_of ('\n', base);
-	    Assert (eol != pipe.src.npos);
-	    s << cmd.Loc ().File () << ':' << cmd.Loc ().Line ()
+	    assert (eol != pipe.src.npos);
+	    s << cmd.Loc ().file () << ':' << cmd.Loc ().line ()
 	      << " in<<" << std::string_view (&pipe.src[base], eol - base)
 	      << '\n';
 	  }
       }
     else if (!pipe.src.empty ())
-      s << cmd.Loc ().File () << ':' << cmd.Loc ().Line ()
+      s << cmd.Loc ().file () << ':' << cmd.Loc ().line ()
 	<< " in< " << pipe.src << '\n';
   
-    s << cmd.Loc ().File () << ':' << cmd.Loc ().Line () << " "
+    s << cmd.Loc ().file () << ':' << cmd.Loc ().line () << " "
       << Pipeline::kinds[pipe.kind] << ':';
     if (pipe.expected_exit)
       s << pipe.expected_exit;
@@ -98,8 +98,8 @@ std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
       auto &filter = pipe.commands[ix];
       if (!filter.Empty ())
 	{
-	  s << filter.Loc ().File () << ':'
-	    << filter.Loc ().Line () << outs[ix - 1];
+	  s << filter.Loc ().file () << ':'
+	    << filter.Loc ().line () << outs[ix - 1];
 	  s << (filter.RedirectType () == Command::R_FILE ? '>' : '|');
 	  if (ix == 2)
 	    s << '&';
@@ -130,7 +130,7 @@ void NoteSignal (int signal)
 
 int Pipeline::Execute (Tester &logger, unsigned const *limits)
 {
-  Assert (commands.size () == 1 || commands.size () == 3);
+  assert (commands.size () == 1 || commands.size () == 3);
 
   std::cerr << *this;
 
@@ -184,7 +184,7 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
       if (filt.RedirectType () == Command::R_FILE)
 	{
 	  // To a file
-	  Assert (filt.words.size () == 1);
+	  assert (filt.words.size () == 1);
 
 	  char const *out = filt.words.front ().c_str ();
 	  int fd = open (out, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
@@ -223,32 +223,32 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
     sigaddset (&sigmask, sigs[ix]);
 #ifdef USE_EPOLL
   while (sigprocmask (SIG_BLOCK, &sigmask, &sigorig) < 0)
-    Assert (errno == EINTR);
+    assert (errno == EINTR);
 
   int poll_fd = epoll_create1 (EPOLL_CLOEXEC);
   int sig_fd = signalfd (-1, &sigmask, SFD_NONBLOCK | SFD_CLOEXEC);
-  Assert (poll_fd >= 0 && sig_fd >= 0);
+  assert (poll_fd >= 0 && sig_fd >= 0);
 
   {
     epoll_event ev;
     ev.events = EPOLLIN;
     ev.data.u64 = 0;
     while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
-      Assert (errno == EINTR);
+      assert (errno == EINTR);
     if (here_fd >= 0)
       {
 	ev.events = EPOLLOUT;
 	ev.data.u64 = 1;
 	while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, here_fd, &ev) < 0)
-	  Assert (errno == EINTR);
+	  assert (errno == EINTR);
       }
   }
 #else
   while (sigprocmask (SIG_UNBLOCK, &sigmask, &sigorig) < 0)
-    Assert (errno == EINTR);
+    assert (errno == EINTR);
   sigset_t sigselect;
   while (sigprocmask (SIG_BLOCK, &sigmask, &sigselect) < 0)
-    Assert (errno == EINTR);
+    assert (errno == EINTR);
 
   // Install signal handlers
   struct sigaction old_actions[sizeof (sigs)];
@@ -316,7 +316,7 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 	      ev.events = EPOLLIN;
 	      ev.data.u64 = strix | 4;
 	      if (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe_fd, &ev) < 0)
-		Unreachable ();
+		unreachable ();
 #endif
 	    }
       }
@@ -373,7 +373,7 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
       if (count < 0)
 	{
 	  count = 0;
-	  Assert (errno == EINTR);
+	  assert (errno == EINTR);
 	}
 
       for (int ix = 0; ix != count; ix++)
@@ -399,18 +399,18 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 			cookie = stream | 4;
 			goto found_fd;
 		      }
-		  Unreachable ();
+		  unreachable ();
 		}
 	    }
 	found_fd:;
-	  Assert (hwm >= 0);
+	  assert (hwm >= 0);
 #endif
 	  switch (cookie)
 	    {
 	    default:
 	      {
 		unsigned stream = cookie & 3;
-		Assert (stream < 4 && num_streams);
+		assert (stream < 4 && num_streams);
 		if (int done = streams[stream].Read ())
 		  {
 		    if (done >= 0)
@@ -475,7 +475,7 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 #ifdef USE_EPOLL
 		signalfd_siginfo sig;
 		ssize_t bytes = read (sig_fd, &sig, sizeof (sig));
-		Assert (bytes == sizeof (sig));
+		assert (bytes == sizeof (sig));
 		seen_sig = sig.ssi_signo;
 #endif
 		break;
@@ -510,7 +510,7 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 		  {
 		    if (child == pid_t (-1))
 		      {
-			Assert (!subtasks);
+			assert (!subtasks);
 			break;
 		      }
 
@@ -549,7 +549,7 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 			    }
 			  goto found_pid;
 			}
-		    Unreachable ();
+		    unreachable ();
 		  found_pid:;
 		  }
 	      }
@@ -574,7 +574,7 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 	      break;
 
 	    default:
-	      Unreachable ();
+	      unreachable ();
 	    }
 #ifndef USE_EPOLL
 	  if (seen_sig)
@@ -592,7 +592,7 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
     sigaction (sigs[ix], &old_actions[ix], nullptr);
 #endif
   while (sigprocmask (SIG_SETMASK, &sigorig, nullptr) < 0)
-    Assert (errno == EINTR);
+    assert (errno == EINTR);
 
   for (unsigned ix = 1; ix != commands.size (); ix++)
     {
@@ -617,8 +617,8 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 	      else if (io)
 		{
 		  s = &std::cerr;
-		  *s << "# Checker " << filt.Loc ().File ()
-		     << ':' << filt.Loc ().Line ()
+		  *s << "# Checker " << filt.Loc ().file ()
+		     << ':' << filt.Loc ().line ()
 		     << filt << '\n';
 		}
 	      *s << std::string_view (stream.data (), size);
@@ -626,7 +626,7 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 	}
     }
 
-  Assert (exit_code >= 0);
+  assert (exit_code >= 0);
 
   bool pass = (signalled == (kind == SIGNAL)
 	       && (exit_code == expected_exit) == !expect_inverted);

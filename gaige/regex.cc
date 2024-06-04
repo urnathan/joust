@@ -83,6 +83,6 @@ char const *gaige::regex::Error (int error) noexcept
     case error_complexity:return "too complex";
     case error_stack:	return "insufficient memory";
     default:
-      Unreachable ();
+      unreachable ();
     }
 }

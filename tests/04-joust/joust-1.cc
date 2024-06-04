@@ -15,7 +15,7 @@
 // RUN-SIGNAL:ABRT $subdir$stem --inline |& ezio -p INLINE1 -p FATAL $test
 // INLINE1-OPTION: matchSol
 // INLINE1: $stem: burn it all down
-// INLINE1-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} nms::HCF (char const *,
+// INLINE1-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} nms::haltAndCatchFire (char const *,
 // INLINE1-NEXT: 01-0x{:[0-9a-f]+} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:main|.anon.::InvokeHCF}
 // INLINE1-NEXT: 01.1{: *} {:(extern/joust/)?}tests/$test:{:[0-9]+} main
 
@@ -24,7 +24,7 @@
 // RUN-SIGNAL:ABRT $subdir$stem --nested |& ezio -p NESTED1 -p FATAL $test
 // NESTED1-OPTION: matchSol
 // NESTED1: $stem: go boom
-// NESTED1-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} nms::HCF (char const *,
+// NESTED1-NEXT: 00-0x{:[0-9a-f]+} {:([^ ]*/)?}fatal.cc:{:[0-9]+} nms::haltAndCatchFire (char const *,
 // NESTED1-NEXT: 01-0x{:[0-9a-f]+} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:.}anon}::NestedHCF (int)
 // NESTED1-NEXT: 02-0x{ret1:[0-9a-f]+} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:.}anon}::TrampHCF (int)
 // NESTED1-NEXT: 03-0x{ret2:[0-9a-f]+} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:.}anon}::NestedHCF (int)
@@ -49,13 +49,15 @@
 // C
 #include <stddef.h>
 
+using namespace nms;
+
 namespace {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
 [[gnu::always_inline]] void
 InvokeHCF ()
-{ nms::HCF ("burn it all down"); }
+{ haltAndCatchFire ("burn it all down"); }
 #pragma GCC diagnostic pop
 
 void NestedHCF (int ix);
@@ -72,7 +74,7 @@ NestedHCF (int ix = 4)
   asm volatile ("");
   if (--ix)
     TrampHCF (ix);
-  nms::HCF ("go boom!");
+  haltAndCatchFire ("go boom!");
 }
 
 } // namespace
@@ -80,8 +82,8 @@ NestedHCF (int ix = 4)
 int main (int argc, char *argv[])
 {
 #include "joust/project-ident.inc"
-  nms::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
-  nms::SignalHandlers ();
+  setBuildInfo (JOUST_PROJECT_IDENTS);
+  installSignalHandlers ();
 
   struct Flags 
   {
@@ -90,7 +92,7 @@ int main (int argc, char *argv[])
     bool is_backtraced = false;
     bool is_optimized = false;
   } flags;
-  static constexpr nms::Option const options[] =
+  static constexpr Option const options[] =
     {
       {"inline", 0, OPTION_FLDFN (Flags, do_inline), "Inline"},
       {"nested", 0, OPTION_FLDFN (Flags, do_nested), "Nested"},
@@ -98,7 +100,7 @@ int main (int argc, char *argv[])
       {"backtraced", 0, OPTION_FLDFN (Flags, is_backtraced), "Backtraced"},
       {}
     };
-  options->Parse (argc, argv, &flags);
+  options->parseArgs (argc, argv, &flags);
 
   if (flags.is_optimized)
     {
@@ -115,6 +117,6 @@ int main (int argc, char *argv[])
     InvokeHCF ();
   if (flags.do_nested)
     NestedHCF ();
-  options->Help (stdout, "");
+  options->printUsage (stdout, "");
   return 0;
 }

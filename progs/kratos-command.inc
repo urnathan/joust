@@ -35,7 +35,7 @@ public:
   { return redirect; }
   void RedirectType (Redirect r)
   {
-    Assert (redirect == R_NORMAL);
+    assert (redirect == R_NORMAL);
     redirect = r;
   }
 

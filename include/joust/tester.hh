@@ -105,11 +105,11 @@ protected:
 public:
   Streamer Result (Status status, char const *filename) noexcept
   { return Result (status, nms::SrcLoc (filename)); }
-  Streamer Result (Status status, nms::SrcLoc = nms::SrcLoc::Here ()) noexcept;
+  Streamer Result (Status status, nms::SrcLoc = nms::SrcLoc::here ()) noexcept;
   Streamer Result (bool pass, bool xfail = false,
-		   nms::SrcLoc loc = nms::SrcLoc::Here ()) noexcept
+		   nms::SrcLoc loc = nms::SrcLoc::here ()) noexcept
   { return Result (PassFail (pass, xfail), loc); }
-  Streamer Message (nms::SrcLoc loc = nms::SrcLoc::Here ()) noexcept
+  Streamer Message (nms::SrcLoc loc = nms::SrcLoc::here ()) noexcept
   { return Result (MSG, loc); }
 
 public:

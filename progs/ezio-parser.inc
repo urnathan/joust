@@ -91,7 +91,7 @@ void Parser::Options (std::string_view const &text)
     switch (token->GetKind ())
       {
       case Token::STRING:
-	Assert (token->GetString () == "!");
+	assert (token->GetString () == "!");
 	if (!on)
 	  goto unexpected;
 	on = false;

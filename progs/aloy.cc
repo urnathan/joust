@@ -66,8 +66,8 @@ static void Title (FILE *stream)
 int main (int argc, char *argv[])
 {
 #include "joust/project-ident.inc"
-  nms::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
-  nms::SignalHandlers ();
+  nms::setBuildInfo (JOUST_PROJECT_IDENTS);
+  nms::installSignalHandlers ();
   struct Flags
   {
     bool help = false;
@@ -90,22 +90,22 @@ int main (int argc, char *argv[])
        {"gen", 'g', OPTION_FLDFN (Flags, gen), "PROGRAM:Generator"},
        {"tester", 't', OPTION_FLDFN (Flags, tester), "PROGRAM:Tester"},
        {}};
-  int argno = options->Parse (argc, argv, &flags);
+  int argno = options->parseArgs (argc, argv, &flags);
   if (flags.help)
     {
       Title (stdout);
-      options->Help (stdout, "[generator-options]");
+      options->printUsage (stdout, "[generator-options]");
       return 0;
     }
   if (flags.version)
     {
       Title (stdout);
-      nms::BuildNote (stdout);
+      printBuildNote (stdout);
       return 0;
     }
   if (flags.dir)
     if (chdir (flags.dir) < 0)
-      nms::Fatal ("cannot chdir '%s': %m", flags.dir);
+      fatalExit ("?cannot chdir '%s': %m", flags.dir);
 
   // Get the log streams
   std::ofstream sum, log;
@@ -118,11 +118,11 @@ int main (int argc, char *argv[])
       out.append (".sum");
       sum.open (out);
       if (!sum.is_open ())
-	nms::Fatal ("cannot write '%s': %m", out.c_str ());
+	fatalExit ("cannot write '%s': %m", out.c_str ());
       out.erase (len).append (".log");
       log.open (out);
       if (!log.is_open ())
-	nms::Fatal ("cannot write '%s': %m", out.c_str ());
+	fatalExit ("cannot write '%s': %m", out.c_str ());
     }
 
   Engine engine (std::min (flags.jobs, 256u),

@@ -86,7 +86,7 @@ std::tuple<pid_t, int> gaige::Spawn (int fd_in, int fd_out, int fd_err,
 	  close (pipe_fds[1]);
 	  // Do not run atexit
 	  _exit (0);
-	  Unreachable ();
+	  unreachable ();
 	}
 
       err = errno;

@@ -229,25 +229,25 @@ void Engine::Init (char const *tester, std::vector<std::string> *genner,
     sigaddset (&sigmask, sigs[ix]);
 #ifdef USE_EPOLL
   while (sigprocmask (SIG_BLOCK, &sigmask, nullptr) < 0)
-    Assert (errno == EINTR);
+    assert (errno == EINTR);
 
   sig_fd = signalfd (-1, &sigmask, SFD_NONBLOCK | SFD_CLOEXEC);
-  Assert (sig_fd >= 0);
+  assert (sig_fd >= 0);
 
   // Epoll fd
   poll_fd = epoll_create1 (EPOLL_CLOEXEC);
-  Assert (poll_fd >= 0);
+  assert (poll_fd >= 0);
 
   epoll_event ev;
   ev.events = EPOLLIN;
   ev.data.u64 = unsigned (FD::SIGNAL);
   while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
-    Assert (errno == EINTR || errno == EAGAIN);
+    assert (errno == EINTR || errno == EAGAIN);
 #else
   while (sigprocmask (SIG_UNBLOCK, &sigmask, nullptr) < 0)
-    Assert (errno == EINTR);
+    assert (errno == EINTR);
   while (sigprocmask (SIG_BLOCK, &sigmask, &sigselect) < 0)
-    Assert (errno == EINTR);
+    assert (errno == EINTR);
   old_actions = new struct sigaction[sizeof (sigs)];
   // Install signal handlers
   for (unsigned ix = sizeof (sigs); ix--;)
@@ -357,7 +357,7 @@ void Engine::HandleSignal (int sig)
 	  {
 	    if (child == pid_t (-1))
 	      {
-		Assert (!running && generator.Ready ());
+		assert (!running && generator.Ready ());
 		break;
 	      }
 
@@ -401,7 +401,7 @@ void Engine::HandleSignal (int sig)
 
     case SIGPIPE:
     default:
-      Unreachable ();
+      unreachable ();
     }
 }
 
@@ -433,7 +433,7 @@ void Engine::WantMake ()
 	{
 	  if (make_want)
 	    while (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_in, nullptr) < 0)
-	      Assert (errno == EINTR || errno == EAGAIN);
+	      assert (errno == EINTR || errno == EAGAIN);
 	}
       else
 	{
@@ -443,7 +443,7 @@ void Engine::WantMake ()
 	      ev.events = EPOLLIN;
 	      ev.data.u64 = unsigned (FD::MAKE_IN);
 	      while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, make_in, &ev) < 0)
-		Assert (errno == EINTR || errno == EAGAIN);
+		assert (errno == EINTR || errno == EAGAIN);
 	    }
 	}
 #endif
@@ -453,7 +453,7 @@ void Engine::WantMake ()
 
 void Engine::StopMake (int err)
 {
-  Assert (make_out >= 0 && make_in >= 0);
+  assert (make_out >= 0 && make_in >= 0);
 #ifdef USE_EPOLL
   epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_out, nullptr);
   epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_in, nullptr);
@@ -492,7 +492,7 @@ void Engine::QueueMake (int token)
       ev.events = EPOLLOUT;
       ev.data.u64 = unsigned (FD::MAKE_OUT);
       while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, make_out, &ev) < 0)
-	Assert (errno == EINTR || errno == EAGAIN);
+	assert (errno == EINTR || errno == EAGAIN);
     }
 #endif
   used_tokens.push_back (char (token));
@@ -515,7 +515,7 @@ void Engine::WriteMake ()
       used_tokens.clear ();
 #ifdef USE_EPOLL
       while (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_out, nullptr) < 0)
-	Assert (errno == EINTR || errno == EAGAIN);
+	assert (errno == EINTR || errno == EAGAIN);
 #endif
     }
   else
@@ -532,7 +532,7 @@ void Engine::Process ()
   if (count < 0)
     {
       count = 0;
-      Assert (errno == EINTR || errno == EAGAIN);
+      assert (errno == EINTR || errno == EAGAIN);
     }
 
   for (int ix = 0; ix != count; ix++)
@@ -543,7 +543,7 @@ void Engine::Process ()
 	  signalfd_siginfo sig;
 
 	  ssize_t bytes = read (sig_fd, &sig, sizeof (sig));
-	  Assert (bytes == sizeof (sig));
+	  assert (bytes == sizeof (sig));
 	  HandleSignal (sig.ssi_signo);
 	}
 	break;
@@ -605,7 +605,7 @@ void Engine::Process ()
 
   int count = pselect (hwm, &rd_set, &wr_set, nullptr, nullptr, &sigselect);
   if (count < 0)
-    Assert (errno == EINTR);
+    assert (errno == EINTR);
   else
     {
       if (make_want && FD_ISSET (make_in, &rd_set))

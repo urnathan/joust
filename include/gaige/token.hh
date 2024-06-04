@@ -75,13 +75,13 @@ public:
   Token (Kind kind_, unsigned long integer)
     : Token (kind_)
   {
-    Assert (kind >= INTEGER_LWM && kind < INTEGER_HWM);
+    assert (kind >= INTEGER_LWM && kind < INTEGER_HWM);
     new (&value.integer) decltype (value.integer) (std::move (integer));
   }
   Token (Kind kind_, std::string &&string)
     : Token (kind_)
   {
-    Assert (kind_ >= STRING_LWM && kind_ < STRING_HWM);
+    assert (kind_ >= STRING_LWM && kind_ < STRING_HWM);
     new (&value.string) decltype (value.string) (std::move (string));
   }
   Token (Kind kind_, std::string_view const &string)
@@ -90,7 +90,7 @@ public:
   Token (Kind kind_, std::vector<Token> &&capture)
     : Token (kind_)
   {
-    Assert (kind_ >= CAPTURE_LWM && kind_ < CAPTURE_HWM);
+    assert (kind_ >= CAPTURE_LWM && kind_ < CAPTURE_HWM);
     new (&value.capture) decltype (value.capture) (std::move (capture));
   }
 
@@ -121,27 +121,27 @@ public:
 public:
   unsigned long GetInteger () const
   {
-    Assert (kind >= INTEGER_LWM && kind < INTEGER_HWM);
+    assert (kind >= INTEGER_LWM && kind < INTEGER_HWM);
     return value.integer;
   }
   std::string const &GetString () const
   {
-    Assert (kind >= STRING_LWM && kind < STRING_HWM);
+    assert (kind >= STRING_LWM && kind < STRING_HWM);
     return value.string;
   }
   std::string &GetString ()
   {
-    Assert (kind >= STRING_LWM && kind < STRING_HWM);
+    assert (kind >= STRING_LWM && kind < STRING_HWM);
     return value.string;
   }
   std::vector<Token> const &GetCapture () const
   {
-    Assert (kind >= CAPTURE_LWM && kind < CAPTURE_HWM);
+    assert (kind >= CAPTURE_LWM && kind < CAPTURE_HWM);
     return value.capture;
   }
   std::vector<Token> &GetCapture ()
   {
-    Assert (kind >= CAPTURE_LWM && kind < CAPTURE_HWM);
+    assert (kind >= CAPTURE_LWM && kind < CAPTURE_HWM);
     return value.capture;
   }
 

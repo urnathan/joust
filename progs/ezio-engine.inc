@@ -174,7 +174,7 @@ void Engine::Initialize ()
   if (frames.empty ())
     {
       if (nevers.empty ())
-	nms::Fatal ("nothing to check");
+	fatalExit ("nothing to check");
       frames.emplace_back ();
     }
   frameIter = frames.begin ();
@@ -248,7 +248,7 @@ void Engine::Process (std::string_view const &text, bool eof)
 		continue;
 
 	      default:
-		Unreachable ();
+		unreachable ();
 	      }
 	  }
     no_match:;
@@ -261,7 +261,7 @@ void Engine::Process (std::string_view const &text, bool eof)
     {
       Pattern *p = framePeek->body.front ();
 
-      Assert (p);
+      assert (p);
 
       auto expn = p->Expand (syms);
       if (expn != regex::FOUND)
@@ -316,7 +316,7 @@ void Engine::Process (char const *file)
       if (fd < 0)
 	{
 	fatal:
-	  nms::Fatal ("cannot read test file '%s': %m", file);
+	  fatalExit ("cannot read test file '%s': %m", file);
 	}
     }
 

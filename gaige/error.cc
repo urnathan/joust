@@ -16,5 +16,5 @@ Error::Error (nms::SrcLoc loc)
   : stream (&std::cerr)
 {
   errored = true;
-  *stream << loc.File () << ':' << loc.Line () << ": error: ";
+  *stream << loc.file () << ':' << loc.line () << ": error: ";
 }

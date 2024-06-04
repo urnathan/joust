@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+using namespace nms;
 using namespace gaige;
 
 std::string const *Symbols::Get (std::string const &var) const
@@ -94,7 +95,7 @@ void Symbols::Read (char const *file)
   if (fd < 0)
     {
     fatal:
-      nms::Fatal ("cannot read defines '%s': %m", file);
+      fatalExit ("?cannot read defines '%s': %m", file);
     }
   size_t len = [] (int fd_)
 	       {

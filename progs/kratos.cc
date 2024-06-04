@@ -78,8 +78,8 @@ static void Title (FILE *stream)
 int main (int argc, char *argv[])
 {
 #include "joust/project-ident.inc"
-  nms::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
-  nms::SignalHandlers ();
+  nms::setBuildInfo (JOUST_PROJECT_IDENTS);
+  nms::installSignalHandlers ();
 
   struct Flags
   {
@@ -103,25 +103,25 @@ int main (int argc, char *argv[])
        {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
        {"prefix", 'p', OPTION_FLDFN (Flags, prefixes), "PREFIX:Pattern prefix"},
        {}};
-  int argno = options->Parse (argc, argv, &flags);
+  int argno = options->parseArgs (argc, argv, &flags);
   if (flags.help)
     {
       Title (stdout);
-      options->Help (stdout, "testfile");
+      options->printUsage (stdout, "testfile");
       return 0;
     }
   if (flags.version)
     {
       Title (stdout);
-      nms::BuildNote (stdout);
+      printBuildNote (stdout);
       return 0;
     }
   if (flags.dir)
     if (chdir (flags.dir) < 0)
-      nms::Fatal ("cannot chdir '%s': %m", flags.dir);
+      fatalExit ("?cannot chdir '%s': %m", flags.dir);
 
   if (argno == argc)
-    nms::Fatal ("expected test filename");
+    fatalExit ("?expected test filename");
   char const *testFile = argv[argno++];
 
   if (!flags.prefixes.size ())
@@ -149,7 +149,7 @@ int main (int argc, char *argv[])
   }
 
   if ((!ended && pipes.empty ()) || Error::Errors ())
-    nms::Fatal ("failed to construct commands '%s'", testFile);
+    fatalExit ("?failed to construct commands '%s'", testFile);
 
   std::ofstream sum, log;
   if (!flags.out[flags.out[0] == '-'])
@@ -161,11 +161,11 @@ int main (int argc, char *argv[])
       out.append (".sum");
       sum.open (out);
       if (!sum.is_open ())
-	nms::Fatal ("cannot write '%s': %m", out.c_str ());
+	fatalExit ("cannot write '%s': %m", out.c_str ());
       out.erase (len).append (".log");
       log.open (out);
       if (!log.is_open ())
-	nms::Fatal ("cannot write '%s': %m", out.c_str ());
+	fatalExit ("cannot write '%s': %m", out.c_str ());
     }
 
   Tester logger (flags.out ? sum : std::cout, flags.out ? log : std::cerr);

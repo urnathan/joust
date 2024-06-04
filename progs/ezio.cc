@@ -59,8 +59,8 @@ static void Title (FILE *stream)
 int main (int argc, char *argv[])
 {
 #include "joust/project-ident.inc"
-  nms::SetBuild (argv[0], JOUST_PROJECT_IDENTS);
-  nms::SignalHandlers ();
+  nms::setBuildInfo (JOUST_PROJECT_IDENTS);
+  nms::installSignalHandlers ();
 
   struct Flags
   {
@@ -86,22 +86,22 @@ int main (int argc, char *argv[])
        {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
        {"prefix", 'p', OPTION_FLDFN (Flags, prefixes), "PREFIX:Pattern prefix"},
        {}};
-  int argno = options->Parse (argc, argv, &flags);
+  int argno = options->parseArgs (argc, argv, &flags);
   if (flags.help)
     {
       Title (stdout);
-      options->Help (stdout, "pattern-files+");
+      options->printUsage (stdout, "pattern-files+");
       return 0;
     }
   if (flags.version)
     {
       Title (stdout);
-      nms::BuildNote (stdout);
+      printBuildNote (stdout);
       return 0;
     }
   if (flags.dir)
     if (chdir (flags.dir) < 0)
-      nms::Fatal ("cannot chdir '%s': %m", flags.dir);
+      fatalExit ("cannot chdir '%s': %m", flags.dir);
 
   if (!flags.prefixes.size ())
     flags.prefixes.push_back ("CHECK");
@@ -128,11 +128,11 @@ int main (int argc, char *argv[])
       out.append (".sum");
       sum.open (out);
       if (!sum.is_open ())
-	nms::Fatal ("cannot write '%s': %m", out.c_str ());
+	fatalExit ("cannot write '%s': %m", out.c_str ());
       out.erase (len).append (".log");
       log.open (out);
       if (!log.is_open ())
-	nms::Fatal ("cannot write '%s': %m", out.c_str ());
+	fatalExit ("cannot write '%s': %m", out.c_str ());
     }
 
   Engine engine (syms, flags.out ? sum : std::cout, flags.out ? log : std::cerr);
@@ -146,7 +146,7 @@ int main (int argc, char *argv[])
       // Scan the pattern file
       parser.ScanFile (pathname, flags.prefixes);
       if (Error::Errors ())
-	nms::Fatal ("failed to construct patterns '%s'", patternFile);
+	fatalExit ("failed to construct patterns '%s'", patternFile);
     }
 
   engine.Initialize ();

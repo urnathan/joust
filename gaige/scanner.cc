@@ -62,7 +62,7 @@ bool Scanner::ScanFile (std::string const &fname,
   if (end[-1] != '\n')
     *const_cast<char *> (end++) = '\n';
 
-  Assert (prefixes.size ());
+  assert (prefixes.size ());
 
   std::vector<unsigned> lengths;
   lengths.reserve (prefixes.size ());
@@ -82,7 +82,7 @@ bool Scanner::ScanFile (std::string const &fname,
 	}
     }
 
-  loc.NextLine ();
+  loc.advanceLine ();
   bool ended = false;
   for (char const *base = begin;;)
     {
@@ -138,12 +138,12 @@ bool Scanner::ScanFile (std::string const &fname,
       for (;;)
 	{
 	  eol = std::find (begin, end, '\n');
-	  Assert (eol != end);
+	  assert (eol != end);
 
 	  if (eol > colon)
 	    break;
 	  begin = eol + 1;
-	  loc.NextLine ();
+	  loc.advanceLine ();
 	}
 
       // Process the pattern
@@ -157,7 +157,7 @@ bool Scanner::ScanFile (std::string const &fname,
 	}
 
       base = begin = eol + 1;
-      loc.NextLine ();
+      loc.advanceLine ();
     }
 
   munmap (buffer, alloc);

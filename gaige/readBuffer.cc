@@ -16,7 +16,7 @@ using namespace gaige;
 
 int ReadBuffer::Read ()
 {
-  Assert (fd >= 0);
+  assert (fd >= 0);
 
   // Read
   size_t lwm = size ();
