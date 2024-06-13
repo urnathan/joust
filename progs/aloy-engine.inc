@@ -10,7 +10,7 @@ public:
   using Parent = Tester;
 
 private:
-  enum class FD
+  enum class FDs
   {
     MAKE_IN,	// make_in
     MAKE_OUT,	// make_out
@@ -19,95 +19,94 @@ private:
   };
 
 private:
-  std::deque<Job> jobs;
-  std::vector<std::string> command;
-  std::string used_tokens;  // tokens to send back to make
-  std::string ready_tokens; // tokens we've got from make
-  Job generator;
+  std::deque<Job> Jobs;
+  std::vector<std::string> Command;
+  std::string UsedTokens;  // tokens to send back to make
+  std::string ReadyTokens; // tokens we've got from make
+  Job Generator;
 
 private:
-  unsigned job_limit = 1;  // static number of jobs we can spawn
-  unsigned fixed_jobs = 0; // non-jobserver jobs running
-  unsigned make_want = 0;
-  int make_in = -1, make_out = -1;
+  unsigned JobLimit = 1;  // static number of jobs we can spawn
+  unsigned FixedJobs = 0; // non-jobserver jobs running
+  unsigned MakeWant = 0;
+  int MakeIn = -1, MakeOut = -1;
 
 private:
 #ifdef USE_EPOLL
-  int sig_fd = -1;
-  int poll_fd = -1;
+  int SigFD = -1;
+  int PollFD = -1;
 #else
-  static int const poll_fd = -1;
-  sigset_t sigselect;
-  struct sigaction *old_actions = nullptr;
+  static int const PollFD = -1;
+  sigset_t SigSelect;
+  struct sigaction *OldActions = nullptr;
 #endif
 
 private:
-  bool stopping = false;
+  bool Stopping = false;
 
 private:
-  unsigned retired = 0;   // Jobs written out
-  unsigned completed = 0; // Jobs completed, but waiting to write
-  unsigned running = 0;	  // Jobs running
-  unsigned pending = 0;	  // Jobs waiting to run
+  unsigned Retired = 0;   // Jobs written out
+  unsigned Completed = 0; // Jobs completed, but waiting to write
+  unsigned Running = 0;	  // Jobs running
+  unsigned Pending = 0;	  // Jobs waiting to run
 
 private:
-  unsigned counts[STATUS_HWM];
+  unsigned Counts[STATUS_HWM];
 
 public:
   Engine (unsigned limit, std::ostream &sum, std::ostream &log);
   ~Engine ();
 
 public:
-  bool IsLive () const
+  bool isLive () const
   {
-    return !generator.Ready () || !jobs.empty ()
-      || !used_tokens.empty () || !ready_tokens.empty ();
+    return !Generator.isReady () || !Jobs.empty ()
+      || !UsedTokens.empty () || !ReadyTokens.empty ();
   }
-  void Init (char const *tester, std::vector<std::string> *genner,
+  void init (char const *tester, std::vector<std::string> *genner,
 	     int argc, char const *const argv[]);
-  void Fini (std::ostream * = nullptr);
-  void Stop (int sig);
-  void Process ();
-  void Retire (std::ostream * = nullptr);
-  void Fini (Job const &, std::ostream * = nullptr, bool is_generator = false);
-  void Spawn ();
-  std::string Progress ();
+  void fini (std::ostream * = nullptr);
+  void stop (int sig);
+  void process ();
+  void retire (std::ostream * = nullptr);
+  void fini (Job const &, std::ostream * = nullptr, bool is_generator = false);
+  void spawn ();
+  std::string getProgress ();
 
 public:
-  auto Result (Status status)
+  auto result (Statuses status)
   {
-    counts[status]++;
-    return Parent::Result (status, nms::SrcLoc ());
+    Counts[status]++;
+    return Parent::result (status, SrcLoc ());
   }
 
 private:
-  void ReadGenerator ();
-  void HandleSignal (int sig);
+  void readGenerator ();
+  void handleSignal (int sig);
 
 private:
-  void StopMake (int);
-  void WantMake ();
-  void ReadMake ();
-  void WriteMake ();
-  void QueueMake (int token);
+  void stopMake (int);
+  void wantMake ();
+  void readMake ();
+  void writeMake ();
+  void queueMake (int token);
 
   friend std::ostream &operator<< (std::ostream &, Engine const &);
 };
 
 #else
 
-static constexpr
-unsigned char sigs[]
+static constexpr unsigned char sigs[]
 = {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGTERM};
 
-Engine::Engine (unsigned limit, std::ostream &sum_, std::ostream &log_)
-  : Parent (sum_, log_), job_limit (limit)
+Engine::Engine (unsigned limit, std::ostream &sum, std::ostream &log)
+  : Parent (sum, log), JobLimit (limit)
 {
   for (unsigned ix = STATUS_HWM; ix--;)
-    counts[ix] = 0;
+    Counts[ix] = 0;
 
   // Get jobserver FDs
-  if (job_limit)
+  if (JobLimit)
     ;
   else if (char const *makeflags = getenv ("MAKEFLAGS"))
     {
@@ -136,20 +135,20 @@ Engine::Engine (unsigned limit, std::ostream &sum_, std::ostream &log_)
 	      Lexer lexer (option);
 	      struct stat stat_buf;
 
-	      if (!lexer.Integer () || lexer.PeekAdvance () != ','
-		  || !lexer.Integer () || lexer.Peek ()
-		  || (make_in = lexer.GetToken ()->GetInteger (),
-		      make_out = lexer.GetToken ()->GetInteger (),
-		      fstat (make_in, &stat_buf) < 0
+	      if (!lexer.isInteger () || lexer.peekAdvanceChar () != ','
+		  || !lexer.isInteger () || lexer.peekChar ()
+		  || (MakeIn = lexer.getToken ()->integer (),
+		      MakeOut = lexer.getToken ()->integer (),
+		      fstat (MakeIn, &stat_buf) < 0
 		      || (stat_buf.st_mode & S_IFMT) != S_IFIFO
-		      || fstat (make_out, &stat_buf) < 0
+		      || fstat (MakeOut, &stat_buf) < 0
 		      || (stat_buf.st_mode & S_IFMT) != S_IFIFO))
 		{
 		  /* Not available after all.  */
 		  std::cerr << "MAKEFLAGS" << '=' << makeflags
 			    << (" specifies unusable jobserver"
 				" (prefix command with '+'?)\n");
-		  make_in = make_out = -1;
+		  MakeIn = MakeOut = -1;
 		}
 	      break;
 	    }
@@ -157,16 +156,16 @@ Engine::Engine (unsigned limit, std::ostream &sum_, std::ostream &log_)
 	    {
 	      if (option.find_first_of ('n') != option.npos)
 		// Non-execution
-		command.clear ();
+		Command.clear ();
 	      first = false;
 	    }
 	}
 
       // We can always spawn one job without asking the jobserver
-      job_limit = 1;
+      JobLimit = 1;
     }
   else
-    job_limit = 1;
+    JobLimit = 1;
 }
 
 Engine::~Engine ()
@@ -175,18 +174,17 @@ Engine::~Engine ()
 std::ostream &operator<< (std::ostream &s, Engine const &self)
 {
   for (unsigned ix = 0; ix != Tester::STATUS_HWM; ix++)
-    if (ix == Tester::PASS || self.counts[ix])
-      s << self.statuses[ix] << ' ' << self.counts[ix] << '\n';
+    if (ix == Tester::PASS || self.Counts[ix])
+      s << self.StatusNames[ix] << ' ' << self.Counts[ix] << '\n';
 
   return s;
 }
 
 #ifndef USE_EPOLL
 // Signals we saw
-volatile
-unsigned sigs_seen;
+volatile unsigned sigs_seen;
 
-void NoteSignal (int signal)
+static void noteSignal (int signal)
 {
   for (unsigned ix = sizeof (sigs); ix--;)
     if (signal == sigs[ix])
@@ -197,29 +195,28 @@ void NoteSignal (int signal)
 }
 #endif
 
-void Engine::Init (char const *tester, std::vector<std::string> *genner,
+void Engine::init (char const *tester, std::vector<std::string> *genner,
 		   int argc, char const *const argv[])
 {
   auto now = time (nullptr);
   *this << "Test run: " << ctime (&now) << "\n";
 
   // Initialize command vector and gen vector
-  command.emplace_back (tester);
+  Command.emplace_back (tester);
   bool dashed = false;
   for (int ix = 0; ix != argc; ix++)
     {
       std::string_view arg (argv[ix]);
       if (!dashed && arg == "--")
 	{
-	  command.reserve (ix + 1);
-	  for (auto iter = generator.Command ().begin ();
-	       iter != generator.Command ().end (); ++iter)
-	    command.emplace_back (std::move (*iter));
-	  generator.Command ().clear ();
+	  Command.reserve (ix + 1);
+	  for (auto &word : Generator.command ())
+	    Command.emplace_back (std::move (word));
+	  Generator.command ().clear ();
 	  dashed = true;
 	}
       else
-	generator.Command ().emplace_back (arg);
+	Generator.command ().emplace_back (arg);
     }
 
   // Signal fd and block sigchild
@@ -231,17 +228,17 @@ void Engine::Init (char const *tester, std::vector<std::string> *genner,
   while (sigprocmask (SIG_BLOCK, &sigmask, nullptr) < 0)
     assert (errno == EINTR);
 
-  sig_fd = signalfd (-1, &sigmask, SFD_NONBLOCK | SFD_CLOEXEC);
-  assert (sig_fd >= 0);
+  SigFD = signalfd (-1, &sigmask, SFD_NONBLOCK | SFD_CLOEXEC);
+  assert (SigFD >= 0);
 
   // Epoll fd
-  poll_fd = epoll_create1 (EPOLL_CLOEXEC);
-  assert (poll_fd >= 0);
+  PollFD = epoll_create1 (EPOLL_CLOEXEC);
+  assert (PollFD >= 0);
 
   epoll_event ev;
   ev.events = EPOLLIN;
-  ev.data.u64 = unsigned (FD::SIGNAL);
-  while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, sig_fd, &ev) < 0)
+  ev.data.u64 = unsigned (FDs::SIGNAL);
+  while (epoll_ctl (PollFD, EPOLL_CTL_ADD, SigFD, &ev) < 0)
     assert (errno == EINTR || errno == EAGAIN);
 #else
   while (sigprocmask (SIG_UNBLOCK, &sigmask, nullptr) < 0)
@@ -262,62 +259,61 @@ void Engine::Init (char const *tester, std::vector<std::string> *genner,
 
   if (genner)
     {
-      if (generator.Spawn (*this, *genner, poll_fd))
-	fixed_jobs++;
+      if (Generator.spawn (*this, *genner, PollFD))
+	FixedJobs++;
     }
   else
     {
       // Create pending job queue
-      for (auto iter = generator.Command ().begin ();
-	   iter != generator.Command ().end (); ++iter)
+      for (auto &word : Generator.command ())
 	{
-	  jobs.emplace_back (std::move (*iter));
-	  pending++;
+	  Jobs.emplace_back (std::move (word));
+	  Pending++;
 	}
-      generator.Command ().clear ();
+      Generator.command ().clear ();
     }
 }
 
-void Engine::Fini (std::ostream *summary)
+void Engine::fini (std::ostream *summary)
 {
-  Fini (generator, summary, true);
+  fini (Generator, summary, true);
 
   if (summary)
-    *summary << "# Summary of " << retired << " test programs \n" << *this;
-  if (retired)
-    Sum () << '\n';
-  *this << "# Summary of " << retired << " test programs \n" << *this;
+    *summary << "# Summary of " << Retired << " test programs \n" << *this;
+  if (Retired)
+    sum () << '\n';
+  *this << "# Summary of " << Retired << " test programs \n" << *this;
 
-  Flush ();
+  flush ();
 
 #ifdef USE_EPOLL
-  close (poll_fd);
-  poll_fd = -1;
-  close (sig_fd);
-  sig_fd = -1;
+  close (PollFD);
+  PollFD = -1;
+  close (SigFD);
+  SigFD = -1;
 #else
   // Restore signal handlers
   for (unsigned ix = sizeof (sigs); ix--;)
-    sigaction (sigs[ix], &old_actions[ix], nullptr);
-  delete[] old_actions;
-  old_actions = nullptr;
+    sigaction (sigs[ix], &OldActions[ix], nullptr);
+  delete[] OldActions;
+  OldActions = nullptr;
 #endif
 }
 
-void Engine::ReadGenerator ()
+void Engine::readGenerator ()
 {
   // Lex
-  auto &buffer = generator.Buffer (0);
+  auto &buffer = Generator.buffer (0);
   auto first = buffer.begin ();
   auto last = buffer.end ();
   while (first != last)
     {
       auto eol = std::find (first, last, '\n');
-      if (eol == last && buffer.IsOpen ())
+      if (eol == last && buffer.isOpen ())
 	break;
 
       std::string_view line (first, eol);
-      first = eol + buffer.IsOpen ();
+      first = eol + buffer.isOpen ();
 
       bool sol = true;
       for (size_t pos = 0;; sol = false)
@@ -332,8 +328,8 @@ void Engine::ReadGenerator ()
 	  if (end == line.npos)
 	    end = line.size ();
 
-	  jobs.emplace_back (line.substr (pos, end - pos));
-	  pending++;
+	  Jobs.emplace_back (line.substr (pos, end - pos));
+	  Pending++;
 	  pos = end;
 	}
     }
@@ -342,10 +338,10 @@ void Engine::ReadGenerator ()
   if (first != buffer.begin ())
     buffer.erase (buffer.begin (), first);
 
-  WantMake ();
+  wantMake ();
 }
 
-void Engine::HandleSignal (int sig)
+void Engine::handleSignal (int sig)
 {
   switch (sig)
     {
@@ -357,36 +353,36 @@ void Engine::HandleSignal (int sig)
 	  {
 	    if (child == pid_t (-1))
 	      {
-		assert (!running && generator.Ready ());
+		assert (!Running && Generator.isReady ());
 		break;
 	      }
 
 	    if (WIFEXITED (status) || WIFSIGNALED (status))
 	      {
-		if (generator.IsPid (child))
+		if (Generator.isPid (child))
 		  {
-		    generator.Reap (status);
-		    fixed_jobs--;
+		    Generator.reap (status);
+		    FixedJobs--;
 		  }
 		else
 		  {
-		    auto iter = jobs.begin ();
-		    for (unsigned limit = completed + running; limit--; ++iter)
-		      if (iter->IsPid (child))
+		    auto iter = Jobs.begin ();
+		    for (unsigned limit = Completed + Running; limit--; ++iter)
+		      if (iter->isPid (child))
 			{
-			  int token = iter->Reap (status);
+			  int token = iter->reap (status);
 			  if (token != -1)
-			    QueueMake (token);
+			    queueMake (token);
 			  else
-			    fixed_jobs--;
+			    FixedJobs--;
 
-			  completed++;
-			  running--;
+			  Completed++;
+			  Running--;
 			  break;
 			}
 		  }
 	      }
-	    if (!running && !generator.Ready ())
+	    if (!Running && !Generator.isReady ())
 	      break;
 	  }
       }
@@ -396,7 +392,7 @@ void Engine::HandleSignal (int sig)
     case SIGINT:
     case SIGQUIT:
     case SIGTERM:
-      Stop (sig);
+      stop (sig);
       break;
 
     case SIGPIPE:
@@ -405,24 +401,24 @@ void Engine::HandleSignal (int sig)
     }
 }
 
-void Engine::Stop (int sig)
+void Engine::stop (int sig)
 {
-  stopping = true;
-  generator.Stop (sig);
-  if (pending)
+  Stopping = true;
+  Generator.stop (sig);
+  if (Pending)
     do
-      jobs.pop_back ();
-    while (--pending);
-  for (auto iter = jobs.begin (); iter != jobs.end (); ++iter)
-    iter->Stop (sig);
+      Jobs.pop_back ();
+    while (--Pending);
+  for (auto &job : Jobs)
+    job.stop (sig);
 }
 
-void Engine::WantMake ()
+void Engine::wantMake ()
 {
-  if (make_in >= 0)
+  if (MakeIn >= 0)
     {
-      unsigned want = pending;
-      unsigned ready = ready_tokens.size () + (job_limit - fixed_jobs);
+      unsigned want = Pending;
+      unsigned ready = ReadyTokens.size () + (JobLimit - FixedJobs);
       if (want < ready)
 	want = 0;
       else
@@ -431,104 +427,104 @@ void Engine::WantMake ()
 #ifdef USE_EPOLL
       if (!want)
 	{
-	  if (make_want)
-	    while (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_in, nullptr) < 0)
+	  if (MakeWant)
+	    while (epoll_ctl (PollFD, EPOLL_CTL_DEL, MakeIn, nullptr) < 0)
 	      assert (errno == EINTR || errno == EAGAIN);
 	}
       else
 	{
-	  if (!make_want)
+	  if (!MakeWant)
 	    {
 	      epoll_event ev;
 	      ev.events = EPOLLIN;
-	      ev.data.u64 = unsigned (FD::MAKE_IN);
-	      while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, make_in, &ev) < 0)
+	      ev.data.u64 = unsigned (FDs::MAKE_IN);
+	      while (epoll_ctl (PollFD, EPOLL_CTL_ADD, MakeIn, &ev) < 0)
 		assert (errno == EINTR || errno == EAGAIN);
 	    }
 	}
 #endif
-      make_want = want;
+      MakeWant = want;
     }
 }
 
-void Engine::StopMake (int err)
+void Engine::stopMake (int err)
 {
-  assert (make_out >= 0 && make_in >= 0);
+  assert (MakeOut >= 0 && MakeIn >= 0);
 #ifdef USE_EPOLL
-  epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_out, nullptr);
-  epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_in, nullptr);
+  epoll_ctl (PollFD, EPOLL_CTL_DEL, MakeOut, nullptr);
+  epoll_ctl (PollFD, EPOLL_CTL_DEL, MakeIn, nullptr);
 #endif
-  make_out = make_in = -1;
-  used_tokens.clear ();
-  Result (Tester::ERROR) << " terminating jobserver:" << strerror (err);
+  MakeOut = MakeIn = -1;
+  UsedTokens.clear ();
+  result (Tester::ERROR) << " terminating jobserver:" << strerror (err);
 }
 
-void Engine::ReadMake ()
+void Engine::readMake ()
 {
   unsigned const block_size = 16;
   char buffer[block_size];
 
-  unsigned want = make_want < block_size ? make_want : block_size;
-  ssize_t got = read (make_in, buffer, want);
+  unsigned want = MakeWant < block_size ? MakeWant : block_size;
+  ssize_t got = read (MakeIn, buffer, want);
   if (got < 0)
     {
       if (errno != EINTR && errno != EAGAIN)
-	StopMake (errno);
+	stopMake (errno);
     }
   else
-    ready_tokens.append (buffer, got);
+    ReadyTokens.append (buffer, got);
 
-  WantMake ();
+  wantMake ();
 }
 
 // Write the token back to jobcontrol to
 // allow other processes a chance.
-void Engine::QueueMake (int token)
+void Engine::queueMake (int token)
 {
 #ifdef USE_EPOLL
-  if (used_tokens.empty ())
+  if (UsedTokens.empty ())
     {
       epoll_event ev;
       ev.events = EPOLLOUT;
-      ev.data.u64 = unsigned (FD::MAKE_OUT);
-      while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, make_out, &ev) < 0)
+      ev.data.u64 = unsigned (FDs::MAKE_OUT);
+      while (epoll_ctl (PollFD, EPOLL_CTL_ADD, MakeOut, &ev) < 0)
 	assert (errno == EINTR || errno == EAGAIN);
     }
 #endif
-  used_tokens.push_back (char (token));
+  UsedTokens.push_back (char (token));
 }
 
 // Able to write something to the make pipe.  Do it.
 
-void Engine::WriteMake ()
+void Engine::writeMake ()
 {
-  ssize_t wrote = write (make_out, used_tokens.data (), used_tokens.size ());
+  ssize_t wrote = write (MakeOut, UsedTokens.data (), UsedTokens.size ());
   if (wrote < 0)
     {
       if (errno != EINTR && errno != EAGAIN)
-	StopMake (errno);
+	stopMake (errno);
       wrote = 0;
     }
 
-  if (size_t (wrote) == used_tokens.size ())
+  if (size_t (wrote) == UsedTokens.size ())
     {
-      used_tokens.clear ();
+      UsedTokens.clear ();
 #ifdef USE_EPOLL
-      while (epoll_ctl (poll_fd, EPOLL_CTL_DEL, make_out, nullptr) < 0)
+      while (epoll_ctl (PollFD, EPOLL_CTL_DEL, MakeOut, nullptr) < 0)
 	assert (errno == EINTR || errno == EAGAIN);
 #endif
     }
   else
-    used_tokens.erase (0, wrote);
+    UsedTokens.erase (0, wrote);
 }
 
-void Engine::Process ()
+void Engine::process ()
 {
 #ifdef USE_EPOLL
   constexpr int max_events = 20;
   epoll_event events[max_events];
 
-  int count = epoll_wait (poll_fd, events, max_events, -1);
+  int count = epoll_wait (PollFD, events, max_events, -1);
   if (count < 0)
     {
       count = 0;
@@ -538,32 +534,32 @@ void Engine::Process ()
   for (int ix = 0; ix != count; ix++)
     switch (uint64_t cookie = events[ix].data.u64)
       {
-      case unsigned (FD::SIGNAL):
+      case unsigned (FDs::SIGNAL):
 	{
 	  signalfd_siginfo sig;
 
-	  ssize_t bytes = read (sig_fd, &sig, sizeof (sig));
+	  ssize_t bytes = read (SigFD, &sig, sizeof (sig));
 	  assert (bytes == sizeof (sig));
-	  HandleSignal (sig.ssi_signo);
+	  handleSignal (sig.ssi_signo);
 	}
 	break;
 
-      case unsigned (FD::MAKE_IN):
-	ReadMake ();
+      case unsigned (FDs::MAKE_IN):
+	readMake ();
 	break;
 
-      case unsigned (FD::MAKE_OUT):
-	WriteMake ();
+      case unsigned (FDs::MAKE_OUT):
+	writeMake ();
 	break;
 
       default:
 	{
 	  Job *job = reinterpret_cast<Job *> (cookie ^ (cookie & 7));
 
-	  job->Read (*this, cookie & 7, poll_fd);
+	  job->read (*this, cookie & 7, PollFD);
 
-	  if (!stopping && !(cookie & 7) && job == &generator)
-	    ReadGenerator ();
+	  if (!Stopping && !(cookie & 7) && job == &Generator)
+	    readGenerator ();
 	}
 	break;
       }
@@ -644,34 +640,34 @@ void Engine::Process ()
 #endif
 }
 
-void Engine::Fini (Job const &job, std::ostream *out, bool is_generator)
+void Engine::fini (Job const &job, std::ostream *out, bool is_generator)
 {
   if (is_generator)
-    Log () << "# Test generator: " << job << '\n';
+    log () << "# Test generator: " << job << '\n';
   else
     {
-      Log () << "# Test:" << retired << " " << job << '\n';
-      Log () << "ALOY:";
-      for (auto iter = command.begin (); iter != command.end (); ++iter)
-	Log () << *iter << ' ';
-      Log () << job << '\n';
+      log () << "# Test:" << Retired << " " << job << '\n';
+      log () << "ALOY:";
+      for (const auto &cmd : Command)
+	log () << cmd << ' ';
+      log () << job << '\n';
     }
 
-  auto &log_text = job.Buffer (1);
-  Log () << std::string_view (log_text.data (), log_text.size ());
+  auto &log_text = job.buffer (1);
+  log () << std::string_view (log_text.data (), log_text.size ());
 
   if (!is_generator)
     {
       unsigned bad_count = 0;
       std::string_view bad_line;
-      auto &sum_text = job.Buffer (0);
+      auto &sum_text = job.buffer (0);
       for (auto sol = sum_text.data (), end = sol + sum_text.size ();
 	   sol != end;)
 	{
 	  auto eol = std::find (sol, end, '\n');
 	  auto line = std::string_view (sol, eol);
 
-	  Status st = DecodeStatus (line);
+	  Statuses st = decodeStatus (line);
 	  if (st == STATUS_HWM)
 	    {
 	      bad_count++;
@@ -680,92 +676,92 @@ void Engine::Fini (Job const &job, std::ostream *out, bool is_generator)
 	    }
 	  else if (st < Tester::STATUS_REPORT)
 	    {
-	      counts[st]++;
+	      Counts[st]++;
 	      if (out && (st == Tester::FAIL || st == Tester::ERROR))
 		*out << line << '\n';
 	    }
-	  Sum () << line << '\n';
+	  sum () << line << '\n';
 	  sol = eol + (eol != end);
 	}
       if (bad_count)
 	{
-	  Result (Tester::ERROR)
+	  result (Tester::ERROR)
 	    << job << ": unexpected summary line '" << bad_line << '\'';
-	  counts[Tester::ERROR]++;
+	  Counts[Tester::ERROR]++;
 	}
     }
 
-  job.ReportExit (*this);
+  job.reportExit (*this);
 
-  Log () << '\n';
+  log () << '\n';
 }
 
-void Engine::Retire (std::ostream *out)
+void Engine::retire (std::ostream *out)
 {
-  while (completed && jobs.front ().Ready ())
+  while (Completed && Jobs.front ().isReady ())
     {
-      Fini (jobs.front (), out, false);
-      jobs.pop_front ();
+      fini (Jobs.front (), out, false);
+      Jobs.pop_front ();
 
-      completed--;
-      retired++;
+      Completed--;
+      Retired++;
     }
 }
 
-void Engine::Spawn ()
+void Engine::spawn ()
 {
-  for (auto iter = jobs.begin () + (completed + running); pending; ++iter)
+  for (auto iter = Jobs.begin () + (Completed + Running); Pending; ++iter)
     {
       int token = -1;
-      if (job_limit > fixed_jobs)
+      if (JobLimit > FixedJobs)
 	;
-      else if (ready_tokens.size ())
+      else if (ReadyTokens.size ())
 	{
-	  token = ready_tokens.back ();
-	  ready_tokens.pop_back ();
+	  token = ReadyTokens.back ();
+	  ReadyTokens.pop_back ();
 	}
       else
 	break;
 
-      if (iter->Spawn (*this, command, poll_fd, token))
+      if (iter->spawn (*this, Command, PollFD, token))
 	{
-	  running++;
+	  Running++;
 	  if (token < 0)
-	    fixed_jobs++;
+	    FixedJobs++;
 	}
       else
 	{
-	  completed++;
+	  Completed++;
 	  if (token >= 0)
-	    QueueMake (token);
+	    queueMake (token);
 	}
-      pending--;
+      Pending--;
     }
 
-  while (!ready_tokens.empty ())
+  while (!ReadyTokens.empty ())
     {
-      QueueMake (ready_tokens.back ());
-      ready_tokens.pop_back ();
+      queueMake (ReadyTokens.back ());
+      ReadyTokens.pop_back ();
     }
 
-  WantMake ();
+  wantMake ();
 }
 
-std::string Engine::Progress ()
+std::string Engine::getProgress ()
 {
-  unsigned done = retired + completed;
-  unsigned total = done + running + pending;
+  unsigned done = Retired + Completed;
+  unsigned total = done + Running + Pending;
   std::ostringstream progress;
 
-  progress << "[" << retired;
-  if (completed)
-    progress << "(&" << completed << ')';
-  if (running)
-    progress << '+' << running;
+  progress << "[" << Retired;
+  if (Completed)
+    progress << "(&" << Completed << ')';
+  if (Running)
+    progress << '+' << Running;
   progress << '/' << total << "] " << done * 100 / (total + !total) << '%';
-  if (!jobs.empty ())
-    progress << ' ' << jobs.front ();
-  else if (!generator.Ready ())
+  if (!Jobs.empty ())
+    progress << ' ' << Jobs.front ();
+  else if (!Generator.isReady ())
     progress << " ...";
   return progress.str ();
 }

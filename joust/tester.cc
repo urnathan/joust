@@ -13,7 +13,7 @@
 using namespace joust;
 
 constinit
-std::string_view const Tester::statuses[]
+std::string_view const Tester::StatusNames[]
 = {NMS_LIST (NMS_STRING, JOUST_STATUSES)};
 
 Tester::Tester () noexcept
@@ -22,25 +22,25 @@ Tester::Tester () noexcept
   /* If one of the std streams is not a tty, then enable sum stream
      too.  This is pretty much the best we can do.   */
   if (!isatty (1) || !isatty (2))
-    sum = &std::cout;
+    Sum = &std::cout;
 }
 
-Tester::Status Tester::DecodeStatus (std::string_view const &line) noexcept
+Tester::Statuses Tester::decodeStatus (std::string_view const &line) noexcept
 {
   for (unsigned ix = STATUS_HWM; ix--;)
-    if (line.size () > statuses[ix].size ()
-	&& line.starts_with (statuses[ix])
-	&& line[statuses[ix].size ()] == ':')
-      return Status (ix);
+    if (line.size () > StatusNames[ix].size ()
+	&& line.starts_with (StatusNames[ix])
+	&& line[StatusNames[ix].size ()] == ':')
+      return Statuses (ix);
 
   return STATUS_HWM;
 }
 
-Tester::Streamer Tester::Result (Status status, nms::SrcLoc loc) noexcept
+Tester::Streamer Tester::result (Statuses status, nms::SrcLoc loc) noexcept
 {
   Streamer result (this);
 
-  result << statuses[status] << ": ";
+  result << StatusNames[status] << ": ";
 
   if (auto const *file = loc.file ())
     {

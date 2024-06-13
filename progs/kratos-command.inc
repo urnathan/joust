@@ -7,52 +7,52 @@
 class Command
 {
 public:
-  enum Redirect : char
+  enum Redirects : char
   {
     R_NORMAL,
     R_FILE,
   };
 
 private:
-  std::vector<std::string> words; // parsed line
-  nms::SrcLoc loc;
-  int stdin = -1;
-  pid_t pid = 0;
-  Redirect redirect = R_NORMAL;
+  std::vector<std::string> Words; // parsed line
+  SrcLoc Loc;
+  int Stdin = -1;
+  pid_t Pid = 0;
+  Redirects Redirect = R_NORMAL;
 
 public:
-  auto Error ()
-  { return gaige::Error (loc); }
+  auto error ()
+  { return gaige::Error (Loc); }
 
 public:
-  auto const &Loc () const 
-  { return loc; }
-  void Loc (nms::SrcLoc l)
-  { loc = l; }
+  auto const &loc () const 
+  { return Loc; }
+  void loc (SrcLoc l)
+  { Loc = l; }
 
 public:
-  auto RedirectType () const
-  { return redirect; }
-  void RedirectType (Redirect r)
+  auto redirect () const
+  { return Redirect; }
+  void redirect (Redirects r)
   {
-    assert (redirect == R_NORMAL);
-    redirect = r;
+    assert (Redirect == R_NORMAL);
+    Redirect = r;
   }
 
 public:
-  auto Empty () const
-  { return words.empty (); }
+  auto empty () const
+  { return Words.empty (); }
 
 public:
-  bool Execute (int, int, unsigned const *limits = nullptr);
-  void Stop (int sig)
+  bool execute (int, int, unsigned const *limits = nullptr);
+  void stop (int sig)
   {
-    if (pid > 0)
-      kill (pid, sig);
+    if (Pid > 0)
+      kill (Pid, sig);
   }
 
 private:
-  void Shellify (Symbols const &);
+  void shellify (Symbols const &);
 
   friend std::ostream &operator<< (std::ostream &, Command const &);
 
@@ -62,13 +62,12 @@ private:
 
 #else
 
-void Command::Shellify (Symbols const &syms)
+void Command::shellify (Symbols const &syms)
 {
   bool active = false;
   size_t len = 0;
-  for (auto iter = words.begin (); iter != words.end (); ++iter)
+  for (auto const &word: Words)
     {
-      std::string const &word = *iter;
       len += word.size () + 1;
       if (!active)
 	{
@@ -88,47 +87,46 @@ void Command::Shellify (Symbols const &syms)
       std::string concat;
       concat.reserve (len);
 
-      for (auto iter = words.begin (); iter != words.end (); ++iter)
+      for (auto const &word : Words)
 	{
-	  if (iter != words.begin ())
+	  if (!concat.empty())
 	    concat.push_back (' ');
-	  concat += *iter;
+	  concat += word;
 	}
 
-      words.clear ();
-      if (auto sh = syms.Get ("SHELL"))
-	words.emplace_back (*sh);
+      Words.clear ();
+      if (auto sh = syms.value ("SHELL"))
+	Words.emplace_back (*sh);
       else
 	{
 	  char const *shell = getenv ("SHELL");
 	  if (!shell || !*shell)
 	    shell = "zsh";
-	  words.emplace_back (shell);
+	  Words.emplace_back (shell);
 	}
-      words.emplace_back ("-c");
-      words.emplace_back (std::move (concat));
+      Words.emplace_back ("-c");
+      Words.emplace_back (std::move (concat));
     }
 }
 
-bool Command::Execute (int fd_out, int fd_err, unsigned const *limits)
+bool Command::execute (int fd_out, int fd_err, unsigned const *limits)
 {
-  auto spawn = Spawn (stdin, fd_out, fd_err, words, nullptr, limits);
+  auto [p, err] = spawn (Stdin, fd_out, fd_err, Words, nullptr, limits);
 
-  pid = std::get<0> (spawn);
-  if (int err = std::get<1> (spawn))
-    Error () << "failed to spawn '" << words[0]
+  Pid = p;
+  if (err)
+    error () << "failed to spawn '" << Words[0]
 	     << "': " << strerror (err);
 
-  return std::get<0> (spawn);
+  return bool (Pid);
 }
 
 std::ostream &operator<< (std::ostream &s, Command const &cmd)
 {
-  for (auto witer = cmd.words.begin (); witer != cmd.words.end (); ++witer)
+  for (auto const &word : cmd.Words)
     {
       s << ' ';
 
-      std::string_view const word = *witer;
       bool quoted = false;
       constexpr char const *meta (R"('"`()[]\$ 	*?|;&<>)");
       for (auto *ptr = meta; *ptr; ptr++)

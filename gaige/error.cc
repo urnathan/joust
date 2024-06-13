@@ -10,11 +10,11 @@
 
 using namespace gaige;
 
-bool Error::errored;
+bool Error::HasErrored;
 
 Error::Error (nms::SrcLoc loc)
-  : stream (&std::cerr)
+  : Stream (&std::cerr)
 {
-  errored = true;
-  *stream << loc.file () << ':' << loc.line () << ": error: ";
+  HasErrored = true;
+  *Stream << loc.file () << ':' << loc.line () << ": error: ";
 }

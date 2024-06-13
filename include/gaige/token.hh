@@ -29,7 +29,7 @@ class Token
   (WHITESPACE, "whitespace"),				\
   (REGEX_CAPTURE, "regex-capture")
 public:
-  enum Kind : unsigned char
+  enum Kinds : unsigned char
   {
     NMS_LIST (NMS_1ST, TOKEN_KINDS),
     TOKEN_HWM,
@@ -43,55 +43,49 @@ public:
   };
 
 public:
-  static char const *const kinds[TOKEN_HWM];
+  static char const *const KindNames[TOKEN_HWM];
 
 private:
-  union Value
+  union
   {
-    unsigned long integer;
-    std::string string;
-    std::vector<Token> capture;
-
-    Value ()
-    {}
-    ~Value ()
-    {}
+    unsigned long Integer;
+    std::string String;
+    std::vector<Token> Capture;
   };
-  Value value;
-  Kind kind;
-  unsigned char user = 0;
+   Kinds Kind;
+  unsigned char User = 0;
 
 public:
-  Token (Kind kind_ = EMPTY)
-    : kind (kind_)
+  Token (Kinds kind = EMPTY)
+    : Kind (kind)
   {
-    if (kind >= INTEGER_LWM && kind < INTEGER_HWM)
-      new (&value.integer) decltype (value.integer) ();
-    else if (kind >= STRING_LWM && kind < STRING_HWM)
-      new (&value.string) decltype (value.string) ();
-    else if (kind >= CAPTURE_LWM && kind < CAPTURE_HWM)
-      new (&value.capture) decltype (value.capture) ();
+    if (Kind >= INTEGER_LWM && Kind < INTEGER_HWM)
+      new (&Integer) decltype (Integer) ();
+    else if (Kind >= STRING_LWM && Kind < STRING_HWM)
+      new (&String) decltype (String) ();
+    else if (Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM)
+      new (&Capture) decltype (Capture) ();
   }
-  Token (Kind kind_, unsigned long integer)
-    : Token (kind_)
+  Token (Kinds kind, unsigned long integer)
+    : Kind (kind)
   {
-    assert (kind >= INTEGER_LWM && kind < INTEGER_HWM);
-    new (&value.integer) decltype (value.integer) (std::move (integer));
+    assert (Kind >= INTEGER_LWM && Kind < INTEGER_HWM);
+    new (&Integer) decltype (Integer) (std::move (integer));
   }
-  Token (Kind kind_, std::string &&string)
-    : Token (kind_)
+  Token (Kinds kind, std::string &&string)
+    : Kind (kind)
   {
-    assert (kind_ >= STRING_LWM && kind_ < STRING_HWM);
-    new (&value.string) decltype (value.string) (std::move (string));
+    assert (Kind >= STRING_LWM && Kind < STRING_HWM);
+    new (&String) decltype (String) (std::move (string));
   }
-  Token (Kind kind_, std::string_view const &string)
-    : Token (kind_, std::string (string))
+  Token (Kinds kind, std::string_view const &string)
+  : Token (kind, std::string (string))
   {}
-  Token (Kind kind_, std::vector<Token> &&capture)
-    : Token (kind_)
+  Token (Kinds kind, std::vector<Token> &&capture)
+    : Kind (kind)
   {
-    assert (kind_ >= CAPTURE_LWM && kind_ < CAPTURE_HWM);
-    new (&value.capture) decltype (value.capture) (std::move (capture));
+    assert (Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM);
+    new (&Capture) decltype (Capture) (std::move (capture));
   }
 
 public:
@@ -109,40 +103,40 @@ public:
   }
 
 public:
-  Kind GetKind () const
-  { return kind; }
+  Kinds kind () const
+  { return Kind; }
 
 public:
-  unsigned GetUser () const
-  { return user; }
-  void SetUser (unsigned u)
-  { user = u; }
+  unsigned user () const
+  { return User; }
+  void user (unsigned u)
+  { User = u; }
 
 public:
-  unsigned long GetInteger () const
+  unsigned long integer () const
   {
-    assert (kind >= INTEGER_LWM && kind < INTEGER_HWM);
-    return value.integer;
+    assert (Kind >= INTEGER_LWM && Kind < INTEGER_HWM);
+    return Integer;
   }
-  std::string const &GetString () const
+  std::string const &string () const
   {
-    assert (kind >= STRING_LWM && kind < STRING_HWM);
-    return value.string;
+    assert (Kind >= STRING_LWM && Kind < STRING_HWM);
+    return String;
   }
-  std::string &GetString ()
+  std::string &string ()
   {
-    assert (kind >= STRING_LWM && kind < STRING_HWM);
-    return value.string;
+    assert (Kind >= STRING_LWM && Kind < STRING_HWM);
+    return String;
   }
-  std::vector<Token> const &GetCapture () const
+  std::vector<Token> const &capture () const
   {
-    assert (kind >= CAPTURE_LWM && kind < CAPTURE_HWM);
-    return value.capture;
+    assert (Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM);
+    return Capture;
   }
-  std::vector<Token> &GetCapture ()
+  std::vector<Token> &capture ()
   {
-    assert (kind >= CAPTURE_LWM && kind < CAPTURE_HWM);
-    return value.capture;
+    assert (Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM);
+    return Capture;
   }
 
 public:

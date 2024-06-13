@@ -16,7 +16,7 @@
 using namespace nms;
 using namespace gaige;
 
-std::tuple<pid_t, int> gaige::Spawn (int fd_in, int fd_out, int fd_err,
+std::tuple<pid_t, int> gaige::spawn (int fd_in, int fd_out, int fd_err,
 				     std::vector<std::string> const &command,
 				     std::vector<std::string> const *wrapper,
 				     unsigned const *limits)
@@ -26,7 +26,7 @@ std::tuple<pid_t, int> gaige::Spawn (int fd_in, int fd_out, int fd_err,
   int pipe_fds[2];
 
   // pipe ends: 0-read from, 1-write to
-  if (MakePipe (pipe_fds) < 0)
+  if (makePipe (pipe_fds) < 0)
     err = errno;
   else
     {
@@ -113,7 +113,7 @@ std::tuple<pid_t, int> gaige::Spawn (int fd_in, int fd_out, int fd_err,
 }
 
 #ifndef HAVE_PIPE2
-int gaige::MakePipe (int pipes[2])
+int gaige::makePipe (int pipes[2])
 {
   if (pipe (pipes) < 0)
     // Failed to make the pipes

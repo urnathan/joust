@@ -7,7 +7,7 @@ class Parser : public Scanner
   using Parent = Scanner;
 
 private:
-  enum State : signed char
+  enum States : signed char
   {
     IDLE,		// not started
     REDIRECT_IN,	// read from file
@@ -17,62 +17,62 @@ private:
   };
 
 private:
-  std::vector<Pipeline> &pipes;
-  Symbols &syms;
-  std::string src;
-  State state = IDLE;
-  bool here = false;
+  std::vector<Pipeline> &Pipes;
+  Symbols &Syms;
+  std::string Src;
+  States State = IDLE;
+  bool IsHereDoc = false;
 
 public:
-  Parser (char const *file_, std::vector<Pipeline> &p, Symbols &s)
-    : Parent (file_), pipes (p), syms (s)
+  Parser (char const *file, std::vector<Pipeline> &p, Symbols &s)
+    : Parent (file), Pipes (p), Syms (s)
   {
   }
 
 public:
-  void Unlexed (Lexer const &lexer, char const *ctx);
+  void lexError (Lexer const &lexer, char const *ctx);
 
 protected:
-  virtual bool ProcessLine (std::string_view const &variant,
+  virtual bool processLine (std::string_view const &variant,
 			    std::string_view const &pattern) override;
 
 private:
-  bool RecursivelyExpand (std::vector<std::string> *, Lexer &,
+  bool recursivelyExpand (std::vector<std::string> *, Lexer &,
 			  bool braced, std::string &word,
 			  std::vector<std::string const *> &stack);
-  bool RecursivelyExpand (std::vector<std::string> *,
+  bool recursivelyExpand (std::vector<std::string> *,
 			  std::string_view const &val, bool braced,
 			  std::string &word,
 			  std::vector<std::string const *> &stack);
 };
 
-void Parser::Unlexed (Lexer const &lexer, char const *ctx)
+void Parser::lexError (Lexer const &lexer, char const *ctx)
 {
-  Error ()
+  error ()
     << "failed to lex " << ctx
-    << " after '" << lexer.Before ()
-    << "' at '" << lexer.After () << "'";
+    << " after '" << lexer.before ()
+    << "' at '" << lexer.after () << "'";
 }
 
 // [<from] [>to] cmd [| cmd [| cmd] ]]
-bool Parser::ProcessLine (std::string_view const &variant,
+bool Parser::processLine (std::string_view const &variant,
 			  std::string_view const &pattern) 
 {
   unsigned kind = 0;
   if (variant.size ())
     {
-      if (state >= ACTIVE_LWM)
+      if (State >= ACTIVE_LWM)
 	{
-	  Error () << "command variant only permitted at start of pipeline"
+	  error () << "command variant only permitted at start of pipeline"
 		   << " '" << variant << '\'';
-	  state = IDLE;
+	  State = IDLE;
 	}
 
       for (; kind != Pipeline::PIPELINE_HWM; ++kind)
-	if (variant == Pipeline::kinds[kind])
+	if (variant == Pipeline::KindNames[kind])
 	  goto found;
 
-      return Parent::ProcessLine (variant, pattern);
+      return Parent::processLine (variant, pattern);
     found:;
       if (kind == Pipeline::END)
 	return true;
@@ -86,38 +86,38 @@ bool Parser::ProcessLine (std::string_view const &variant,
   bool escape = false;
   for (;;)
     {
-      char c = lexer.Peek ();
+      char c = lexer.peekChar ();
 
-      if (word.empty () && !depth && !escape && state != REDIRECT_HERE)
+      if (word.empty () && !depth && !escape && State != REDIRECT_HERE)
 	{
 	  // Lex separator
-	  State next_state = IDLE;
+	  States next_state = IDLE;
 	  bool inverted = false;
 	  int exit = 0;
 
-	  if (c == '<' && state == IDLE)
+	  if (c == '<' && State == IDLE)
 	    {
 	      next_state = REDIRECT_IN;
-	      lexer.Advance ();
-	      if (lexer.Peek () == '<')
+	      lexer.advanceChar ();
+	      if (lexer.peekChar () == '<')
 		{
 		  next_state = REDIRECT_HERE;
-		  lexer.Advance ();
+		  lexer.advanceChar ();
 		}
 	    }
 	  else if (c == '>')
 	    {
 	      next_state = REDIRECT_OUT;
-	      lexer.Advance ();
+	      lexer.advanceChar ();
 	    }
 	  else if (c == '|')
 	    {
-	      next_state = State (ACTIVE_LWM + 1);
-	      lexer.Advance ();
-	      if (lexer.Peek () == '&')
+	      next_state = States (ACTIVE_LWM + 1);
+	      lexer.advanceChar ();
+	      if (lexer.peekChar () == '&')
 		{
-		  next_state = State (ACTIVE_LWM + 2);
-		  lexer.Advance ();
+		  next_state = States (ACTIVE_LWM + 2);
+		  lexer.advanceChar ();
 		}
 	    }
 	  else if (bol)
@@ -128,17 +128,17 @@ bool Parser::ProcessLine (std::string_view const &variant,
 		{
 		  inverted = true;
 		  lexed = true;
-		  lexer.Advance ();
+		  lexer.advanceChar ();
 		}
 
-	      if (lexer.Integer ())
+	      if (lexer.isInteger ())
 		{
-		  exit = lexer.GetToken ()->GetInteger ();
+		  exit = lexer.getToken ()->integer ();
 		  lexed = true;
 		}
 	      else if (kind == Pipeline::SIGNAL)
 		{
-		  if (lexer.Identifier ())
+		  if (lexer.isIdentifier ())
 		    {
 		      static std::tuple<unsigned, char const *> sigmap[]
 #define SIGNAL(NAME) {SIG##NAME, #NAME}
@@ -156,7 +156,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 #undef SIGNAL
 
 		      std::string const &signal
-			= lexer.GetToken ()->GetString ();
+			= lexer.getToken ()->string ();
 
 		      for (auto *ptr = sigmap; std::get<1> (*ptr); ptr++)
 			if (signal == std::get<1> (*ptr))
@@ -166,7 +166,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
 			  }
 
 		      if (!exit)
-			Error () << "unknown signal '" << signal << '\'';
+			error () << "unknown signal '" << signal << '\'';
 		      lexed = true;
 		    }
 		}
@@ -178,21 +178,21 @@ bool Parser::ProcessLine (std::string_view const &variant,
 
 	  if (next_state != IDLE)
 	    {
-	      switch (state)
+	      switch (State)
 		{
 		case IDLE:
 		  break;
 
 		case REDIRECT_IN:
-		  if (src.empty ())
-		    Error () << "no source redirection specified";
+		  if (Src.empty ())
+		    error () << "no source redirection specified";
 		  break;
 
 		default:
-		  assert (state >= ACTIVE_LWM);
-		  if (pipes.back ().commands[state - ACTIVE_LWM].Empty ())
-		    Error () << "no "
-			     << (state == ACTIVE_LWM ? "command" : "filter")
+		  assert (State >= ACTIVE_LWM);
+		  if (Pipes.back ().Commands[State - ACTIVE_LWM].empty ())
+		    error () << "no "
+			     << (State == ACTIVE_LWM ? "command" : "filter")
 			     << " specified";
 		  break;
 
@@ -204,14 +204,14 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	      switch (next_state)
 		{
 		case REDIRECT_HERE:
-		  if (here)
+		  if (IsHereDoc)
 		    break;
-		  here = true;
+		  IsHereDoc = true;
 		  [[fallthrough]];
 
 		case REDIRECT_IN:
-		  if (!src.empty ())
-		    Error () << "input redirection already specified";
+		  if (!Src.empty ())
+		    error () << "input redirection already specified";
 		  break;
 
 		case ACTIVE_LWM:
@@ -224,48 +224,47 @@ bool Parser::ProcessLine (std::string_view const &variant,
 		case REDIRECT_OUT:
 		  next_cmd_index = (next_state == REDIRECT_OUT
 				    ? 1 : next_state - ACTIVE_LWM);
-		  if (pipes.empty ())
-		    Error () << "no command to filter";
-		  else if (pipes.back ().commands.size () > 1
-			   && !pipes.back ().commands[next_cmd_index].Empty ())
+		  if (Pipes.empty ())
+		    error () << "no command to filter";
+		  else if (Pipes.back ().Commands.size () > 1
+			   && !Pipes.back ().Commands[next_cmd_index].empty ())
 		    {
-		      Error () << (next_cmd_index == 1 ? "stdout" : "stderr")
+		      error () << (next_cmd_index == 1 ? "stdout" : "stderr")
 			       << "filter already specified";
-		      pipes.back ().commands[next_cmd_index].words.clear ();
+		      Pipes.back ().Commands[next_cmd_index].Words.clear ();
 		    }
 		  break;
 		}
 
 	      if (next_state == ACTIVE_LWM
-		  || (next_cmd_index > 0 && pipes.empty ()))
+		  || (next_cmd_index > 0 && Pipes.empty ()))
 		{
-		  pipes.emplace_back (Pipeline::Kind (kind), inverted, exit);
-		  auto &last = pipes.back ();
-		  last.SetIn (std::move (src), here);
-		  src.clear ();
-		  here = false;
+		  Pipes.emplace_back (Pipeline::Kinds (kind), inverted, exit);
+		  Pipes.back ().src (std::move (Src), IsHereDoc);
+		  Src.clear ();
+		  IsHereDoc = false;
 		}
 
-	      if (next_cmd_index > 0 && pipes.back ().commands.size () == 1)
+	      if (next_cmd_index > 0 && Pipes.back ().Commands.size () == 1)
 		{
 		  // Add empty out & err cmds
-		  pipes.back ().commands.emplace_back ();
-		  pipes.back ().commands.emplace_back ();
+		  Pipes.back ().Commands.emplace_back ();
+		  Pipes.back ().Commands.emplace_back ();
 		}
 
-	      state = next_state;
+	      State = next_state;
 	      if (next_state == REDIRECT_OUT)
 		{
-		  state = State (ACTIVE_LWM + 1);
-		  pipes.back ().commands[1].RedirectType (Command::R_FILE);
+		  State = States (ACTIVE_LWM + 1);
+		  Pipes.back ().Commands[1].redirect (Command::R_FILE);
 		}
 	      continue;
 	    }
 
-	  if (c == '\\' && !lexer.Peek (1) && state != REDIRECT_HERE)
+	  if (c == '\\' && !lexer.peekChar (1) && State != REDIRECT_HERE)
 	    {
 	      // Continued line
-	      lexer.Advance ();
+	      lexer.advanceChar ();
 	      break;
 	    }
 	}
@@ -274,26 +273,26 @@ bool Parser::ProcessLine (std::string_view const &variant,
 
       if (!c || ((c == ' ' || c == '\t')
 		 && !depth && !escape
-		 && state != REDIRECT_HERE))
+		 && State != REDIRECT_HERE))
 	{
 	  // end of word
-	  if (word.size () || state == REDIRECT_HERE)
+	  if (word.size () || State == REDIRECT_HERE)
 	    {
-	      if (state == REDIRECT_IN)
+	      if (State == REDIRECT_IN)
 		{
-		  if (!src.empty ())
-		    Error () << "extra after input redirection";
-		  src = std::move (word);
+		  if (!Src.empty ())
+		    error () << "extra after input redirection";
+		  Src = std::move (word);
 		}
-	      else if (state == REDIRECT_HERE)
+	      else if (State == REDIRECT_HERE)
 		{
-		  src.append (std::move (word));
-		  src.push_back ('\n');
+		  Src.append (std::move (word));
+		  Src.push_back ('\n');
 		}
 	      else
 		{
-		  assert (state >= ACTIVE_LWM);
-		  pipes.back ().commands[state - ACTIVE_LWM].words.emplace_back
+		  assert (State >= ACTIVE_LWM);
+		  Pipes.back ().Commands[State - ACTIVE_LWM].Words.emplace_back
 		    (std::move (word));
 		}
 	      word.clear ();
@@ -303,52 +302,51 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	    {
 	      // End of line
 	      if (depth
-		  || (state == REDIRECT_IN && src.empty ())
-		  || (state >= ACTIVE_LWM
-		      && pipes.back ().commands[state - ACTIVE_LWM].Empty ())
-		  || state == IDLE)
-		Error () << "unexpected end of line";
+		  || (State == REDIRECT_IN && Src.empty ())
+		  || (State >= ACTIVE_LWM
+		      && Pipes.back ().Commands[State - ACTIVE_LWM].empty ())
+		  || State == IDLE)
+		error () << "unexpected end of line";
 
-	      if (state == ACTIVE_LWM)
+	      if (State == ACTIVE_LWM)
 		{
-		  auto &last = pipes.back ();
+		  auto &last = Pipes.back ();
 
-		  if (last.GetKind () == Pipeline::REQUIRE)
+		  if (last.kind () == Pipeline::REQUIRE)
 		    {
-		      if (!last.src.empty ())
+		      if (!last.Src.empty ())
 			{
-			  Error () << "command cannot have redirected input";
-			  last.src.clear ();
+			  error () << "command cannot have redirected input";
+			  last.Src.clear ();
 			}
 
-		      assert (last.commands.size () == 1);
-		      last.commands[0].Shellify (syms);
-		      last.commands.emplace_back ();
-		      last.commands.emplace_back ();
+		      assert (last.Commands.size () == 1);
+		      last.Commands[0].shellify (Syms);
+		      last.Commands.emplace_back ();
+		      last.Commands.emplace_back ();
 		    }
 		}
-	      state = IDLE;
+	      State = IDLE;
 
 	      break;
 	    }
 	  goto advance;
 	}
 
-      if (state == IDLE)
+      if (State == IDLE)
 	{
 	  // Commit to a state.
-	  pipes.emplace_back (Pipeline::Kind (kind), false, 0);
-	  auto &last = pipes.back ();
-	  last.SetIn (std::move (src), here);
-	  src.clear ();
-	  here = false;
-	  state = ACTIVE_LWM;
+	  Pipes.emplace_back (Pipeline::Kinds (kind), false, 0);
+	  Pipes.back ().src (std::move (Src), IsHereDoc);
+	  Src.clear ();
+	  IsHereDoc = false;
+	  State = ACTIVE_LWM;
 	}
 
-      if (state >= ACTIVE_LWM
+      if (State >= ACTIVE_LWM
 	  && word.empty ()
-	  && pipes.back ().commands[state - ACTIVE_LWM].Empty ())
-	pipes.back ().commands[state - ACTIVE_LWM].Loc (Loc ());
+	  && Pipes.back ().Commands[State - ACTIVE_LWM].empty ())
+	Pipes.back ().Commands[State - ACTIVE_LWM].loc (loc ());
       
       if (escape)
 	{
@@ -356,11 +354,11 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	append:
 	  word.push_back (c);
 	advance:
-	  lexer.Advance ();
+	  lexer.advanceChar ();
 	}
       else if (c == '\\')
 	{
-	  if (!depth && state == REDIRECT_HERE)
+	  if (!depth && State == REDIRECT_HERE)
 	    goto append;
 	  escape = true;
 	  goto advance;
@@ -374,7 +372,7 @@ bool Parser::ProcessLine (std::string_view const &variant,
       else if (c == '}')
 	{
 	  if (!depth)
-	    Unlexed (lexer, "unexpected '}'");
+	    lexError (lexer, "unexpected '}'");
 	  else if (--depth)
 	    goto append;
 	  goto advance;
@@ -383,13 +381,13 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	{
 	  std::vector<std::string const *> stack;
 	  std::vector<std::string> *accum = nullptr;
-	  if (state >= ACTIVE_LWM)
+	  if (State >= ACTIVE_LWM)
 	    {
-	      auto &cmd = pipes.back ().commands[state - ACTIVE_LWM];
-	      if (cmd.RedirectType () != Command::R_FILE)
-		accum = &cmd.words;
+	      auto &cmd = Pipes.back ().Commands[State - ACTIVE_LWM];
+	      if (cmd.redirect () != Command::R_FILE)
+		accum = &cmd.Words;
 	    }
-	  RecursivelyExpand (accum, lexer, depth, word, stack);
+	  recursivelyExpand (accum, lexer, depth, word, stack);
 	}
       else
 	goto append;
@@ -398,59 +396,59 @@ bool Parser::ProcessLine (std::string_view const &variant,
   return false;
 }
 
-bool Parser::RecursivelyExpand (std::vector<std::string> *words, Lexer &lexer,
+bool Parser::recursivelyExpand (std::vector<std::string> *words, Lexer &lexer,
 				bool quoted, std::string &word,
 				std::vector<std::string const *> &stack)
 {
   bool ok = true;
-  bool braced = lexer.Peek (1) == '{';
-  lexer.Advance (1 + braced);
-  if (!lexer.Identifier ())
+  bool braced = lexer.peekChar (1) == '{';
+  lexer.advanceChar (1 + braced);
+  if (!lexer.isIdentifier ())
     {
       word.push_back ('$');
       if (!braced)
 	return true;
 
-      if (lexer.Peek () == '}')
+      if (lexer.peekChar () == '}')
 	{
-	  lexer.Advance ();
+	  lexer.advanceChar ();
 	  return true;
 	}
       else
 	{
-	  Unlexed (lexer, "expected variable");
+	  lexError (lexer, "expected variable");
 	  return false;
 	}
     }
 
   if (braced)
     {
-      if (lexer.Peek () == '}')
-	lexer.Advance ();
+      if (lexer.peekChar () == '}')
+	lexer.advanceChar ();
       else
 	{
-	  Unlexed (lexer, "expected '}'");
+	  lexError (lexer, "expected '}'");
 	  ok = false;
 	}
     }
-  std::string const &var = lexer.GetToken ()->GetString ();
+  std::string const &var = lexer.getToken ()->string ();
 
   // Not the most efficient recursion detector, but we don't expect
   // this to ever be very deep.
   for (auto iter = stack.begin (); iter != stack.end (); ++iter)
     if (var == **iter)
       {
-	Error () << "recursive expansion of '" << var << "'";
+	error () << "recursive expansion of '" << var << "'";
 	return false;
       }
 
   stack.push_back (&var);
 
-  if (std::string const *val = syms.Get (var))
-    ok = RecursivelyExpand (words, *val, quoted, word, stack);
+  if (std::string const *val = Syms.value (var))
+    ok = recursivelyExpand (words, *val, quoted, word, stack);
   else
     {
-      Error () << "undefined variable '" << var << "'";
+      error () << "undefined variable '" << var << "'";
       ok = false;
     }
 
@@ -459,7 +457,7 @@ bool Parser::RecursivelyExpand (std::vector<std::string> *words, Lexer &lexer,
   return ok;
 }
 
-bool Parser::RecursivelyExpand (std::vector<std::string> *words,
+bool Parser::recursivelyExpand (std::vector<std::string> *words,
 				std::string_view const &val,
 				bool quoted, std::string &word,
 				std::vector<std::string const *> &stack)
@@ -468,14 +466,14 @@ bool Parser::RecursivelyExpand (std::vector<std::string> *words,
   bool escape = false;
   bool ok = true;
 
-  while (char c = lex.Peek ())
+  while (char c = lex.peekChar ())
     {
       if (escape)
 	{
 	append:
 	  word.push_back (c);
 	advance:
-	  lex.Advance ();
+	  lex.advanceChar ();
 	}
       else if (c == '\\')
 	{
@@ -484,9 +482,9 @@ bool Parser::RecursivelyExpand (std::vector<std::string> *words,
 	}
       else if (c == '$')
 	{
-	  if (!RecursivelyExpand (words, lex, quoted, word, stack))
+	  if (!recursivelyExpand (words, lex, quoted, word, stack))
 	    {
-	      Error () << "... expanding '" << stack.back () << '\'';
+	      error () << "... expanding '" << stack.back () << '\'';
 	      ok = false;
 	    }
 	}

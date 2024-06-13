@@ -24,7 +24,7 @@ using namespace gaige;
 // everything after the prefix, up to \n is the pattern.
 // Lines must match the regexp [^:alnum:]prefix(-opt)?: to be recognized
 
-bool Scanner::ScanFile (std::string const &fname,
+bool Scanner::scanFile (std::string const &fname,
 			std::vector<char const *> const &prefixes)
 {
   int fd = open (fname.c_str (), O_RDONLY | O_CLOEXEC);
@@ -32,7 +32,7 @@ bool Scanner::ScanFile (std::string const &fname,
     {
     fatal:
       int err = errno;
-      Error () << "cannot read file '" << fname << "': " << strerror (err);
+      error () << "cannot read file '" << fname << "': " << strerror (err);
       return false;
     }
   size_t len = [] (int fd_)
@@ -82,7 +82,7 @@ bool Scanner::ScanFile (std::string const &fname,
 	}
     }
 
-  loc.advanceLine ();
+  Loc.advanceLine ();
   bool ended = false;
   for (char const *base = begin;;)
     {
@@ -143,21 +143,21 @@ bool Scanner::ScanFile (std::string const &fname,
 	  if (eol > colon)
 	    break;
 	  begin = eol + 1;
-	  loc.advanceLine ();
+	  Loc.advanceLine ();
 	}
 
       // Process the pattern
       std::string_view pattern_text (colon + 1, eol);
       std::string_view variant_text (variant, colon);
 
-      if (ProcessLine (std::move (variant_text), std::move (pattern_text)))
+      if (processLine (std::move (variant_text), std::move (pattern_text)))
 	{
 	  ended = true;
 	  break;
 	}
 
       base = begin = eol + 1;
-      loc.advanceLine ();
+      Loc.advanceLine ();
     }
 
   munmap (buffer, alloc);
@@ -165,9 +165,9 @@ bool Scanner::ScanFile (std::string const &fname,
   return ended;
 }
 
-bool Scanner::ProcessLine (std::string_view const &variant,
+bool Scanner::processLine (std::string_view const &variant,
 			   std::string_view const &)
 {
-  Error () << "unrecognized command variant '" << variant << '\'';
+  error () << "unrecognized command variant '" << variant << '\'';
   return true;
 }

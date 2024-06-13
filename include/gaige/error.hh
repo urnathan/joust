@@ -15,22 +15,20 @@ namespace gaige {
 class Error
 {
 private:
-  std::ostream *stream;
+  std::ostream *Stream;
 
 private:
-  static bool errored;
+  static bool HasErrored;
 
 public:
   Error (nms::SrcLoc);
   Error (Error &&src)
-    : stream (src.stream)
-  {
-    src.stream = nullptr;
-  }
+    : Stream (src.Stream)
+  { src.Stream = nullptr; }
   ~Error ()
   {
-    if (stream)
-      *stream << '\n';
+    if (Stream)
+      *Stream << '\n';
   };
 
 private:
@@ -40,16 +38,14 @@ public:
   template <typename T>
   Error &operator<< (T &&obj)
   {
-    *stream << std::forward<T> (obj);
+    *Stream << std::forward<T> (obj);
 
     return *this;
   }
 
 public:
-  static bool Errors ()
-  {
-    return errored;
-  }
+  static bool hasErrored ()
+  { return HasErrored; }
 };
 
 } // namespace gaige

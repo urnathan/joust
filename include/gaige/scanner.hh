@@ -15,26 +15,26 @@ namespace gaige {
 class Scanner
 {
 private:
-  nms::SrcLoc loc;
+  nms::SrcLoc Loc;
   
 public:
   Scanner (char const *file_)
-    : loc (file_)
+    : Loc (file_)
   {}
 
 public:
-  auto const &Loc () const
-  { return loc; }
+  auto const &loc () const
+  { return Loc; }
 
 public:
-  auto Error ()
-  { return gaige::Error (loc); }
+  auto error ()
+  { return Error (Loc); }
 
 public:
-  bool ScanFile (std::string const &, std::vector<char const *> const &prefixes);
+  bool scanFile (std::string const &, std::vector<char const *> const &prefixes);
 
 protected:
-  virtual bool ProcessLine (std::string_view const &variant,
+  virtual bool processLine (std::string_view const &variant,
 			    std::string_view const &line);
 };
 

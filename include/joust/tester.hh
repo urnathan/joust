@@ -18,22 +18,18 @@ class Tester
 private:
   class Streamer
   {
-    Tester *logger;
+    Tester *Logger;
 
   public:
     Streamer (Tester *l) noexcept
-      : logger (l)
-    {
-    }
+      : Logger (l) {}
     Streamer (Streamer &&s) noexcept
-      : logger (s.logger)
-    {
-      s.logger = nullptr;
-    }
+      : Logger (s.Logger)
+    { s.Logger = nullptr; }
     ~Streamer () noexcept
     {
-      if (logger)
-	*logger << '\n';
+      if (Logger)
+	*Logger << '\n';
     }
 
   private:
@@ -43,7 +39,7 @@ private:
     template <typename T>
     Streamer &operator<< (T &&obj) noexcept
     {
-      *logger << std::forward<T> (obj);
+      *Logger << std::forward<T> (obj);
 
       return *this;
     }
@@ -51,7 +47,7 @@ private:
 
 public:  
 #define JOUST_STATUSES PASS, FAIL, XPASS, XFAIL, ERROR, UNSUPPORTED, MSG
-  enum Status
+  enum Statuses
   {
     NMS_LIST (NMS_IDENT, JOUST_STATUSES),
     STATUS_HWM,
@@ -59,20 +55,18 @@ public:
   };
 
 public:
-  static std::string_view const statuses[STATUS_HWM];
+  static std::string_view const StatusNames[STATUS_HWM];
 
 private:
-  std::ostream *sum;
-  std::ostream &log;
+  std::ostream *Sum;
+  std::ostream &Log;
 
 public:
   Tester (std::ostream &s, std::ostream &l) noexcept
-    : sum (&s), log (l)
-  {}
+    : Sum (&s), Log (l) {}
 
   Tester (std::ostream &l) noexcept
-    : sum (nullptr), log (l)
-  {}
+    : Sum (nullptr), Log (l) {}
 
   Tester () noexcept;
 
@@ -81,44 +75,44 @@ private:
   Tester &operator= (Tester const &) = delete;
 
 public:
-  std::ostream &Sum () const noexcept
-  { return sum ? *sum : log; }
+  std::ostream &sum () const noexcept
+  { return Sum ? *Sum : Log; }
 
-  std::ostream &Log () const noexcept
-  { return log; }
+  std::ostream &log () const noexcept
+  { return Log; }
   
 public:
-  void Flush () noexcept
+  void flush () noexcept
   {
-    if (sum)
-      sum->flush ();
-    log.flush ();
+    if (Sum)
+      Sum->flush ();
+    Log.flush ();
   }
 
 public:
-  static Status PassFail (bool pass, bool xfail = false) noexcept
-  { return Status ((pass ? PASS : FAIL) + (xfail ? XPASS - PASS : 0)); }
+  static Statuses passFail (bool pass, bool xfail = false) noexcept
+  { return Statuses ((pass ? PASS : FAIL) + (xfail ? XPASS - PASS : 0)); }
 
 protected:
-  Status DecodeStatus (std::string_view const &) noexcept;
+  Statuses decodeStatus (std::string_view const &) noexcept;
 
 public:
-  Streamer Result (Status status, char const *filename) noexcept
-  { return Result (status, nms::SrcLoc (filename)); }
-  Streamer Result (Status status, nms::SrcLoc = nms::SrcLoc::here ()) noexcept;
-  Streamer Result (bool pass, bool xfail = false,
+  Streamer result (Statuses status, char const *filename) noexcept
+  { return result (status, nms::SrcLoc (filename)); }
+  Streamer result (Statuses status, nms::SrcLoc = nms::SrcLoc::here ()) noexcept;
+  Streamer result (bool pass, bool xfail = false,
 		   nms::SrcLoc loc = nms::SrcLoc::here ()) noexcept
-  { return Result (PassFail (pass, xfail), loc); }
-  Streamer Message (nms::SrcLoc loc = nms::SrcLoc::here ()) noexcept
-  { return Result (MSG, loc); }
+  { return result (passFail (pass, xfail), loc); }
+  Streamer message (nms::SrcLoc loc = nms::SrcLoc::here ()) noexcept
+  { return result (MSG, loc); }
 
 public:
   template <typename T>
   Tester const &operator<< (T const &obj) const noexcept
   {
-    if (sum)
-      *sum << obj;
-    log << obj;
+    if (Sum)
+      *Sum << obj;
+    Log << obj;
 
     return *this;
   }

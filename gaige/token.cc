@@ -8,40 +8,36 @@
 
 using namespace gaige;
 
-constinit
-char const *const Token::kinds[TOKEN_HWM]
+constinit char const *const Token::KindNames[TOKEN_HWM]
 = {NMS_LIST (NMS_2ND, TOKEN_KINDS)};
 
 Token::Token (Token &&from)
-  : kind (from.kind), user (from.user)
+  : Kind (from.Kind), User (from.User)
 {
-  if (kind >= INTEGER_LWM && kind < INTEGER_HWM)
-    new (&value.integer) decltype (value.integer)
-      (std::move (from.value.integer));
-  else if (kind >= STRING_LWM && kind < STRING_HWM)
-    new (&value.string) decltype (value.string)
-      (std::move (from.value.string));
-  else if (kind >= CAPTURE_LWM && kind < CAPTURE_HWM)
-    new (&value.capture) decltype (value.capture)
-      (std::move (from.value.capture));
+  if (Kind >= INTEGER_LWM && Kind < INTEGER_HWM)
+    new (&Integer) decltype (Integer) (std::move (from.Integer));
+  else if (Kind >= STRING_LWM && Kind < STRING_HWM)
+    new (&String) decltype (String) (std::move (from.String));
+  else if (Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM)
+    new (&Capture) decltype (Capture) (std::move (from.Capture));
 }
 
 Token::~Token ()
 {
-  if (kind >= INTEGER_LWM && kind < INTEGER_HWM)
+  if (Kind >= INTEGER_LWM && Kind < INTEGER_HWM)
     {
-      using type = decltype (value.integer);
-      value.integer.type::~type ();
+      using type = decltype (Integer);
+      Integer.type::~type ();
     }
-  else if (kind >= STRING_LWM && kind < STRING_HWM)
+  else if (Kind >= STRING_LWM && Kind < STRING_HWM)
     {
-      using type = decltype (value.string);
-      value.string.type::~type ();
+      using type = decltype (String);
+      String.type::~type ();
     }
-  else if (kind >= CAPTURE_LWM && kind < CAPTURE_HWM)
+  else if (Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM)
     {
-      using type = decltype (value.capture);
-      value.capture.type::~type ();
+      using type = decltype (Capture);
+      Capture.type::~type ();
     }
 }
 
@@ -49,11 +45,11 @@ std::ostream &gaige::operator<< (std::ostream &s,
 				 std::vector<Token> const &tokens)
 {
   s << '{';
-  for (auto token = tokens.begin (); token != tokens.end (); ++token)
+  for (const auto &token : tokens)
     {
-      if (token != tokens.begin ())
+      if (&token != &*tokens.begin ())
 	s << ", ";
-      s << *token;
+      s << token;
     }
   s << '}';
 
@@ -62,16 +58,16 @@ std::ostream &gaige::operator<< (std::ostream &s,
 
 std::ostream &gaige::operator<< (std::ostream &s, Token const &token)
 {
-  Token::Kind kind = token.GetKind ();
+  Token::Kinds kind = token.kind ();
 
-  s << Token::kinds[kind];
+  s << Token::KindNames[kind];
 
   if (kind >= Token::INTEGER_LWM && kind < Token::INTEGER_HWM)
-    s << ':' << token.GetInteger ();
+    s << ':' << token.Integer;
   else if (kind >= Token::STRING_LWM && kind < Token::STRING_HWM)
-    s << ":'" << token.GetString () << '\'';
+    s << ":'" << token.String << '\'';
   else if (kind >= Token::CAPTURE_LWM && kind < Token::CAPTURE_HWM)
-    s << ' ' << token.value.capture;
+    s << ' ' << token.Capture;
 
   return s;
 }

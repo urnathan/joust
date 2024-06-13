@@ -13,16 +13,16 @@ class Pattern
     using Parent::Parent;
 
   public:
-    bool Option ();
-    bool Pattern ();
+    bool option ();
+    bool pattern ();
 
   protected:
-    bool PatternRegexp ();
+    bool patternRegexp ();
   };
 
 public:
 #define PATTERN_KINDS MATCH, NEXT, DAG, LABEL, NOT, NEVER, NONE, UNKNOWN
-  enum Kind : unsigned char
+  enum Kinds : unsigned char
   {
     NMS_LIST (NMS_IDENT, PATTERN_KINDS),
     PATTERN_HWM,
@@ -30,98 +30,97 @@ public:
   };
 
 public:
-  static char const *const kinds[PATTERN_HWM];
+  static char const *const KindNames[PATTERN_HWM];
 
 private:
-  nms::SrcLoc loc;
+  SrcLoc Loc;
 
 private:
-  Kind kind;
+  Kinds Kind;
 
 private:
-  bool matchSpace : 1 = false;
-  bool matchSol : 1 = false;
-  bool matchEol : 1 = false;
-  bool is_eof : 1 = false;
-  bool is_xfail : 1 = false;
-  bool has_error : 1 = false;
-  bool has_matched : 1 = false;
-  bool has_captures : 1 = false;
+  bool IsMatchSpace : 1 = false;
+  bool IsMatchSol : 1 = false;
+  bool IsMatchEol : 1 = false;
+  bool IsEOF : 1 = false;
+  bool IsXFail : 1 = false;
+  bool HasError : 1 = false;
+  bool HasMatch : 1 = false;
+  bool HasCapture : 1 = false;
 
 private:
-  std::string original;
-  std::string expansion;
-  std::regex regex;
+  std::string Original;
+  std::string Expansion;
+  std::regex Regex;
 
 private:
-  std::vector<Token> atoms;
+  std::vector<Token> Atoms;
 
 protected:
-  Pattern (Kind kind_, Parser const *parser, std::string_view const &text)
-    : loc (parser->Loc ()), kind (kind_), original (text)
+  Pattern (Kinds kind, Parser const *parser, std::string_view const &text)
+    : Loc (parser->loc ()), Kind (kind), Original (text)
   {
-    if (parser->GetMatchSol ())
-      matchSol = true;
-    if (parser->GetMatchEol ())
-      matchEol = true;
-    if (parser->GetMatchSpace ())
-      matchSpace = true;
-    if (parser->GetXfail ())
-      is_xfail = true;
+    if (parser->isMatchSol ())
+      IsMatchSol = true;
+    if (parser->isMatchEol ())
+      IsMatchEol = true;
+    if (parser->isMatchSpace ())
+      IsMatchSpace = true;
+    if (parser->isXFail ())
+      IsXFail = true;
   }
 
 public:
   ~Pattern () = default;
 
 public:
-  Kind GetKind () const
-  { return kind; }
+  Kinds kind () const
+  { return Kind; }
 
 public:
-  bool Errored () const
-  { return has_error; }
-  bool Matched () const
-  { return has_matched; }
-  bool Captures () const
-  { return has_captures; }
+  bool hasError () const
+  { return HasError; }
+  bool hasMatch () const
+  { return HasMatch; }
+  bool hasCapture () const
+  { return HasCapture; }
 
 private:
   void Append (Token &&a)
-  { atoms.push_back (std::move (a)); }
+  { Atoms.push_back (std::move (a)); }
   unsigned Size () const
-  { return atoms.size (); }
+  { return Atoms.size (); }
 
 public:
-  gaige::Error Error ();
+  Error error ();
 
 public:
   bool Canonicalize ();
 
 public:
-  regex::Result Expand (Symbols const &);
-  regex::Result Compare (Symbols &, std::string_view const &text, bool eof);
+  regex::Results Expand (Symbols const &);
+  regex::Results Compare (Symbols &, std::string_view const &text, bool eof);
 
 private:
-  regex::Result DoExpand (Symbols const &);
+  regex::Results DoExpand (Symbols const &);
 
 public:
-  static Pattern *Parse (Parser *, Kind kind, std::string_view const &);
+  static Pattern *Parse (Parser *, Kinds kind, std::string_view const &);
 
 private:
   bool ParseEscape (Parser *, Lexer &);
 
 private:
-  void Result (Tester &, Tester::Status) const;
+  void result (Tester &, Tester::Statuses) const;
 
 public:
-  void Result (Tester &) const;
-  void Matched (Tester &) const;
+  void result (Tester &) const;
+  void match (Tester &) const;
 
   friend std::ostream &operator<< (std::ostream &s, Pattern const &p);
 };
 
-constinit
-char const *const Pattern::kinds[PATTERN_HWM]
+constinit char const *const Pattern::KindNames[PATTERN_HWM]
 = {NMS_LIST (NMS_STRING, PATTERN_KINDS)};
 
 // PATTERN_REGEXP is
@@ -132,23 +131,23 @@ char const *const Pattern::kinds[PATTERN_HWM]
 //   string: $$
 //   string: .+
 // Final TOKEN_CLOSE has capture count
-bool Pattern::Lexer::PatternRegexp ()
+bool Pattern::Lexer::patternRegexp ()
 {
   bool escape = false;
   unsigned square = 0;
   bool brace = false;
   int captures = 0;
 
-  while (char c = Peek ())
+  while (char c = peekChar ())
     switch (c)
       {
       case '[':
 	if (!escape && !square && !brace)
-	  square = c_ix;
+	  square = LexChar;
 	goto append;
 
       case ']':
-	if (c_ix != square + 1)
+	if (LexChar != square + 1)
 	  square = 0;
 	goto append;
 
@@ -167,9 +166,9 @@ bool Pattern::Lexer::PatternRegexp ()
 	  brace = false;
 	else if (!escape)
 	  {
-	    Advance ();
-	    Append (Token (Token::CLOSE));
-	    tokens.back ().SetUser (captures);
+	    advanceChar ();
+	    append (Token (Token::CLOSE));
+	    Tokens.back ().user (captures);
 	    return true;
 	  }
 	goto append;
@@ -183,7 +182,7 @@ bool Pattern::Lexer::PatternRegexp ()
 	goto append;
 
       case '-':
-	if (c_ix == square + 1)
+	if (LexChar == square + 1)
 	  square++;
 	goto append;
 
@@ -191,22 +190,22 @@ bool Pattern::Lexer::PatternRegexp ()
 	if (escape || square)
 	  goto append;
 	{
-	  char peek = Peek (1);
-	  bool braced = peek == '{';
-	  if (!(braced || std::isalpha (peek) || peek == '_'))
+	  char c = peekChar (1);
+	  bool braced = c == '{';
+	  if (!(braced || std::isalpha (c) || c == '_'))
 	    // not ${ or $[:alpha:|]
 	    goto append;
 
-	  Advance (1 + braced);
-	  bool ident = Identifier ();
+	  advanceChar (1 + braced);
+	  bool ident = isIdentifier ();
 	  if (braced)
 	    {
-	      if (Peek () != '}')
+	      if (peekChar () != '}')
 		return false;
 	      if (!ident)
 		// ${} emit the $ eat the {}
 		goto append;
-	      Advance ();
+	      advanceChar ();
 	    }
 	  else
 	    assert (ident);
@@ -222,73 +221,73 @@ bool Pattern::Lexer::PatternRegexp ()
       append:
 	escape = false;
       escape:
-	Advance ();
-	Append (Token::STRING, c);
+	advanceChar ();
+	append (Token::STRING, c);
 	break;
       }
 
   return false;
 }
 
-bool Pattern::Lexer::Pattern ()
+bool Pattern::Lexer::pattern ()
 {
-  while (char c = Peek ())
+  while (char c = peekChar ())
     switch (c)
       {
       case ' ':
       case '\t':
-	Advance ();
-	Append (Token::WHITESPACE, c);
+	advanceChar ();
+	append (Token::WHITESPACE, c);
 	break;
 
       case '{':
 	{
-	  char peek = Peek (1);
+	  char c = peekChar (1);
 
-	  bool ident = std::isalpha (peek) || peek == '_';
-	  if (!(ident || peek == ':'))
+	  bool ident = std::isalpha (c) || c == '_';
+	  if (!(ident || c == ':'))
 	    goto append;
 
-	  Advance ();
-	  Append (Token (Token::OPEN));
+	  advanceChar ();
+	  append (Token (Token::OPEN));
 
 	  if (ident)
 	    {
-	      if (!Identifier ())
+	      if (!isIdentifier ())
 		return false;
-	      peek = Peek ();
+	      c = peekChar ();
 	    }
 
-	  if (peek == ':')
+	  if (c == ':')
 	    {
-	      Advance ();
-	      Append (Token (Token::COLON));
+	      advanceChar ();
+	      append (Token (Token::COLON));
 	    }
 
-	  if (!PatternRegexp ())
+	  if (!patternRegexp ())
 	    return false;
 	}
 	break;
 
       case '$':
 	{
-	  char peek = Peek (1);
+	  char c = peekChar (1);
 
-	  bool braced = peek == '{';
-	  if (!(braced || std::isalpha (peek) || peek == '_'))
+	  bool braced = c == '{';
+	  if (!(braced || std::isalpha (c) || c == '_'))
 	    // not ${ or $[:alpha:|]
 	    goto append;
 
-	  Advance (1 + braced);
-	  bool ident = Identifier ();
+	  advanceChar (1 + braced);
+	  bool ident = isIdentifier ();
 	  if (braced)
 	    {
-	      if (Peek () != '}')
+	      if (peekChar () != '}')
 		return false;
 	      if (!ident)
 		// ${} emit the $ eat the {}
 		goto append;
-	      Advance ();
+	      advanceChar ();
 	    }
 	  else
 	    assert (ident);
@@ -297,24 +296,24 @@ bool Pattern::Lexer::Pattern ()
 
       default:
       append:
-	Advance ();
-	Append (Token::STRING, c);
+	advanceChar ();
+	append (Token::STRING, c);
 	break;
       }
 
   return true;
 }
 
-Error Pattern::Error ()
+Error Pattern::error ()
 {
-  has_error = true;
-  return gaige::Error (loc);
+  HasError = true;
+  return Error (Loc);
 }
 
 std::ostream &operator<< (std::ostream &s, Pattern const &p)
 {
-  return s << p.loc.file () << ':' << p.loc.line () << ":"
-	   << p.kinds[p.GetKind ()] << ", " << p.atoms << '\n';
+  return s << p.Loc.file () << ':' << p.Loc.line () << ":"
+	   << p.KindNames[p.kind ()] << ", " << p.Atoms << '\n';
 }
 
 // match-escape: IDENTIFIER-opt COLON regexp-expand CLOSE
@@ -324,43 +323,43 @@ std::ostream &operator<< (std::ostream &s, Pattern const &p)
 bool Pattern::ParseEscape (Parser *parser, Lexer &lexer)
 {
   Token escape (Token::REGEX_CAPTURE);
-  Token *next = lexer.GetToken ();
+  Token *next = lexer.getToken ();
 
   Token ident;
-  if (next && next->GetKind () == Token::IDENTIFIER)
+  if (next && next->kind () == Token::IDENTIFIER)
     {
-      if (GetKind () >= CAPTURE_HWM)
-	Error () << "capture not permitted in " << kinds[GetKind ()];
+      if (kind () >= CAPTURE_HWM)
+	error () << "capture not permitted in " << KindNames[kind ()];
       ident = std::move (*next);
-      next = lexer.GetToken ();
+      next = lexer.getToken ();
     }
 
   if (!next)
     {
     failed:
-      parser->Unparsed ("pattern {{escape}}", next);
+      parser->parseError ("pattern {{escape}}", next);
       return false;
     }
 
-  if (next->GetKind () != Token::COLON)
+  if (next->kind () != Token::COLON)
     goto failed;
 
-  escape.GetCapture ().emplace_back (std::move (ident));
+  escape.capture ().emplace_back (std::move (ident));
 
-  while ((next = lexer.GetToken ()))
-    if (next->GetKind () == Token::IDENTIFIER
-	|| next->GetKind () == Token::STRING
-	|| next->GetKind () == Token::WHITESPACE)
-      escape.GetCapture ().emplace_back (std::move (*next));
+  while ((next = lexer.getToken ()))
+    if (next->kind () == Token::IDENTIFIER
+	|| next->kind () == Token::STRING
+	|| next->kind () == Token::WHITESPACE)
+      escape.capture ().emplace_back (std::move (*next));
     else
       break;
 
   if (!next)
     goto failed;
-  if (next->GetKind () != Token::CLOSE)
+  if (next->kind () != Token::CLOSE)
     goto failed;
 
-  escape.SetUser (next->GetUser ());
+  escape.user (next->user ());
   Append (std::move (escape));
 
   return true;
@@ -370,25 +369,26 @@ bool Pattern::ParseEscape (Parser *parser, Lexer &lexer)
 // match: match-opt match-word
 // match-word: STRING | IDENTIFIER | OPEN match-escape
 
-Pattern *Pattern::Parse (Parser *parser, Kind kind, std::string_view const &line)
+Pattern *Pattern::Parse (Parser *parser, Kinds kind,
+			 std::string_view const &line)
 {
   auto p = new Pattern (kind, parser, line);
   if (kind == UNKNOWN)
     {
     failed:
-      p->has_error = true;
+      p->HasError = true;
       return p;
     }
 
   Lexer lexer (line);
-  if (!lexer.Pattern ())
+  if (!lexer.pattern ())
     {
-      parser->Unlexed (lexer, "pattern");
+      parser->lexError (lexer, "pattern");
       goto failed;
     }
 
-  while (Token *tok = lexer.GetToken ())
-    switch (tok->GetKind ())
+  while (Token *tok = lexer.getToken ())
+    switch (tok->kind ())
       {
       case Token::WHITESPACE:
       case Token::IDENTIFIER:
@@ -402,7 +402,7 @@ Pattern *Pattern::Parse (Parser *parser, Kind kind, std::string_view const &line
 	break;
 
       default:
-	parser->Unparsed ("pattern", tok);
+	parser->parseError ("pattern", tok);
 	goto failed;
       }
 
@@ -419,23 +419,23 @@ Pattern *Pattern::Parse (Parser *parser, Kind kind, std::string_view const &line
 bool Pattern::Canonicalize ()
 {
   std::vector<Token> canon;
-  canon.reserve (atoms.size ());
+  canon.reserve (Atoms.size ());
   int eof = 0;
 
   std::string acc; // Current accumulation
 
-  if (matchSol)
+  if (IsMatchSol)
     acc.push_back ('^');
 
-  bool eol = matchEol;
-  for (auto token = atoms.begin (); token != atoms.end (); ++token)
+  bool eol = IsMatchEol;
+  for (auto token = Atoms.begin (); token != Atoms.end (); ++token)
     {
-      switch (token->GetKind ())
+      switch (token->kind ())
 	{
 	case Token::WHITESPACE:
-	  if (matchSpace)
+	  if (IsMatchSpace)
 	    // Spacing mush match exactly
-	    acc.append (std::move (token->GetString ()));
+	    acc.append (std::move (token->string ()));
 	  else
 	    // Any horizontal whitespace
 	    acc.append ("[ \t]+");
@@ -443,9 +443,9 @@ bool Pattern::Canonicalize ()
 
 	case Token::STRING:
 	  {
-	    std::string_view string = token->GetString ();
+	    std::string_view string = token->string ();
 	    // SOL can also be matched with explicit ^
-	    if (canon.empty () && acc.size () == matchSol
+	    if (canon.empty () && acc.size () == IsMatchSol
 		&& string.front () == '^')
 	      {
 		string.remove_prefix (1);
@@ -453,12 +453,12 @@ bool Pattern::Canonicalize ()
 		  acc.push_back ('^');
 	      }
 	    // EOL can also match be matched with explicit $
-	    if (token + 1 == atoms.end () && string.back () == '$')
+	    if (std::next (token) == Atoms.end () && string.back () == '$')
 	      {
 		eol = true;
 		string.remove_suffix (1);
 	      }
-	    std::string escaped = regex::Protect (string);
+	    std::string escaped = regex::protect (string);
 	    acc.append (std::move (escaped));
 	    eof = -1;
 	  }
@@ -470,7 +470,7 @@ bool Pattern::Canonicalize ()
 	      canon.push_back (Token (Token::STRING, std::move (acc)));
 	      acc.clear ();
 	    }
-	  if (!eof && token->GetString () == "EOF")
+	  if (!eof && token->string () == "EOF")
 	    eof = 1;
 	  else
 	    eof = -1;
@@ -479,24 +479,24 @@ bool Pattern::Canonicalize ()
 
 	case Token::REGEX_CAPTURE:
 	  {
-	    std::vector<Token> &capture = token->GetCapture ();
+	    std::vector<Token> &capture = token->capture ();
 
 	    if (capture.size () == 1)
 	      {
-		Error () << "capture captures nothing";
+		error () << "capture captures nothing";
 		return false;
 	      }
 
-	    if (capture[0].GetKind () == Token::IDENTIFIER)
-	      has_captures = true;
+	    if (capture[0].kind () == Token::IDENTIFIER)
+	      HasCapture = true;
 
 	    if (capture.size () == 2
-		&& capture[0].GetKind () == Token::EMPTY
-		&& capture[1].GetKind () == Token::STRING
-		&& !token->GetUser ())
+		&& capture[0].kind () == Token::EMPTY
+		&& capture[1].kind () == Token::STRING
+		&& !token->user ())
 	      // A null capture of a single non-capturing string can
 	      // just be a string
-	      acc.append (std::move (capture[1].GetString ()));
+	      acc.append (std::move (capture[1].string ()));
 	    else
 	      {
 		if (acc.size ())
@@ -521,56 +521,56 @@ bool Pattern::Canonicalize ()
   if (acc.size ())
     canon.push_back (Token (Token::STRING, std::move (acc)));
 
-  if (!canon.size () && kind < CAPTURE_HWM)
+  if (!canon.size () && kind () < CAPTURE_HWM)
     {
-      Error () << kinds[kind] << " pattern is empty";
+      error () << KindNames[kind ()] << " pattern is empty";
       return false;
     }
 
   if (eof == 1)
     {
       canon.clear ();
-      is_eof = true;
+      IsEOF = true;
     }
 
-  atoms = std::move (canon);
+  Atoms = std::move (canon);
 
   return true;
 }
 
-regex::Result Pattern::DoExpand (Symbols const &symbols)
+regex::Results Pattern::DoExpand (Symbols const &symbols)
 {
-  for (auto token = atoms.begin (); token != atoms.end (); ++token)
-    switch (token->GetKind ())
+  for (auto &token : Atoms)
+    switch (token.kind ())
       {
       case Token::STRING:
-	expansion.append (token->GetString ());
+	Expansion.append (token.string ());
 	break;
 
       case Token::IDENTIFIER:
-	if (auto *val = symbols.Get (token->GetString ()))
-	  regex::Protect (expansion, *val);
+	if (auto *val = symbols.value (token.string ()))
+	  regex::protect (Expansion, *val);
 	else
 	  return regex::NOTFOUND;
 	break;
 
       case Token::REGEX_CAPTURE:
 	{
-	  std::vector<Token> const &capture = token->GetCapture ();
-	  bool is_capture = capture[0].GetKind () == Token::IDENTIFIER;
+	  std::vector<Token> const &capture = token.capture ();
+	  bool is_capture = capture[0].kind () == Token::IDENTIFIER;
 
 	  if (is_capture)
-	    expansion.push_back ('(');
+	    Expansion.push_back ('(');
 	  for (auto cap = capture.begin () + 1; cap != capture.end (); ++cap)
-	    switch (cap->GetKind ())
+	    switch (cap->kind ())
 	      {
 	      case Token::STRING:
-		expansion.append (cap->GetString ());
+		Expansion.append (cap->string ());
 		break;
 
 	      case Token::IDENTIFIER:
-		if (auto *val = symbols.Get (cap->GetString ()))
-		  regex::Protect (expansion, *val);
+		if (auto *val = symbols.value (cap->string ()))
+		  regex::protect (Expansion, *val);
 		else
 		  return regex::NOTFOUND;
 		break;
@@ -579,7 +579,7 @@ regex::Result Pattern::DoExpand (Symbols const &symbols)
 		unreachable ();
 	      }
 	  if (is_capture)
-	    expansion.push_back (')');
+	    Expansion.push_back (')');
 	}
 	break;
 
@@ -591,22 +591,22 @@ regex::Result Pattern::DoExpand (Symbols const &symbols)
 }
 
 // Expand tokens to expansion
-regex::Result Pattern::Expand (Symbols const &symbols)
+regex::Results Pattern::Expand (Symbols const &symbols)
 {
-  if (Errored ())
+  if (hasError ())
     return regex::FAILED;
 
-  if (!expansion.empty () || atoms.empty ())
+  if (!Expansion.empty () || Atoms.empty ())
     // We have a pattern already
     return regex::FOUND;
 
   auto exit = regex::FOUND;
-  if (atoms.size () == 1 && atoms[0].GetKind () == Token::STRING)
+  if (Atoms.size () == 1 && Atoms[0].kind () == Token::STRING)
     {
       // It's a single string, just use it.  We'll never be called
       // again, so it's ok to move it.
-      expansion = std::move (atoms[0].GetString ());
-      atoms.clear ();
+      Expansion = std::move (Atoms[0].string ());
+      Atoms.clear ();
     }
   else
     exit = DoExpand (symbols);
@@ -615,54 +615,53 @@ regex::Result Pattern::Expand (Symbols const &symbols)
     {
       int fail;
 
-      exit = regex::Create (regex, expansion, fail);
+      exit = regex::create (Regex, Expansion, fail);
       if (exit == regex::FAILED)
-	Error () << "regex '" << expansion << "' contains "
-		 << regex::Error (fail);
+	error () << "regex '" << Expansion << "' contains "
+		 << regex::error (fail);
     }
   else
-    expansion.clear ();
+    Expansion.clear ();
 
   return exit;
 }
 
-regex::Result Pattern::Compare (Symbols &symbols, std::string_view const &text,
-				bool eof)
+regex::Results Pattern::Compare (Symbols &symbols, std::string_view const &text,
+				 bool eof)
 {
-  if (is_eof != eof)
+  if (IsEOF != eof)
     return regex::NOTFOUND;
   else if (eof)
     {
-      has_matched = true;
+      HasMatch = true;
       return regex::FOUND;
     }
 
   std::cmatch match;
-  int error;
-  auto matched = regex::Search (regex, text, match, error);
+  int err;
+  auto matched = regex::search (Regex, text, match, err);
   if (matched == regex::NOTFOUND)
     ;
   else if (matched == regex::FAILED)
-    Error () << "regex '" << expansion
-	     << "' encountered " << regex::Error (error);
+    error () << "regex '" << Expansion
+	     << "' encountered " << regex::error (err);
   else
     {
-      has_matched = true;
+      HasMatch = true;
 
       auto match_iter = ++match.begin ();
-      for (auto atom_iter = atoms.begin ();
-	   atom_iter != atoms.end (); ++atom_iter)
-	if (atom_iter->GetKind () == Token::REGEX_CAPTURE)
+      for (auto const &atom : Atoms)
+	if (atom.kind () == Token::REGEX_CAPTURE)
 	  {
-	    int captures = atom_iter->GetUser ();
-	    auto const &capture = atom_iter->GetCapture ();
-	    if (capture[0].GetKind () == Token::IDENTIFIER)
+	    int captures = atom.user ();
+	    auto const &capture = atom.capture ();
+	    if (capture[0].kind () == Token::IDENTIFIER)
 	      {
 		assert (match_iter->matched);
 		captures++;
-		auto const &var = capture[0].GetString ();
-		if (!symbols.Set (var, match_iter->str ()))
-		  Error () << "multiple definitions of '" << var << '\'';
+		auto const &var = capture[0].string ();
+		if (!symbols.value (var, match_iter->str ()))
+		  error () << "multiple definitions of '" << var << '\'';
 	      }
 	    assert (match.end () - match_iter >= captures);
 	    match_iter += captures;
@@ -677,21 +676,21 @@ regex::Result Pattern::Compare (Symbols &symbols, std::string_view const &text,
 }
 
 // Write to stdout
-void Pattern::Result (Tester &logger, Tester::Status s) const
-{ logger.Result (s, loc) << kinds[GetKind ()] << ' ' << original; }
+void Pattern::result (Tester &logger, Tester::Statuses s) const
+{ logger.result (s, Loc) << KindNames[kind ()] << ' ' << Original; }
 
 /* Emit result for a skipped-over pattern.  */
-void Pattern::Result (Tester &log) const
+void Pattern::result (Tester &log) const
 {
-  if (Errored ())
-    Result (log, Tester::ERROR);
-  else if (!Matched ())
-    Result (log, Tester::PassFail (GetKind () >= CAPTURE_HWM, is_xfail));
+  if (hasError ())
+    result (log, Tester::ERROR);
+  else if (!hasMatch ())
+    result (log, Tester::passFail (kind () >= CAPTURE_HWM, IsXFail));
 }
 
-void Pattern::Matched (Tester &log) const
+void Pattern::match (Tester &log) const
 {
-  assert (!Errored () && Matched ());
+  assert (!hasError () && hasMatch ());
 
-  Result (log, Tester::PassFail (GetKind () < CAPTURE_HWM, is_xfail));
+  result (log, Tester::passFail (kind () < CAPTURE_HWM, IsXFail));
 }

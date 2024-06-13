@@ -15,30 +15,30 @@ class ReadBuffer
   using Parent = std::vector<char>;
 
 private:
-  static constexpr size_t blockSize = 16384;
+  static constexpr size_t BlockSize = 16384;
 
 private:
-  int fd = -1;
+  int FD = -1;
 
 public:
   // Read from fd, return errno on error, -1 on eof, 0 otherwise
-  int Read ();
+  int read ();
 
 public:
-  bool IsOpen () const
-  { return fd >= 0; }
+  bool isOpen () const
+  { return FD >= 0; }
 
 public:
-  int GetFD () const
-  { return fd; }
+  int fd () const
+  { return FD; }
 
-  void Open (int f)
-  { fd = f; }
+  void open (int f)
+  { FD = f; }
 
-  int Close ()
+  int close ()
   {
-    int f = fd;
-    fd = -1;
+    int f = FD;
+    FD = -1;
     return f;
   }
 };

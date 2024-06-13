@@ -18,16 +18,14 @@ namespace gaige {
 class Lexer
 {
 protected:
-  std::vector<Token> tokens; // Lexed tokens
-  std::string_view const string; // Source of characters
-  unsigned c_ix = 0; // Next char to lex
-  unsigned t_ix = 0; // Next token to return
+  std::vector<Token> Tokens; // Lexed tokens
+  std::string_view const String; // Source of characters
+  unsigned LexChar = 0; // Next char to lex
+  unsigned LexToken = 0; // Next token to return
 
 public:
   Lexer (std::string_view const &s)
-    : string (s)
-  {
-  }
+    : String (s) {}
 
   Lexer () = delete;
   ~Lexer () = default;
@@ -37,64 +35,64 @@ private:
   Lexer (Lexer const &) = delete;
 
 public:
-  Token *GetToken ()
+  Token *getToken ()
   {
-    if (Token *peeked = PeekToken ())
+    if (Token *peeked = peekToken ())
       {
-	t_ix++;
+	LexToken++;
 	return peeked;
       }
     return nullptr;
   }
-  Token *PeekToken (unsigned advance = 0)
+  Token *peekToken (unsigned advance = 0)
   {
-    if (t_ix + advance >= tokens.size ())
+    if (LexToken + advance >= Tokens.size ())
       return nullptr;
-    return &tokens[t_ix + advance];
+    return &Tokens[LexToken + advance];
   }
 
 public:
-  std::string_view Before () const;
-  std::string_view After () const;
+  std::string_view before () const;
+  std::string_view after () const;
 
 public:
-  char Peek (unsigned a = 0) const
+  char peekChar (unsigned a = 0) const
   {
-    if (c_ix + a >= string.size ())
+    if (LexChar + a >= String.size ())
       return 0;
-    return string[c_ix + a];
+    return String[LexChar + a];
   }
-  void Advance (unsigned a = 1)
+  void advanceChar (unsigned a = 1)
   {
-    assert (c_ix + a <= string.size ());
-    c_ix += a;
+    assert (LexChar + a <= String.size ());
+    LexChar += a;
   }
-  char SkipWS ();
+  char skipWS ();
 
 public:
   // Advance and peek
-  char AdvancePeek ()
+  char advancePeekChar ()
   {
-    Advance ();
-    return Peek ();
+    advanceChar ();
+    return peekChar ();
   }
   // Peek and advance
-  char PeekAdvance ()
+  char peekAdvanceChar ()
   {
-    char c = Peek ();
+    char c = peekChar ();
     if (c)
-      Advance ();
+      advanceChar ();
     return c;
   }
 
 public:
-  void Append (Token &&tok);
+  void append (Token &&tok);
   // Append char C to final token KIND
-  void Append (Token::Kind, char c);
+  void append (Token::Kinds, char c);
 
 public:
-  bool Identifier ();
-  bool Integer ();
+  bool isIdentifier ();
+  bool isInteger ();
 };
 
 } // namespace gaige

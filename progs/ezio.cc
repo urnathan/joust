@@ -50,7 +50,7 @@ class Engine;
 
 } // namespace
 
-static void Title (FILE *stream)
+static void title (FILE *stream)
 {
   fprintf (stream, "EZIO: Expect Zero Irregularities Observed\n");
   fprintf (stream, "Copyright 2020-2024 Nathan Sidwell, nathan@acm.org\n");
@@ -89,13 +89,13 @@ int main (int argc, char *argv[])
   int argno = options->parseArgs (argc, argv, &flags);
   if (flags.help)
     {
-      Title (stdout);
+      title (stdout);
       options->printUsage (stdout, "pattern-files+");
       return 0;
     }
   if (flags.version)
     {
-      Title (stdout);
+      title (stdout);
       printBuildNote (stdout);
       return 0;
     }
@@ -109,14 +109,14 @@ int main (int argc, char *argv[])
   Symbols syms;
 
   // Register defines
-  syms.Set ("EOF", "${}EOF");
+  syms.value ("EOF", "${}EOF");
   for (auto d : flags.defines)
-    syms.Define (std::string_view (d));
+    syms.define (std::string_view (d));
   if (flags.include)
-    syms.Read (flags.include);
+    syms.readFile (flags.include);
   if (auto *vars = getenv ("JOUST"))
     if (*vars)
-      syms.Read (vars);
+      syms.readFile (vars);
 
   std::ofstream sum, log;
   if (!flags.out[flags.out[0] == '-'])
@@ -140,26 +140,26 @@ int main (int argc, char *argv[])
   while (argno != argc)
     {
       char const *patternFile = argv[argno++];
-      std::string pathname = syms.Origin (patternFile);
+      std::string pathname = syms.setOriginValues (patternFile);
       Parser parser (patternFile, engine);
 
       // Scan the pattern file
-      parser.ScanFile (pathname, flags.prefixes);
-      if (Error::Errors ())
+      parser.scanFile (pathname, flags.prefixes);
+      if (Error::hasErrored ())
 	fatalExit ("failed to construct patterns '%s'", patternFile);
     }
 
-  engine.Initialize ();
+  engine.initialize ();
 
   if (flags.verbose)
-    engine.Log () << engine << '\n';
+    engine.log () << engine << '\n';
 
-  engine.Process (flags.in);
+  engine.process (flags.in);
 
-  engine.Finalize ();
+  engine.finalize ();
 
   sum.close ();
   log.close ();
 
-  return Error::Errors ();
+  return Error::hasErrored ();
 }

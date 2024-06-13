@@ -8,71 +8,71 @@
 
 using namespace gaige;
 
-std::string_view Lexer::Before () const
-{ return string.substr (0, c_ix); }
+std::string_view Lexer::before () const
+{ return String.substr (0, LexChar); }
 
-std::string_view Lexer::After () const
-{ return string.substr (c_ix, string.size () - c_ix); }
+std::string_view Lexer::after () const
+{ return String.substr (LexChar, String.size () - LexChar); }
 
-void Lexer::Append (Token &&tok)
-{ tokens.push_back (std::move (tok)); }
+void Lexer::append (Token &&tok)
+{ Tokens.push_back (std::move (tok)); }
 
-void Lexer::Append (Token::Kind kind, char c)
+void Lexer::append (Token::Kinds kind, char c)
 {
-  if (!(tokens.size () && tokens.back ().GetKind () == kind))
-    Append (Token (kind));
-  tokens.back ().GetString ().push_back (c);
+  if (!(Tokens.size () && Tokens.back ().kind () == kind))
+    append (Token (kind));
+  Tokens.back ().string ().push_back (c);
 }
 
-char Lexer::SkipWS ()
+char Lexer::skipWS ()
 {
   char c;
   unsigned a = 0;
-  while ((c = Peek (a)))
+  while ((c = peekChar (a)))
     {
       if (c != ' ' && c != '\t')
 	break;
       a++;
     }
-  Advance (a);
+  advanceChar (a);
   return c;
 }
 
-bool Lexer::Identifier ()
+bool Lexer::isIdentifier ()
 {
-  char c = Peek ();
+  char c = peekChar ();
   if (!(std::isalpha (c) || c == '_'))
     return false;
 
-  unsigned begin = c_ix;
+  unsigned begin = LexChar;
   for (;;)
     {
-      auto peek = AdvancePeek ();
+      auto peek = advancePeekChar ();
       if (!(peek == '_' || std::isalnum (peek)))
 	break;
     }
 
-  Append (Token (Token::IDENTIFIER, string.substr (begin, c_ix - begin)));
+  append (Token (Token::IDENTIFIER, String.substr (begin, LexChar - begin)));
 
   return true;
 }
 
 // Base 10 integer
-bool Lexer::Integer ()
+bool Lexer::isInteger ()
 {
   unsigned long val = 0;
-  char c = Peek ();
+  char c = peekChar ();
   if (!std::isdigit (c))
     return false;
 
   do
     {
       val = val * 10 + (c - '0');
-      c = AdvancePeek ();
+      c = advancePeekChar ();
     }
   while (std::isdigit (c));
 
-  Append (Token (Token::INTEGER, long (val)));
+  append (Token (Token::INTEGER, long (val)));
 
   return !(std::isalpha (c) || c == '_');
 }

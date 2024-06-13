@@ -25,12 +25,12 @@ main (int, char *[])
 
   joust::Tester log {};
 
-  log.Result (joust::Tester::PASS) << "test1";
-  log.Log () << "location " << __FILE__ << ':' << __LINE__ - 1 << '\n';
-  log.Result (joust::Tester::FAIL) << "test2";
+  log.result (joust::Tester::PASS) << "test1";
+  log.log () << "location " << __FILE__ << ':' << __LINE__ - 1 << '\n';
+  log.result (joust::Tester::FAIL) << "test2";
 
-  log.Result (joust::Tester::MSG) << "message1";
-  log.Message () << "message2";
+  log.result (joust::Tester::MSG) << "message1";
+  log.message () << "message2";
 
   return 0;
 }

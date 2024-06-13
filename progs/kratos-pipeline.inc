@@ -6,7 +6,7 @@ class Pipeline
 {
 public:
 #define PIPELINE_KINDS RUN, SIGNAL, REQUIRE, END
-  enum Kind : unsigned char
+  enum Kinds : unsigned char
   {
     NMS_LIST (NMS_IDENT, PIPELINE_KINDS),
     PIPELINE_HWM,
@@ -14,93 +14,89 @@ public:
   };
 
 public:
-  static char const *const kinds[PIPELINE_HWM];
+  static char const *const KindNames[PIPELINE_HWM];
 
 private:
-  std::vector<Command> commands;
-  std::string src;
-  Kind kind = RUN;
-  unsigned expected_exit : 8 = 0;
-  bool expect_inverted : 1 = false;
-  bool xfailed : 1 = false;
-  bool stopped : 1 = false;
-  bool here_doc : 1 = false;
+  std::vector<Command> Commands;
+  std::string Src;
+  Kinds Kind = RUN;
+  unsigned ExitCode : 8 = 0;
+  bool IsExitInverted : 1 = false;
+  bool IsXFailed : 1 = false;
+  bool IsStopped : 1 = false;
+  bool IsHereDoc : 1 = false;
 
 public:
-  Pipeline (Kind k, bool inverted, unsigned exit = 0)
-    : kind (k), expected_exit (exit), expect_inverted (inverted)
+  Pipeline (Kinds kind, bool inverted, unsigned exit = 0)
+    : Kind (kind), ExitCode (exit), IsExitInverted (inverted)
+  { Commands.emplace_back (); }
+
+public:
+  Kinds kind () const
+  { return Kind; }
+
+public:
+  void src (std::string &&stdin, bool here)
   {
-    commands.emplace_back ();
+    Src = stdin;
+    IsHereDoc = here;
   }
 
 public:
-  Kind GetKind () const
-  { return kind; }
+  int execute (Tester &, unsigned const *);
 
 public:
-  void SetIn (std::string &&stdin, bool here)
-  {
-    src = stdin;
-    here_doc = here;
-  }
-
-public:
-  int Execute (Tester &, unsigned const *);
-
-public:
-  void Result (Tester &, Tester::Status);
+  void result (Tester &, Tester::Statuses);
 
 private:
   friend std::ostream &operator<< (std::ostream &s, Pipeline const &pipe);
   friend class Parser;
 };
 
-constinit
-char const *const Pipeline::kinds[PIPELINE_HWM]
+constinit char const *const Pipeline::KindNames[PIPELINE_HWM]
 = {NMS_LIST (NMS_STRING, PIPELINE_KINDS)};
 
-static constinit
-unsigned char const sigs[]
+static constinit unsigned char const sigs[]
 = {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGALRM, SIGTERM};
 
 std::ostream &operator<< (std::ostream &s, Pipeline const &pipe)
 {
   {
-    auto &cmd = pipe.commands.front ();
+    auto &cmd = pipe.Commands.front ();
 
-    if (pipe.here_doc)
+    if (pipe.IsHereDoc)
       {
-	for (size_t base = 0, eol; base != pipe.src.size (); base = eol + 1)
+	for (size_t base = 0, eol; base != pipe.Src.size (); base = eol + 1)
 	  {
-	    eol = pipe.src.find_first_of ('\n', base);
-	    assert (eol != pipe.src.npos);
-	    s << cmd.Loc ().file () << ':' << cmd.Loc ().line ()
-	      << " in<<" << std::string_view (&pipe.src[base], eol - base)
+	    eol = pipe.Src.find_first_of ('\n', base);
+	    assert (eol != pipe.Src.npos);
+	    s << cmd.loc ().file () << ':' << cmd.loc ().line ()
+	      << " in<<" << std::string_view (&pipe.Src[base], eol - base)
 	      << '\n';
 	  }
       }
-    else if (!pipe.src.empty ())
-      s << cmd.Loc ().file () << ':' << cmd.Loc ().line ()
-	<< " in< " << pipe.src << '\n';
+    else if (!pipe.Src.empty ())
+      s << cmd.loc ().file () << ':' << cmd.loc ().line ()
+	<< " in< " << pipe.Src << '\n';
   
-    s << cmd.Loc ().file () << ':' << cmd.Loc ().line () << " "
-      << Pipeline::kinds[pipe.kind] << ':';
-    if (pipe.expected_exit)
-      s << pipe.expected_exit;
-    if (pipe.expect_inverted)
+    s << cmd.loc ().file () << ':' << cmd.loc ().line () << " "
+      << Pipeline::KindNames[pipe.Kind] << ':';
+    if (pipe.ExitCode)
+      s << pipe.ExitCode;
+    if (pipe.IsExitInverted)
       s << '!';
     s << cmd << '\n';
   }
 
   static char const *const outs[] = {" out", " err"};
-  for (unsigned ix = 1; ix != pipe.commands.size (); ix++)
+  for (unsigned ix = 1; ix != pipe.Commands.size (); ix++)
     {
-      auto &filter = pipe.commands[ix];
-      if (!filter.Empty ())
+      auto &filter = pipe.Commands[ix];
+      if (!filter.empty ())
 	{
-	  s << filter.Loc ().file () << ':'
-	    << filter.Loc ().line () << outs[ix - 1];
-	  s << (filter.RedirectType () == Command::R_FILE ? '>' : '|');
+	  s << filter.loc ().file () << ':'
+	    << filter.loc ().line () << outs[ix - 1];
+	  s << (filter.redirect () == Command::R_FILE ? '>' : '|');
 	  if (ix == 2)
 	    s << '&';
 	  s << filter << '\n';
@@ -128,72 +124,72 @@ void NoteSignal (int signal)
 
 // This mucks about with signals, so expects to be single threaded
 
-int Pipeline::Execute (Tester &logger, unsigned const *limits)
+int Pipeline::execute (Tester &logger, unsigned const *limits)
 {
-  assert (commands.size () == 1 || commands.size () == 3);
+  assert (Commands.size () == 1 || Commands.size () == 3);
 
   std::cerr << *this;
 
   int here_fd = -1;
   {
-    auto &cmd = commands.front ();
+    auto &cmd = Commands.front ();
 
-    if (cmd.words.empty ())
+    if (cmd.Words.empty ())
       {
-	cmd.Error () << "no command to execute";
+	cmd.error () << "no command to execute";
 	return EINVAL;
       }
 
-    if (here_doc)
+    if (IsHereDoc)
       {
 	int pipe[2];
 
-	if (MakePipe (pipe) < 0)
+	if (makePipe (pipe) < 0)
 	  {
 	    int err = errno;
-	    cmd.Error () << "cannot create pipe: " << strerror (err);
+	    cmd.error () << "cannot create pipe: " << strerror (err);
 	  }
 	else
 	  {
 	    here_fd = pipe[1];
-	    cmd.stdin = pipe[0];
+	    cmd.Stdin = pipe[0];
 	  }
       }
     else
       {
-	char const *in = src.c_str ();
+	char const *in = Src.c_str ();
 	if (!*in)
 	  in = "/dev/null";
 	int fd = open (in, O_RDONLY | O_CLOEXEC);
 	if (fd < 0)
 	  {
 	    int err = errno;
-	    cmd.Error () << "cannot read '" << in << "': " << strerror (err);
+	    cmd.error () << "cannot read '" << in << "': " << strerror (err);
 	  }
 	else
-	  cmd.stdin = fd;
+	  cmd.Stdin = fd;
       }
   }
 
   // Determine sinks of cmd[0]
   int fds[2] {1, 2};
-  for (unsigned ix = 1; ix != commands.size (); ix++)
+  for (unsigned ix = 1; ix != Commands.size (); ix++)
     {
-      auto &filt = commands[ix];
+      auto &filt = Commands[ix];
 
-      if (filt.RedirectType () == Command::R_FILE)
+      if (filt.redirect () == Command::R_FILE)
 	{
 	  // To a file
-	  assert (filt.words.size () == 1);
+	  assert (filt.Words.size () == 1);
 
-	  char const *out = filt.words.front ().c_str ();
+	  char const *out = filt.Words.front ().c_str ();
 	  int fd = open (out, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
 			 S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP
 			 | S_IROTH | S_IWOTH);
 	  if (fd < 0)
 	    {
 	      int err = errno;
-	      filt.Error () << "cannot write '" << out
+	      filt.error () << "cannot write '" << out
 			    << "': " << strerror (err);
 	    }
 	  else
@@ -203,15 +199,15 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 	{
 	  // pipe ends: 0-read from, 1-write to
 	  int pipe[2];
-	  if (MakePipe (pipe) < 0)
+	  if (makePipe (pipe) < 0)
 	    {
 	      int err = errno;
-	      filt.Error () << "cannot create pipe: " << strerror (err);
+	      filt.error () << "cannot create pipe: " << strerror (err);
 	    }
 	  else
 	    {
 	      fds[ix - 1] = pipe[1];
-	      filt.stdin = pipe[0];
+	      filt.Stdin = pipe[0];
 	    }
 	}
     }
@@ -269,29 +265,28 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
   unsigned num_streams = 0;
   unsigned subtasks = 0;
   {
-    if (commands.front ().Execute (fds[0], fds[1], limits))
+    if (Commands.front ().execute (fds[0], fds[1], limits))
       subtasks++;
 
-    for (unsigned ix = 1; ix != commands.size (); ix++)
+    for (unsigned ix = 1; ix != Commands.size (); ix++)
       {
-	auto &filt = commands[ix];
+	auto &filt = Commands[ix];
 
 	// pipe ends: 0-read from, 1-write to
 	int pipe[2][2] = {{-1,-1}, {-1,-1}};
 
-	if (filt.stdin < 0)
+	if (filt.Stdin < 0)
 	  continue;
 
-	if (filt.Empty ())
+	if (filt.empty ())
 	  // Expect no output
-	  pipe[0][0] = filt.stdin;
+	  pipe[0][0] = filt.Stdin;
 	else
 	  {
-	    if (MakePipe (pipe[0]) < 0
-		|| MakePipe (pipe[1]) < 0)
+	    if (makePipe (pipe[0]) < 0 || makePipe (pipe[1]) < 0)
 	      {
 		int err = errno;
-		filt.Error () << "cannot create pipe: " << strerror (err);
+		filt.error () << "cannot create pipe: " << strerror (err);
 		if (pipe[0][0] >= 0)
 		  {
 		    close (pipe[0][0]);
@@ -299,7 +294,7 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 		  }
 		pipe[0][0] = pipe[0][1] = -1;
 	      }
-	    if (filt.Execute (pipe[0][1], pipe[1][1]))
+	    if (filt.execute (pipe[0][1], pipe[1][1]))
 	      subtasks++;
 	  }
 
@@ -309,7 +304,7 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 	      unsigned strix = (ix - 1) * 2 + io;
 	      int pipe_fd = pipe[io][0];
 
-	      streams[strix].Open (pipe_fd);
+	      streams[strix].open (pipe_fd);
 	      num_streams++;
 #ifdef USE_EPOLL
 	      epoll_event ev;
@@ -411,24 +406,24 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 	      {
 		unsigned stream = cookie & 3;
 		assert (stream < 4 && num_streams);
-		if (int done = streams[stream].Read ())
+		if (int done = streams[stream].read ())
 		  {
 		    if (done >= 0)
 		      {
-			auto *cmd = &commands[1 + stream / 2];
+			auto *cmd = &Commands[1 + stream / 2];
 			unsigned iostr = stream & 1;
-			if (cmd->words.empty ())
+			if (cmd->Words.empty ())
 			  {
-			    cmd = &commands[0];
+			    cmd = &Commands[0];
 			    iostr = stream >> 1;
 			  }
 
-			cmd->Error () << "failed reading "
-				      << cmd->words.front () << io_streams[iostr]
+			cmd->error () << "failed reading "
+				      << cmd->Words.front () << io_streams[iostr]
 				      << strerror (done);
-			Result (logger, Tester::ERROR);
+			result (logger, Tester::ERROR);
 		      }
-		    int fd = streams[stream].Close ();
+		    int fd = streams[stream].close ();
 #ifdef USE_EPOLL
 		    epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
 #endif
@@ -441,24 +436,24 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 	    case 1:
 	      {
 		// Here doc
-		size_t limit = src.size () - here_pos;
-		ssize_t wrote = write (here_fd, src.data () + here_pos, limit);
+		size_t limit = Src.size () - here_pos;
+		ssize_t wrote = write (here_fd, Src.data () + here_pos, limit);
 		if (wrote < 0)
 		  {
 		    int err = errno;
 		    if (err != EINTR && err != EAGAIN)
 		      {
-			commands[0].Error ()
+			Commands[0].error ()
 			  << "failed writing here doc at byte "
 			  << here_pos << " (" << limit
 			  << " remain): " << strerror (err);
-			Result (logger, Tester::ERROR);
-			here_pos = src.size ();
+			result (logger, Tester::ERROR);
+			here_pos = Src.size ();
 		      }
 		  }
 		else
 		  here_pos += wrote;
-		if (here_pos == src.size ())
+		if (here_pos == Src.size ())
 		  {
 #ifdef USE_EPOLL
 		    epoll_ctl (poll_fd, EPOLL_CTL_DEL, here_fd, nullptr);
@@ -514,9 +509,8 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 			break;
 		      }
 
-		    for (auto iter = commands.begin ();
-			 iter != commands.end (); ++iter)
-		      if (child == iter->pid)
+		    for (auto &cmd : Commands)
+		      if (child == cmd.Pid)
 			{
 			  bool is_sig = false;
 			  int ex = 0;
@@ -530,9 +524,9 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 			  else
 			    goto found_pid;
 
-			  iter->pid = -1;
+			  cmd.Pid = -1;
 			  subtasks--;
-			  if (iter == commands.begin ())
+			  if (&cmd == &Commands[0])
 			    {
 			      if (limits)
 				setitimer (ITIMER_REAL, &timeout, nullptr);
@@ -541,11 +535,11 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 			    }
 			  else if (is_sig || ex)
 			    {
-			      iter->Error ()
-				<< '\'' << iter->words.front ()
+			      cmd.error ()
+				<< '\'' << cmd.Words.front ()
 				<< "' exited with "
 				<< (is_sig ? "signal " : "code ") << ex;
-			      Result (logger, Tester::ERROR);
+			      result (logger, Tester::ERROR);
 			    }
 			  goto found_pid;
 			}
@@ -559,15 +553,15 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 	    case SIGINT:
 	    case SIGQUIT:
 	    case SIGTERM:
-	      stopped = true;
-	      commands.front ().Stop (signo);
+	      IsStopped = true;
+	      Commands.front ().stop (signo);
 	      break;
 
 	    case SIGALRM:
-	      commands.front ().Stop (SIGTERM);
-	      commands.front ().Error ()
+	      Commands.front ().stop (SIGTERM);
+	      Commands.front ().error ()
 		<< "TIMEOUT after " << limits[PL_HWM] << " seconds";
-	      Result (logger, Tester::ERROR);
+	      result (logger, Tester::ERROR);
 	      break;
 
 	    case SIGPIPE:
@@ -594,10 +588,10 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
   while (sigprocmask (SIG_SETMASK, &sigorig, nullptr) < 0)
     assert (errno == EINTR);
 
-  for (unsigned ix = 1; ix != commands.size (); ix++)
+  for (unsigned ix = 1; ix != Commands.size (); ix++)
     {
-      auto &filt = commands[ix];
-      if (filt.stdin < 0)
+      auto &filt = Commands[ix];
+      if (filt.Stdin < 0)
 	continue;
 
       for (unsigned io = 0; io != 2; io++)
@@ -606,19 +600,18 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 	  if (size_t size = stream.size ())
 	    {
 	      std::ostream *s = &std::cout;
-	      if (filt.Empty ())
+	      if (filt.empty ())
 		{
 		  s = &std::cerr;
-		  auto &cmd = commands[0];
-		  logger.Result (Tester::ERROR, cmd.Loc ())
+		  logger.result (Tester::ERROR, Commands[0].loc ())
 		    << "# Unexpected" << io_streams[ix - 1]
-		    << cmd;
+		    << Commands[0];
 		}
 	      else if (io)
 		{
 		  s = &std::cerr;
-		  *s << "# Checker " << filt.Loc ().file ()
-		     << ':' << filt.Loc ().line ()
+		  *s << "# Checker " << filt.loc ().file ()
+		     << ':' << filt.loc ().line ()
 		     << filt << '\n';
 		}
 	      *s << std::string_view (stream.data (), size);
@@ -628,38 +621,38 @@ int Pipeline::Execute (Tester &logger, unsigned const *limits)
 
   assert (exit_code >= 0);
 
-  bool pass = (signalled == (kind == SIGNAL)
-	       && (exit_code == expected_exit) == !expect_inverted);
-  if (!pass && (kind != REQUIRE || signalled))
-    logger.Log () << commands.front ().words[0] << " exited with "
+  bool pass = (signalled == (Kind == SIGNAL)
+	       && (exit_code == ExitCode) == !IsExitInverted);
+  if (!pass && (Kind != REQUIRE || signalled))
+    logger.log () << Commands.front ().Words[0] << " exited with "
 		  << (signalled ? "signal " : "code ") << exit_code << '\n';
-  if (kind == REQUIRE)
-    Result (logger, pass ? Tester::PASS : Tester::UNSUPPORTED);
+  if (Kind == REQUIRE)
+    result (logger, pass ? Tester::PASS : Tester::UNSUPPORTED);
   else
-    Result (logger, Tester::PassFail (pass, xfailed));
+    result (logger, Tester::passFail (pass, IsXFailed));
 
-  if (stopped)
+  if (IsStopped)
     {
-      commands.front ().Error () << " terminated via signal";
+      Commands.front ().error () << " terminated via signal";
       return EINTR;
     }
 
   return pass ? 0 : EINVAL;
 }
 
-void Pipeline::Result (Tester &logger, Tester::Status status)
+void Pipeline::result (Tester &logger, Tester::Statuses status)
 {
-  auto const &cmd = commands.front ();
-  auto l = logger.Result (status, cmd.Loc ());
+  auto const &cmd = Commands.front ();
+  auto l = logger.result (status, cmd.loc ());
 
-  l << kinds[kind];
-  if (expect_inverted || expected_exit)
+  l << KindNames[Kind];
+  if (IsExitInverted || ExitCode)
     {
       l << ' ';
-      if (expect_inverted)
+      if (IsExitInverted)
 	l << '!';
-      if (expected_exit)
-	l << int (expected_exit);
+      if (ExitCode)
+	l << int (ExitCode);
     }
-  l << ' ' << cmd.words.front ();
+  l << ' ' << cmd.Words.front ();
 }

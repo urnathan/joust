@@ -10,15 +10,15 @@ public:
 private:
   struct Frame
   {
-    std::vector<Pattern *> none;
-    std::vector<Pattern *> body;
+    std::vector<Pattern *> None;
+    std::vector<Pattern *> Body;
 
   public:
     Frame (Pattern *head = nullptr)
-    { body.emplace_back (head); }
+    { Body.emplace_back (head); }
     Frame (Frame &&from)
-      : none (std::move (from.none)),
-	body (std::move (from.body))
+      : None (std::move (from.None)),
+	Body (std::move (from.Body))
     {}
     ~Frame ();
 
@@ -29,15 +29,15 @@ private:
   using FrameIter = std::vector<Frame>::iterator;
 
 private:
-  Symbols &syms;
-  std::vector<Pattern *> nevers;
-  std::vector<Frame> frames;
-  FrameIter frameIter; // Current frame
-  BodyIter bodyIter;   // Current element
+  Symbols &Syms;
+  std::vector<Pattern *> Nevers;
+  std::vector<Frame> Frames;
+  FrameIter CurrentFrame; // Current frame
+  BodyIter CurrentBody;   // Current element
 
 public:
-  Engine (Symbols &syms_, std::ostream &sum_, std::ostream &log_)
-    : Parent (sum_, log_), syms (syms_)
+  Engine (Symbols &syms, std::ostream &sum, std::ostream &log)
+    : Parent (sum, log), Syms (syms)
   {}
   ~Engine ();
 
@@ -46,23 +46,23 @@ private:
   Engine &operator= (Engine &&) = delete;
 
 public:
-  void BodyAdvance (BodyIter);
+  void advanceBody (BodyIter);
 
 public:
   // Advance to frame
-  void FrameAdvance (FrameIter);
+  void advanceFrame (FrameIter);
 
 public:
-  void Process (char const *file);
-  void Process (std::string_view const &line, bool eof);
+  void process (char const *file);
+  void process (std::string_view const &line, bool eof);
 
 public:
   // Add pattern to frames or nevers, might start a new frame
-  void Add (Pattern *);
+  void add (Pattern *);
 
 public:
-  void Initialize ();
-  void Finalize ();
+  void initialize ();
+  void finalize ();
 
   friend std::ostream &operator<< (std::ostream &, Engine const &);
   friend std::ostream &operator<< (std::ostream &s, Frame const &e);
@@ -71,158 +71,157 @@ public:
 
 Engine::Frame::~Frame ()
 {
-  for (auto *n : none)
+  for (auto *n : None)
     delete n;
-  for (auto *b : body)
+  for (auto *b : Body)
     delete b;
 }
 
 Engine::~Engine ()
 {
-  for (auto *n : nevers)
+  for (auto *n : Nevers)
     delete n;
 }
 
 std::ostream &operator<< (std::ostream &s, std::vector<Pattern *> const &vec)
 {
-  for (auto iter = vec.begin (); iter != vec.end (); ++iter)
-    if (auto p = *iter)
-      s << *p;
+  for (auto const &p : vec)
+    if (p)
+      s << p;
 
   return s;
 }
 
 std::ostream &operator<< (std::ostream &s, std::vector<Engine::Frame> const &vec)
 {
-  for (auto iter = vec.begin (); iter != vec.end (); ++iter)
-    s << *iter;
+  for (auto const &f : vec)
+    s << f;
 
   return s;
 }
 
 std::ostream &operator<< (std::ostream &s, Engine::Frame const &f)
 {
-  s << f.body << f.none;
+  s << f.Body << f.None;
 
   return s;
 }
 
 std::ostream &operator<< (std::ostream &s, Engine const &e)
 {
-  s << e.frames << e.nevers;
+  s << e.Frames << e.Nevers;
 
   return s;
 }
 
-void Engine::Add (Pattern *p)
+void Engine::add (Pattern *p)
 {
-  if (!p->Errored ())
+  if (!p->hasError ())
     p->Canonicalize ();
 
-  switch (p->GetKind ())
+  switch (p->kind ())
     {
     case Pattern::NEVER:
       // Add to the nevers
-      nevers.push_back (p);
+      Nevers.push_back (p);
       break;
 
     case Pattern::LABEL:
       // Start a new frame
-      frames.emplace_back (p);
+      Frames.emplace_back (p);
       break;
 
     case Pattern::NONE:
       // Append to the current frame's nones
-      if (frames.empty ())
-	frames.emplace_back ();
+      if (Frames.empty ())
+	Frames.emplace_back ();
 
-      frames.back ().none.emplace_back (p);
+      Frames.back ().None.emplace_back (p);
       break;
 
     default:
       // Append to the current frame's body
-      if (frames.empty ())
-	frames.emplace_back ();
+      if (Frames.empty ())
+	Frames.emplace_back ();
 
-      frames.back ().body.emplace_back (p);
+      Frames.back ().Body.emplace_back (p);
       break;
     }
 }
 
-void Engine::BodyAdvance (BodyIter bodyIx)
+void Engine::advanceBody (BodyIter bodyIx)
 {
-  for (; bodyIter != bodyIx; ++bodyIter)
-    (*bodyIter)->Result (*this);
+  for (; CurrentBody != bodyIx; ++CurrentBody)
+    (*CurrentBody)->result (*this);
 }
 
-void Engine::FrameAdvance (FrameIter frameIx)
+void Engine::advanceFrame (FrameIter frameIx)
 {
-  while (frameIter != frameIx)
+  while (CurrentFrame != frameIx)
     {
-      BodyAdvance (frameIter->body.end ());
-      for (auto iter = frameIter->none.begin ();
-	   iter != frameIter->none.end (); ++iter)
-	(*iter)->Result (*this);
-      ++frameIter;
-      if (frameIter != frames.end ())
-	bodyIter = frameIter->body.begin ();
+      advanceBody (CurrentFrame->Body.end ());
+      for (auto &None : CurrentFrame->None)
+	None->result (*this);
+      ++CurrentFrame;
+      if (CurrentFrame != Frames.end ())
+	CurrentBody = CurrentFrame->Body.begin ();
     }
 }
 
-void Engine::Initialize ()
+void Engine::initialize ()
 {
-  if (frames.empty ())
+  if (Frames.empty ())
     {
-      if (nevers.empty ())
+      if (Nevers.empty ())
 	fatalExit ("nothing to check");
-      frames.emplace_back ();
+      Frames.emplace_back ();
     }
-  frameIter = frames.begin ();
-  bodyIter = frameIter->body.begin ();
-  if (!*bodyIter)
-    ++bodyIter;
+  CurrentFrame = Frames.begin ();
+  CurrentBody = CurrentFrame->Body.begin ();
+  if (!*CurrentBody)
+    ++CurrentBody;
 }
 
-void Engine::Process (std::string_view const &text, bool eof)
+void Engine::process (std::string_view const &text, bool eof)
 {
   bool maybe_captures = false;
 
-  if (bodyIter != frameIter->body.begin ())
+  if (CurrentBody != CurrentFrame->Body.begin ())
     {
       // We're inside a frame, process it
-      for (auto peek = bodyIter; peek != frameIter->body.end (); ++peek)
+      for (auto peek = CurrentBody; peek != CurrentFrame->Body.end (); ++peek)
 	{
 	  auto *p = *peek;
 
-	  if (p->Errored ())
+	  if (p->hasError ())
 	    continue;
 
-	  if (p->GetKind () < Pattern::CAPTURE_HWM && p->Matched ())
+	  if (p->kind () < Pattern::CAPTURE_HWM && p->hasMatch ())
 	    continue;
 
-	  auto expn = p->Expand (syms);
+	  auto expn = p->Expand (Syms);
 	  if (expn != regex::FOUND)
 	    {
 	      // We couldn't compile the pattern
 	      if (!maybe_captures && expn == regex::NOTFOUND)
-		p->Error () << Pattern::kinds[p->GetKind ()]
+		p->error () << Pattern::KindNames[p->kind ()]
 			    << " contains unexpandable escape";
 	      continue;
 	    }
 
-	    auto cmp = p->Compare (syms, text, eof);
+	    auto cmp = p->Compare (Syms, text, eof);
 	    if (cmp == regex::FAILED)
 	      continue;
 
-	    switch (p->GetKind ())
+	    switch (p->kind ())
 	      {
 	      case Pattern::DAG:
 		if (cmp == regex::FOUND)
 		  {
-		    p->Matched (*this);
+		    p->match (*this);
 		    return;
 		  }
-		if (p->Captures ())
+		if (p->hasCapture ())
 		  maybe_captures = true;
 		continue;
 
@@ -230,21 +229,21 @@ void Engine::Process (std::string_view const &text, bool eof)
 	      case Pattern::MATCH:
 		if (cmp == regex::FOUND)
 		  {
-		    BodyAdvance (peek);
-		    p->Matched (*this);
-		    bodyIter = ++peek;
+		    advanceBody (peek);
+		    p->match (*this);
+		    CurrentBody = ++peek;
 		    return;
 		  }
 
-		if (p->GetKind () == Pattern::NEXT)
-		  BodyAdvance (++peek);
-		else if (p->Captures ())
+		if (p->kind () == Pattern::NEXT)
+		  advanceBody (++peek);
+		else if (p->hasCapture ())
 		  maybe_captures = true;
 		goto no_match;
 
 	      case Pattern::NOT:
 		if (cmp == regex::FOUND)
-		  p->Matched (*this);
+		  p->match (*this);
 		continue;
 
 	      default:
@@ -256,30 +255,31 @@ void Engine::Process (std::string_view const &text, bool eof)
 
   // Look if any HEAD matches, and if so advance to just after it
   bool first = true;
-  for (auto framePeek = frameIter + bool (bodyIter != frameIter->body.begin ());
-       framePeek != frames.end (); ++framePeek, first = false)
+  for (auto framePeek = CurrentFrame
+	 + bool (CurrentBody != CurrentFrame->Body.begin ());
+       framePeek != Frames.end (); ++framePeek, first = false)
     {
-      Pattern *p = framePeek->body.front ();
+      Pattern *p = framePeek->Body.front ();
 
       assert (p);
 
-      auto expn = p->Expand (syms);
+      auto expn = p->Expand (Syms);
       if (expn != regex::FOUND)
 	{
 	  // Failed to expand it, ignore this but check if definitely
 	  // an error
 	  if (expn == regex::NOTFOUND && !maybe_captures && first)
-	    p->Error () << "LABEL contains unexpandable escape";
+	    p->error () << "LABEL contains unexpandable escape";
 	  continue;
 	}
 
-      if (p->Compare (syms, text, eof) != regex::FOUND)
+      if (p->Compare (Syms, text, eof) != regex::FOUND)
 	continue;
 
       // We've found a matching LABEL, advance and be done
-      FrameAdvance (framePeek);
-      p->Matched (*this);
-      ++bodyIter;
+      advanceFrame (framePeek);
+      p->match (*this);
+      ++CurrentBody;
 
       return;
     }
@@ -287,27 +287,20 @@ void Engine::Process (std::string_view const &text, bool eof)
   // Failed a positive match, check the negative ones
 
   // Look for NONEs
-  if (frameIter != frames.end ())
-    for (auto iter = frameIter->none.begin ();
-	 iter != frameIter->none.end (); ++iter)
-      {
-	auto *p = *iter;
-	if (p->Expand (syms) == regex::FOUND
-	    && p->Compare (syms, text, eof) == regex::FOUND)
-	  p->Matched (*this);
-      }
+  if (CurrentFrame != Frames.end ())
+    for (auto const &none : CurrentFrame->None)
+      if (none->Expand (Syms) == regex::FOUND
+	  && none->Compare (Syms, text, eof) == regex::FOUND)
+	none->match (*this);
 
   // Look for NEVERs
-  for (auto iter = nevers.begin (); iter != nevers.end (); ++iter)
-    {
-      auto *p = *iter;
-      if (p->Expand (syms) == regex::FOUND
-	  && p->Compare (syms, text, eof) == regex::FOUND)
-	p->Matched (*this);
-    }
+  for (auto const &never : Nevers)
+    if (never->Expand (Syms) == regex::FOUND
+	&& never->Compare (Syms, text, eof) == regex::FOUND)
+      never->match (*this);
 }
 
-void Engine::Process (char const *file)
+void Engine::process (char const *file)
 {
   int fd = 0;
   if (file[file[0] == '-'])
@@ -402,8 +395,8 @@ void Engine::Process (char const *file)
     {
       auto *eol = std::find (begin, end, '\n');
       auto text = std::string_view (begin, eol);
-      Log () << line << ':' << text << '\n';
-      Process (text, false);
+      log () << line << ':' << text << '\n';
+      process (text, false);
 
       begin = eol + 1;
     }
@@ -411,10 +404,10 @@ void Engine::Process (char const *file)
   munmap (buffer, alloc);
 }
 
-void Engine::Finalize ()
+void Engine::finalize ()
 {
-  Process ("", true);
-  FrameAdvance (frames.end ());
-  for (auto iter = nevers.begin (); iter != nevers.end (); ++iter)
-    (*iter)->Result (*this);
+  process ("", true);
+  advanceFrame (Frames.end ());
+  for (auto const &never : Nevers)
+    never->result (*this);
 }

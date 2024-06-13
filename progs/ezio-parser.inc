@@ -10,76 +10,74 @@ class Parser : public Scanner
   using Parent = Scanner;
 
 private:
-  bool matchSpace = false;
-  bool matchSol = false;
-  bool matchEol = false;
-  bool xfail = false;
-  Engine &e;
+  bool MatchSpace = false;
+  bool MatchSol = false;
+  bool MatchEol = false;
+  bool XFail = false;
+  Engine &E;
 
 public:
-  Parser (char const *file_, Engine &e_)
-    : Parent (file_), e (e_)
+  Parser (char const *file, Engine &e)
+    : Parent (file), E (e)
   {}
 
 public:
-  bool GetMatchSpace () const
-  { return matchSpace; }
-  bool GetMatchSol () const
-  { return matchSol; }
-  bool GetMatchEol () const
-  { return matchEol; }
-  bool GetXfail () const
-  { return xfail; }
+  bool isMatchSpace () const
+  { return MatchSpace; }
+  bool isMatchSol () const
+  { return MatchSol; }
+  bool isMatchEol () const
+  { return MatchEol; }
+  bool isXFail () const
+  { return XFail; }
 
 public:
-  void Unparsed (char const *ctx, Token const *);
-  void Unlexed (Lexer const &lexer, char const *ctx);
+  void parseError (char const *ctx, Token const *);
+  void lexError (Lexer const &lexer, char const *ctx);
 
 protected:
-  virtual bool ProcessLine (std::string_view const &variant,
+  virtual bool processLine (std::string_view const &variant,
 			    std::string_view const &pattern) override;
 
 private:
-  void Options (std::string_view const &);
+  void options (std::string_view const &);
 };
 
 #else
 
-void Parser::Unlexed (Lexer const &lexer, char const *ctx)
+void Parser::lexError (Lexer const &lexer, char const *ctx)
 {
-  Error ()
+  error ()
     << "failed to lex " << ctx
-    << " after '" << lexer.Before ()
-    << "' at '" << lexer.After () << "'";
+    << " after '" << lexer.before ()
+    << "' at '" << lexer.after () << "'";
 }
 
-void Parser::Unparsed (char const *ctx, Token const *token)
-{
-  Error () << "unexpected '" << token << "' parsing " << ctx;
-}
+void Parser::parseError (char const *ctx, Token const *token)
+{ error () << "unexpected '" << token << "' parsing " << ctx; }
 
-void Parser::Options (std::string_view const &text)
+void Parser::options (std::string_view const &text)
 {
   Lexer lexer (text);
 
-  while (char c = lexer.Peek ())
+  while (char c = lexer.peekChar ())
     switch (c)
       {
       case ' ':
       case '\t':
       case ',':
-	lexer.Advance ();
+	lexer.advanceChar ();
 	break;
 
       case '!':
-	lexer.Advance ();
-	lexer.Append (Token (Token::STRING, std::string ("!")));
+	lexer.advanceChar ();
+	lexer.append (Token (Token::STRING, std::string ("!")));
 	break;
 
       default:
-	if (!lexer.Identifier ())
+	if (!lexer.isIdentifier ())
 	  {
-	    Unlexed (lexer, "options");
+	    lexError (lexer, "options");
 	    return;
 	  }
 	break;
@@ -87,27 +85,27 @@ void Parser::Options (std::string_view const &text)
 
   bool on = true;
 
-  while (Token const *token = lexer.GetToken ())
-    switch (token->GetKind ())
+  while (Token const *token = lexer.getToken ())
+    switch (token->kind ())
       {
       case Token::STRING:
-	assert (token->GetString () == "!");
+	assert (token->string () == "!");
 	if (!on)
 	  goto unexpected;
 	on = false;
 	break;
 
       case Token::IDENTIFIER:
-	if (token->GetString () == "matchSpace")
-	  matchSpace = on;
-	else if (token->GetString () == "matchLine")
-	  matchSol = matchEol = on;
-	else if (token->GetString () == "matchSol")
-	  matchSol = on;
-	else if (token->GetString () == "matchEol")
-	  matchEol = on;
-	else if (token->GetString () == "xfail")
-	  xfail = on;
+	if (token->string () == "matchSpace")
+	  MatchSpace = on;
+	else if (token->string () == "matchLine")
+	  MatchSol = MatchEol = on;
+	else if (token->string () == "matchSol")
+	  MatchSol = on;
+	else if (token->string () == "matchEol")
+	  MatchEol = on;
+	else if (token->string () == "xfail")
+	  XFail = on;
 	else
 	  goto unexpected;
 	on = true;
@@ -116,16 +114,16 @@ void Parser::Options (std::string_view const &text)
       default:
 	{
 	unexpected:
-	  Unparsed ("options", token);
+	  parseError ("options", token);
 	}
       }
 }
 
-bool Parser::ProcessLine (std::string_view const &variant,
+bool Parser::processLine (std::string_view const &variant,
 			  std::string_view const &pattern) 
 {
   if (variant == "OPTION")
-    Options (std::move (pattern));
+    options (std::move (pattern));
   else if (variant == "END")
     return true;
   else
@@ -134,9 +132,9 @@ bool Parser::ProcessLine (std::string_view const &variant,
       if (variant.size ())
 	{
 	  for (; code != Pattern::UNKNOWN; ++code)
-	    if (variant == Pattern::kinds[code])
+	    if (variant == Pattern::KindNames[code])
 	      goto found;
-	  return Parent::ProcessLine (variant, pattern);
+	  return Parent::processLine (variant, pattern);
 	found:;
 	}
 
@@ -151,10 +149,10 @@ bool Parser::ProcessLine (std::string_view const &variant,
 	  else
 	    break;
 	}
-      if (auto *p = Pattern::Parse (this, Pattern::Kind (code), pat))
-	e.Add (p);
+      if (auto *p = Pattern::Parse (this, Pattern::Kinds (code), pat))
+	E.add (p);
 
-      xfail = false;
+      XFail = false;
     }
 
   return false;

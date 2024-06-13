@@ -14,18 +14,18 @@
 
 using namespace gaige;
 
-int ReadBuffer::Read ()
+int ReadBuffer::read ()
 {
-  assert (fd >= 0);
+  assert (FD >= 0);
 
   // Read
   size_t lwm = size ();
   size_t hwm = capacity ();
-  if (hwm - lwm < blockSize / 2)
-    hwm += blockSize;
+  if (hwm - lwm < BlockSize / 2)
+    hwm += BlockSize;
   resize (hwm);
 
-  ssize_t count = read (fd, data () + lwm, hwm - lwm);
+  ssize_t count = ::read (FD, data () + lwm, hwm - lwm);
   resize (lwm + (count >= 0 ? count : 0));
 
   int res = count ? 0 : -1;

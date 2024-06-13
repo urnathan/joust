@@ -18,50 +18,50 @@
 using namespace nms;
 using namespace gaige;
 
-std::string const *Symbols::Get (std::string const &var) const
+std::string const *Symbols::value (std::string const &var) const
 {
-  auto iter = table.find (var);
+  auto iter = Table.find (var);
 
-  return iter == table.end () ? nullptr : &iter->second;
+  return iter == Table.end () ? nullptr : &iter->second;
 }
 
-bool Symbols::Set (std::string_view const &var,
-		   std::string_view const &v)
+bool Symbols::value (std::string_view const &var,
+		     std::string_view const &v)
 {
-  auto [iter, inserted] = table.emplace (var, v);
+  auto [iter, inserted] = Table.emplace (var, v);
   return inserted;
 }
 
-bool Symbols::Define (std::string_view const &define)
+bool Symbols::define (std::string_view const &define)
 {
   auto eq = std::find (define.begin (), define.end (), '=');
   auto val = eq + (eq != define.end ());
 
-  return Set (std::string_view (define.begin (), eq),
-	      std::string_view (val, define.end ()));
+  return value (std::string_view (define.begin (), eq),
+		std::string_view (val, define.end ()));
 }
 
 // test=$testFile
 // stem=$(basename -s .* $testFile)
 // subdir=$(dir $testFile)
 // tmp=${test:/=-}.TMPNAM
-std::string Symbols::Origin (char const *s)
+std::string Symbols::setOriginValues (char const *s)
 {
   std::string_view testFile (s);
 
-  Set ("test", testFile);
+  value ("test", testFile);
 
   auto slash = testFile.find_last_of ('/');
   if (slash == testFile.npos)
     slash = 0;
   else
     slash++;
-  Set ("subdir", testFile.substr (0, slash));
+  value ("subdir", testFile.substr (0, slash));
 
   auto dot = testFile.find_last_of ('.');
   if (dot == testFile.npos || dot < slash)
     dot = testFile.size ();
-  Set ("stem", testFile.substr (slash, dot - slash));
+  value ("stem", testFile.substr (slash, dot - slash));
 
   std::string tmp (testFile);
   for (size_t pos = 0;;)
@@ -72,15 +72,15 @@ std::string Symbols::Origin (char const *s)
       tmp[pos] = '-';
     }
   tmp.append (".tmp");
-  Set ("tmp", tmp);
+  value ("tmp", tmp);
 
   std::string path;
   std::string testdir ("testdir");
-  if (auto *tdir = Get (testdir))
+  if (auto *tdir = value (testdir))
     path.append (*tdir);
   else
     {
-      Set (testdir, ".");
+      value (testdir, ".");
       path.append (".");
     }
   path.append ("/");
@@ -89,7 +89,7 @@ std::string Symbols::Origin (char const *s)
   return path;
 }
 
-void Symbols::Read (char const *file)
+void Symbols::readFile (char const *file)
 {
   int fd = open (file, O_RDONLY | O_CLOEXEC);
   if (fd < 0)
@@ -133,13 +133,13 @@ void Symbols::Read (char const *file)
 
 	  if (eql != eol)
 	    // Value
-	    Set (std::string_view (begin, eql),
-		 std::string_view (eql + 1, eol));
+	    value (std::string_view (begin, eql),
+		   std::string_view (eql + 1, eol));
 	  else
 	    {
 	      // Nested file
 	      *eol = 0;
-	      Read (begin);
+	      readFile (begin);
 	    }
 	}
       begin = eol + 1;

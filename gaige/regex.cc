@@ -14,7 +14,7 @@ using namespace gaige::regex;
 // Escape characters in STRING that are significant to regex
 // extended POSIX, Base Definitions and Headers, Section 9.4
 
-void gaige::regex::Protect (std::string &dst, std::string_view const &src)
+void gaige::regex::protect (std::string &dst, std::string_view const &src)
 {
   // ) needs escaping, } must not be escaped, ] seems either way
   constexpr std::string_view meta (R"([{()*+?.\^$|)");
@@ -29,8 +29,8 @@ void gaige::regex::Protect (std::string &dst, std::string_view const &src)
     }
 }
 
-Result gaige::regex::Create (std::regex &regex, std::string_view const &text,
-			     int &error) noexcept
+Results gaige::regex::create (std::regex &regex, std::string_view const &text,
+			      int &error) noexcept
 {
   try
     {
@@ -46,9 +46,9 @@ Result gaige::regex::Create (std::regex &regex, std::string_view const &text,
     }
 }
 
-Result gaige::regex::Search (std::regex const &regex,
-			     std::string_view const &text,
-			     std::cmatch &match, int &error) noexcept
+Results gaige::regex::search (std::regex const &regex,
+			      std::string_view const &text,
+			      std::cmatch &match, int &error) noexcept
 {
   try
     {
@@ -64,7 +64,7 @@ Result gaige::regex::Search (std::regex const &regex,
     }
 }
 
-char const *gaige::regex::Error (int error) noexcept
+char const *gaige::regex::error (int error) noexcept
 {
   using namespace std::regex_constants;
   switch (error)

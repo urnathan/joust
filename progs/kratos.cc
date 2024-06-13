@@ -69,7 +69,7 @@ namespace {
 
 } // namespace
 
-static void Title (FILE *stream)
+static void title (FILE *stream)
 {
   fprintf (stream, "KRATOS: Kapture Run And Test Output Safely\n");
   fprintf (stream, "Copyright 2020-2024 Nathan Sidwell, nathan@acm.org\n");
@@ -106,13 +106,13 @@ int main (int argc, char *argv[])
   int argno = options->parseArgs (argc, argv, &flags);
   if (flags.help)
     {
-      Title (stdout);
+      title (stdout);
       options->printUsage (stdout, "testfile");
       return 0;
     }
   if (flags.version)
     {
-      Title (stdout);
+      title (stdout);
       printBuildNote (stdout);
       return 0;
     }
@@ -131,24 +131,24 @@ int main (int argc, char *argv[])
 
   // Register defines
   for (auto d : flags.defines)
-    syms.Define (std::string_view (d));
+    syms.define (std::string_view (d));
   if (flags.include)
-    syms.Read (flags.include);
+    syms.readFile (flags.include);
   if (auto *vars = getenv ("JOUST"))
     if (*vars)
-      syms.Read (vars);
+      syms.readFile (vars);
 
   std::vector<Pipeline> pipes;
   bool ended = false;
   {
-    std::string pathname = syms.Origin (testFile);
+    std::string pathname = syms.setOriginValues (testFile);
     Parser parser (testFile, pipes, syms);
 
     // Scan the pattern file
-    ended = parser.ScanFile (pathname, flags.prefixes);
+    ended = parser.scanFile (pathname, flags.prefixes);
   }
 
-  if ((!ended && pipes.empty ()) || Error::Errors ())
+  if ((!ended && pipes.empty ()) || Error::hasErrored ())
     fatalExit ("?failed to construct commands '%s'", testFile);
 
   std::ofstream sum, log;
@@ -171,9 +171,9 @@ int main (int argc, char *argv[])
   Tester logger (flags.out ? sum : std::cout, flags.out ? log : std::cerr);
   if (flags.verbose)
     {
-      logger.Sum () << "Pipelines\n";
+      logger.sum () << "Pipelines\n";
       for (unsigned ix = 0; ix != pipes.size (); ix++)
-	logger.Sum () << ix << pipes[ix];
+	logger.sum () << ix << pipes[ix];
     }
 
   unsigned limits[PL_HWM + 1];
@@ -185,41 +185,41 @@ int main (int argc, char *argv[])
 
       // Default to 1 minute or 1 GB
       limits[ix] = ix == PL_CPU || ix == PL_HWM ? 60 : 1;
-      if (auto limit = syms.Get (vars[ix]))
+      if (auto limit = syms.value (vars[ix]))
 	{
 	  Lexer lexer (*limit);
 
-	  if (!lexer.Integer () || lexer.Peek ())
-	    logger.Result (Tester::ERROR, testFile)
+	  if (!lexer.isInteger () || lexer.peekChar ())
+	    logger.result (Tester::ERROR, testFile)
 	      << "limit '" << vars[ix] << "=" << *limit << "' invalid";
 	  else
-	    limits[ix] = lexer.GetToken ()->GetInteger ();
+	    limits[ix] = lexer.getToken ()->integer ();
 	}
     }
 
   if (pipes.empty ())
-    logger.Result (Tester::PASS, nms::SrcLoc (testFile)) << "No tests to test";
+    logger.result (Tester::PASS, nms::SrcLoc (testFile)) << "No tests to test";
 
   bool skipping = false;
   for (auto &pipe : pipes)
     {
       if (!skipping)
 	{
-	  logger.Log () << '\n';
-	  int e = pipe.Execute (logger, pipe.GetKind () < Pipeline::PIPE_HWM
+	  logger.log () << '\n';
+	  int e = pipe.execute (logger, pipe.kind () < Pipeline::PIPE_HWM
 				? limits : nullptr);
 	  if (e == EINTR)
 	    break;
 
-	  if (e && pipe.GetKind () == Pipeline::REQUIRE)
+	  if (e && pipe.kind () == Pipeline::REQUIRE)
 	    skipping = true;
 	}
-      else if (pipe.GetKind () != Pipeline::REQUIRE)
+      else if (pipe.kind () != Pipeline::REQUIRE)
 	{
-	  pipe.Result (logger, Tester::UNSUPPORTED);
+	  pipe.result (logger, Tester::UNSUPPORTED);
 	  skipping = false;
 	}
     }
 
-  return Error::Errors ();
+  return Error::hasErrored ();
 }

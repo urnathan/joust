@@ -57,7 +57,7 @@ class Engine;
 
 } // namespace
 
-static void Title (FILE *stream)
+static void title (FILE *stream)
 {
   fprintf (stream, "ALOY: Apply List, Observe Yield\n");
   fprintf (stream, "Copyright 2020-2024 Nathan Sidwell, nathan@acm.org\n");
@@ -93,13 +93,13 @@ int main (int argc, char *argv[])
   int argno = options->parseArgs (argc, argv, &flags);
   if (flags.help)
     {
-      Title (stdout);
+      title (stdout);
       options->printUsage (stdout, "[generator-options]");
       return 0;
     }
   if (flags.version)
     {
-      Title (stdout);
+      title (stdout);
       printBuildNote (stdout);
       return 0;
     }
@@ -128,20 +128,20 @@ int main (int argc, char *argv[])
   Engine engine (std::min (flags.jobs, 256u),
 		 flags.out ? sum : std::cout, flags.out ? log : std::cerr);
 
-  engine.Init (flags.tester, flags.gen.empty () ? nullptr : &flags.gen,
+  engine.init (flags.tester, flags.gen.empty () ? nullptr : &flags.gen,
 	       argc - argno, argv + argno);
   bool show_progress = flags.out && isatty (1);
   size_t progress_size = 0;
 
   // MainLoop
-  while (engine.IsLive ())
+  while (engine.isLive ())
     {
-      engine.Spawn ();
-      engine.Process ();
-      engine.Retire (flags.out ? &std::cout : nullptr);
+      engine.spawn ();
+      engine.process ();
+      engine.retire (flags.out ? &std::cout : nullptr);
       if (show_progress)
 	{
-	  std::string text = engine.Progress ();
+	  std::string text = engine.getProgress ();
 	  auto text_size = text.size ();
 
 	  // Append spaces to rub out previous longer progress
@@ -164,7 +164,7 @@ int main (int argc, char *argv[])
       write (1, text.data (), text.size ());
     }
 
-  engine.Fini (flags.out ? &std::cout : nullptr);
+  engine.fini (flags.out ? &std::cout : nullptr);
 
   sum.close ();
   log.close ();
