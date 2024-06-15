@@ -1,5 +1,5 @@
 // Joust/KRATOS: Kapture Run And Test Output Safely	-*- mode:c++ -*-
-// Copyright (C) 2020-2023 Nathan Sidwell, nathan@acm.org
+// Copyright (C) 2020-2024 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 
 // KRATOS is a test executor.  It looks for RUN lines in the provided
@@ -72,7 +72,7 @@ static void
 Title (FILE *stream)
 {
   fprintf (stream, "KRATOS: Kapture Run And Test Output Safely\n");
-  fprintf (stream, "Copyright 2020-2023 Nathan Sidwell, nathan@acm.org\n");
+  fprintf (stream, "Copyright 2020-2024 Nathan Sidwell, nathan@acm.org\n");
 }
 
 int
