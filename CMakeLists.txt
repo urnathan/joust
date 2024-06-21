@@ -52,8 +52,9 @@ configure_file (gdbinit.in .gdbinit ESCAPE_QUOTES)
 configure_file (cfg.h.in include/joust/cfg.h @ONLY)
 
 # user visible library
-file (GLOB JOUST_SRCS CONFIGURE_DEPENDS "joust/*.cc")
-add_library (libjoust ${JOUST_SRCS})
+add_library (libjoust
+  joust/tester.cc
+)
 add_dependencies (joust libjoust)
 set_property(TARGET libjoust PROPERTY OUTPUT_NAME joust)
 target_include_directories (libjoust
@@ -61,8 +62,17 @@ target_include_directories (libjoust
 target_link_libraries (libjoust PUBLIC libnms)
 
 # Internal library, gaige Group All Internal Gizmo Elements
-file (GLOB GAIGE_SRCS CONFIGURE_DEPENDS "gaige/*.cc")
-add_library (libgaige STATIC ${GAIGE_SRCS})
+add_library (libgaige STATIC
+  gaige/error.cc
+  gaige/lexer.cc
+  gaige/readBuffer.cc
+  gaige/regex.cc
+  gaige/scanner.cc
+  gaige/spawn.cc
+  gaige/symbols.cc
+  gaige/token.cc
+)
+
 add_dependencies (joust libgaige)
 set_property(TARGET libgaige PROPERTY OUTPUT_NAME gaige)
 target_include_directories (libgaige
