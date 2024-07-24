@@ -85,9 +85,9 @@ Engine::~Engine ()
 
 std::ostream &operator<< (std::ostream &s, std::vector<Pattern *> const &vec)
 {
-  for (auto const &p : vec)
+  for (auto const *p : vec)
     if (p)
-      s << p;
+      s << *p;
 
   return s;
 }
