@@ -55,68 +55,64 @@ namespace {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
-[[gnu::always_inline]] void
-InvokeHCF ()
-{ haltAndCatchFire ("burn it all down"); }
+[[gnu::always_inline]]
+void InvokeHCF () {
+  haltAndCatchFire("burn it all down");
+}
 #pragma GCC diagnostic pop
 
 void NestedHCF (int ix);
 
 // Trampoline needed to avoid recursion warning (yes, I know, that't
 // the point)
-[[gnu::noinline]] void
-TrampHCF (int ix)
-{ NestedHCF (ix); }
+[[gnu::noinline]]
+void TrampHCF (int ix) {
+  NestedHCF(ix);
+}
 
-[[gnu::noinline]] void
-NestedHCF (int ix = 4)
-{
-  asm volatile ("");
+[[gnu::noinline]]
+void NestedHCF (int ix = 4) {
+  asm volatile("");
   if (--ix)
-    TrampHCF (ix);
-  haltAndCatchFire ("go boom!");
+    TrampHCF(ix);
+  haltAndCatchFire("go boom!");
 }
 
 } // namespace
 
-int main (int argc, char *argv[])
-{
+int main (int argc, char *argv[]) {
 #include "joust/project-ident.inc"
-  setBuildInfo (JOUST_PROJECT_IDENTS);
-  installSignalHandlers ();
+  setBuildInfo(JOUST_PROJECT_IDENTS);
+  installSignalHandlers();
 
-  struct Flags 
-  {
+  struct Flags {
     bool do_inline = false;
     bool do_nested = false;
     bool is_backtraced = false;
     bool is_optimized = false;
   } flags;
-  static constexpr Option const options[] =
-    {
-      {"inline", 0, OPTION_FLDFN (Flags, do_inline), "Inline"},
-      {"nested", 0, OPTION_FLDFN (Flags, do_nested), "Nested"},
-      {"optimized", 0, OPTION_FLDFN (Flags, is_optimized), "Optimized"},
-      {"backtraced", 0, OPTION_FLDFN (Flags, is_backtraced), "Backtraced"},
-      {}
-    };
-  options->parseArgs (argc, argv, &flags);
+  static constexpr Option const options[]
+      = {{"inline", 0, OPTION_FLDFN(Flags, do_inline), "Inline"},
+         {"nested", 0, OPTION_FLDFN(Flags, do_nested), "Nested"},
+         {"optimized", 0, OPTION_FLDFN(Flags, is_optimized), "Optimized"},
+         {"backtraced", 0, OPTION_FLDFN(Flags, is_backtraced), "Backtraced"},
+         {}};
+  options->parseArgs(argc, argv, &flags);
 
-  if (flags.is_optimized)
-    {
+  if (flags.is_optimized) {
 #if __OPTIMIZE__
-      return 0;
+    return 0;
 #endif
-      return 1;
-    }
+    return 1;
+  }
 
   if (flags.is_backtraced)
     return NMS_BACKTRACE == 0;
 
   if (flags.do_inline)
-    InvokeHCF ();
+    InvokeHCF();
   if (flags.do_nested)
-    NestedHCF ();
-  options->printUsage (stdout, "");
+    NestedHCF();
+  options->printUsage(stdout, "");
   return 0;
 }

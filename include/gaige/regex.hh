@@ -11,8 +11,7 @@
 // and contain them.
 namespace gaige::regex {
 
-enum Results
-{
+enum Results {
   // YES, NO, FILE-NOT-FOUND
   NOTFOUND,
   FOUND,
@@ -21,13 +20,12 @@ enum Results
 
 Results create (std::regex &, std::string_view const &text, int &) noexcept;
 Results search (std::regex const &, std::string_view const &text,
-		std::cmatch &, int &) noexcept;
+                std::cmatch &, int &) noexcept;
 char const *error (int) noexcept;
 void protect (std::string &, std::string_view const &);
-inline std::string protect (std::string_view const &src)
-{
+inline std::string protect (std::string_view const &src) {
   std::string dst;
-  protect (dst, src);
+  protect(dst, src);
   return dst;
 }
 

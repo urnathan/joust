@@ -16,21 +16,19 @@
 
 using namespace nms;
 
-int
-main (int, char *[])
-{
+int main (int, char *[]) {
 #include "joust/project-ident.inc"
-  setBuildInfo (JOUST_PROJECT_IDENTS);
-  installSignalHandlers ();
+  setBuildInfo(JOUST_PROJECT_IDENTS);
+  installSignalHandlers();
 
-  joust::Tester log {};
+  joust::Tester log{};
 
-  log.result (joust::Tester::PASS) << "test1";
-  log.log () << "location " << __FILE__ << ':' << __LINE__ - 1 << '\n';
-  log.result (joust::Tester::FAIL) << "test2";
+  log.result(joust::Tester::PASS) << "test1";
+  log.log() << "location " << __FILE__ << ':' << __LINE__ - 1 << '\n';
+  log.result(joust::Tester::FAIL) << "test2";
 
-  log.result (joust::Tester::MSG) << "message1";
-  log.message () << "message2";
+  log.result(joust::Tester::MSG) << "message1";
+  log.message() << "message2";
 
   return 0;
 }

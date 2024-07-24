@@ -61,28 +61,25 @@ using namespace gaige;
 // the loop.
 
 namespace {
-
+// clang-format off
 #include "kratos-command.inc"
 #include "kratos-pipeline.inc"
 #include "kratos-command.inc"
 #include "kratos-parser.inc"
-
+// clang-format on
 } // namespace
 
-static void title (FILE *stream)
-{
-  fprintf (stream, "KRATOS: Kapture Run And Test Output Safely\n");
-  fprintf (stream, "Copyright 2020-2024 Nathan Sidwell, nathan@acm.org\n");
+static void title (FILE *stream) {
+  fprintf(stream, "KRATOS: Kapture Run And Test Output Safely\n");
+  fprintf(stream, "Copyright 2020-2024 Nathan Sidwell, nathan@acm.org\n");
 }
 
-int main (int argc, char *argv[])
-{
+int main (int argc, char *argv[]) {
 #include "joust/project-ident.inc"
-  nms::setBuildInfo (JOUST_PROJECT_IDENTS);
-  nms::installSignalHandlers ();
+  nms::setBuildInfo(JOUST_PROJECT_IDENTS);
+  nms::installSignalHandlers();
 
-  struct Flags
-  {
+  struct Flags {
     bool help = false;
     bool version = false;
     bool verbose = false;
@@ -92,134 +89,124 @@ int main (int argc, char *argv[])
     char const *out = "";
     char const *dir = nullptr;
   } flags;
-  static constinit nms::Option const options[]
-    = {{"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
-       {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
-       {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
-       {"dir", 'C', OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
-       {nullptr, 'D', nms::Option::F_IsConcatenated,
-	OPTION_FLDFN (Flags, defines), "VAR=VAL:Define"},
-       {"defines", 'd', OPTION_FLDFN (Flags, include), "FILE:File of defines"},
-       {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
-       {"prefix", 'p', OPTION_FLDFN (Flags, prefixes), "PREFIX:Pattern prefix"},
-       {}};
-  int argno = options->parseArgs (argc, argv, &flags);
-  if (flags.help)
-    {
-      title (stdout);
-      options->printUsage (stdout, "testfile");
-      return 0;
-    }
-  if (flags.version)
-    {
-      title (stdout);
-      printBuildNote (stdout);
-      return 0;
-    }
+  static constinit nms::Option const options[] = {
+      {"help", 'h', OPTION_FLDFN(Flags, help), "Help"},
+      {"version", 0, OPTION_FLDFN(Flags, version), "Version"},
+      {"verbose", 'v', OPTION_FLDFN(Flags, verbose), "Verbose"},
+      {"dir", 'C', OPTION_FLDFN(Flags, dir), "DIR:Set directory"},
+      {nullptr, 'D', nms::Option::F_IsConcatenated,
+       OPTION_FLDFN(Flags, defines), "VAR=VAL:Define"},
+      {"defines", 'd', OPTION_FLDFN(Flags, include), "FILE:File of defines"},
+      {"out", 'o', OPTION_FLDFN(Flags, out), "FILE:Output"},
+      {"prefix", 'p', OPTION_FLDFN(Flags, prefixes), "PREFIX:Pattern prefix"},
+      {}};
+  int argno = options->parseArgs(argc, argv, &flags);
+  if (flags.help) {
+    title(stdout);
+    options->printUsage(stdout, "testfile");
+    return 0;
+  }
+  if (flags.version) {
+    title(stdout);
+    printBuildNote(stdout);
+    return 0;
+  }
   if (flags.dir)
-    if (chdir (flags.dir) < 0)
-      fatalExit ("?cannot chdir '%s': %m", flags.dir);
+    if (chdir(flags.dir) < 0)
+      fatalExit("?cannot chdir '%s': %m", flags.dir);
 
   if (argno == argc)
-    fatalExit ("?expected test filename");
+    fatalExit("?expected test filename");
   char const *testFile = argv[argno++];
 
-  if (!flags.prefixes.size ())
-    flags.prefixes.push_back ("RUN");
+  if (!flags.prefixes.size())
+    flags.prefixes.push_back("RUN");
 
   Symbols syms;
 
   // Register defines
   for (auto d : flags.defines)
-    syms.define (std::string_view (d));
+    syms.define(std::string_view(d));
   if (flags.include)
-    syms.readFile (flags.include);
-  if (auto *vars = getenv ("JOUST"))
+    syms.readFile(flags.include);
+  if (auto *vars = getenv("JOUST"))
     if (*vars)
-      syms.readFile (vars);
+      syms.readFile(vars);
 
   std::vector<Pipeline> pipes;
   bool ended = false;
   {
-    std::string pathname = syms.setOriginValues (testFile);
-    Parser parser (testFile, pipes, syms);
+    std::string pathname = syms.setOriginValues(testFile);
+    Parser parser(testFile, pipes, syms);
 
     // Scan the pattern file
-    ended = parser.scanFile (pathname, flags.prefixes);
+    ended = parser.scanFile(pathname, flags.prefixes);
   }
 
-  if ((!ended && pipes.empty ()) || Error::hasErrored ())
-    fatalExit ("?failed to construct commands '%s'", testFile);
+  if ((!ended && pipes.empty()) || Error::hasErrored())
+    fatalExit("?failed to construct commands '%s'", testFile);
 
   std::ofstream sum, log;
   if (!flags.out[flags.out[0] == '-'])
     flags.out = nullptr;
-  else
-    {
-      std::string out (flags.out);
-      size_t len = out.size ();
-      out.append (".sum");
-      sum.open (out);
-      if (!sum.is_open ())
-	fatalExit ("cannot write '%s': %m", out.c_str ());
-      out.erase (len).append (".log");
-      log.open (out);
-      if (!log.is_open ())
-	fatalExit ("cannot write '%s': %m", out.c_str ());
-    }
+  else {
+    std::string out(flags.out);
+    size_t len = out.size();
+    out.append(".sum");
+    sum.open(out);
+    if (!sum.is_open())
+      fatalExit("cannot write '%s': %m", out.c_str());
+    out.erase(len).append(".log");
+    log.open(out);
+    if (!log.is_open())
+      fatalExit("cannot write '%s': %m", out.c_str());
+  }
 
-  Tester logger (flags.out ? sum : std::cout, flags.out ? log : std::cerr);
-  if (flags.verbose)
-    {
-      logger.sum () << "Pipelines\n";
-      for (unsigned ix = 0; ix != pipes.size (); ix++)
-	logger.sum () << ix << pipes[ix];
-    }
+  Tester logger(flags.out ? sum : std::cout, flags.out ? log : std::cerr);
+  if (flags.verbose) {
+    logger.sum() << "Pipelines\n";
+    for (unsigned ix = 0; ix != pipes.size(); ix++)
+      logger.sum() << ix << pipes[ix];
+  }
 
   unsigned limits[PL_HWM + 1];
 
-  for (unsigned ix = PL_HWM + 1; ix--;)
-    {
-      static char const *const vars[PL_HWM + 1]
-	= {"cpulimit", "memlimit", "filelimit", "timelimit"};
+  for (unsigned ix = PL_HWM + 1; ix--;) {
+    static char const *const vars[PL_HWM + 1]
+        = {"cpulimit", "memlimit", "filelimit", "timelimit"};
 
-      // Default to 1 minute or 1 GB
-      limits[ix] = ix == PL_CPU || ix == PL_HWM ? 60 : 1;
-      if (auto limit = syms.value (vars[ix]))
-	{
-	  Lexer lexer (*limit);
+    // Default to 1 minute or 1 GB
+    limits[ix] = ix == PL_CPU || ix == PL_HWM ? 60 : 1;
+    if (auto limit = syms.value(vars[ix])) {
+      Lexer lexer(*limit);
 
-	  if (!lexer.isInteger () || lexer.peekChar ())
-	    logger.result (Tester::ERROR, testFile)
-	      << "limit '" << vars[ix] << "=" << *limit << "' invalid";
-	  else
-	    limits[ix] = lexer.getToken ()->integer ();
-	}
+      if (!lexer.isInteger() || lexer.peekChar())
+        logger.result(Tester::ERROR, testFile)
+            << "limit '" << vars[ix] << "=" << *limit << "' invalid";
+      else
+        limits[ix] = lexer.getToken()->integer();
     }
+  }
 
-  if (pipes.empty ())
-    logger.result (Tester::PASS, nms::SrcLoc (testFile)) << "No tests to test";
+  if (pipes.empty())
+    logger.result(Tester::PASS, nms::SrcLoc(testFile)) << "No tests to test";
 
   bool skipping = false;
-  for (auto &pipe : pipes)
-    {
-      if (!skipping)
-	{
-	  logger.log () << '\n';
-	  int e = pipe.execute (logger, pipe.kind () < Pipeline::PIPE_HWM
-				? limits : nullptr);
-	  if (e == EINTR)
-	    break;
+  for (auto &pipe : pipes) {
+    if (!skipping) {
+      logger.log() << '\n';
+      int e = pipe.execute(logger, pipe.kind() < Pipeline::PIPE_HWM ? limits
+                                                                    : nullptr);
+      if (e == EINTR)
+        break;
 
-	  if (e && pipe.kind () == Pipeline::REQUIRE)
-	    skipping = true;
-	}
-      else if (pipe.kind () != Pipeline::REQUIRE)
-	{
-	  pipe.result (logger, Tester::UNSUPPORTED);
-	  skipping = false;
-	}
+      if (e && pipe.kind() == Pipeline::REQUIRE)
+        skipping = true;
+    } else if (pipe.kind() != Pipeline::REQUIRE) {
+      pipe.result(logger, Tester::UNSUPPORTED);
+      skipping = false;
     }
+  }
 
-  return Error::hasErrored ();
+  return Error::hasErrored();
 }

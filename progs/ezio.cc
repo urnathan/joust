@@ -41,29 +41,26 @@ using namespace joust;
 using namespace gaige;
 
 namespace {
-
 class Engine;
+// clang-format off
 #include "ezio-parser.inc"
 #include "ezio-pattern.inc"
 #include "ezio-engine.inc"
 #include "ezio-parser.inc"
-
+// clang-format on
 } // namespace
 
-static void title (FILE *stream)
-{
-  fprintf (stream, "EZIO: Expect Zero Irregularities Observed\n");
-  fprintf (stream, "Copyright 2020-2024 Nathan Sidwell, nathan@acm.org\n");
+static void title (FILE *stream) {
+  fprintf(stream, "EZIO: Expect Zero Irregularities Observed\n");
+  fprintf(stream, "Copyright 2020-2024 Nathan Sidwell, nathan@acm.org\n");
 }
 
-int main (int argc, char *argv[])
-{
+int main (int argc, char *argv[]) {
 #include "joust/project-ident.inc"
-  nms::setBuildInfo (JOUST_PROJECT_IDENTS);
-  nms::installSignalHandlers ();
+  nms::setBuildInfo(JOUST_PROJECT_IDENTS);
+  nms::installSignalHandlers();
 
-  struct Flags
-  {
+  struct Flags {
     bool help = false;
     bool version = false;
     bool verbose = false;
@@ -74,92 +71,89 @@ int main (int argc, char *argv[])
     char const *out = "";
     char const *dir = nullptr;
   } flags;
-  static constinit nms::Option const options[]
-    = {{"help", 'h', OPTION_FLDFN (Flags, help), "Help"},
-       {"version", 0, OPTION_FLDFN (Flags, version), "Version"},
-       {"verbose", 'v', OPTION_FLDFN (Flags, verbose), "Verbose"},
-       {"dir", 'C', nms::Option::F_IsConcatenated,
-	OPTION_FLDFN (Flags, dir), "DIR:Set directory"},
-       {nullptr, 'D', OPTION_FLDFN (Flags, defines), "VAR=VAL:Define"},
-       {"defines", 'd', OPTION_FLDFN (Flags, include), "FILE:File of defines"},
-       {"in", 'i', OPTION_FLDFN (Flags, in), "FILE:Input"},
-       {"out", 'o', OPTION_FLDFN (Flags, out), "FILE:Output"},
-       {"prefix", 'p', OPTION_FLDFN (Flags, prefixes), "PREFIX:Pattern prefix"},
-       {}};
-  int argno = options->parseArgs (argc, argv, &flags);
-  if (flags.help)
-    {
-      title (stdout);
-      options->printUsage (stdout, "pattern-files+");
-      return 0;
-    }
-  if (flags.version)
-    {
-      title (stdout);
-      printBuildNote (stdout);
-      return 0;
-    }
+  static constinit nms::Option const options[] = {
+      {"help", 'h', OPTION_FLDFN(Flags, help), "Help"},
+      {"version", 0, OPTION_FLDFN(Flags, version), "Version"},
+      {"verbose", 'v', OPTION_FLDFN(Flags, verbose), "Verbose"},
+      {"dir", 'C', nms::Option::F_IsConcatenated, OPTION_FLDFN(Flags, dir),
+       "DIR:Set directory"},
+      {nullptr, 'D', OPTION_FLDFN(Flags, defines), "VAR=VAL:Define"},
+      {"defines", 'd', OPTION_FLDFN(Flags, include), "FILE:File of defines"},
+      {"in", 'i', OPTION_FLDFN(Flags, in), "FILE:Input"},
+      {"out", 'o', OPTION_FLDFN(Flags, out), "FILE:Output"},
+      {"prefix", 'p', OPTION_FLDFN(Flags, prefixes), "PREFIX:Pattern prefix"},
+      {}};
+  int argno = options->parseArgs(argc, argv, &flags);
+  if (flags.help) {
+    title(stdout);
+    options->printUsage(stdout, "pattern-files+");
+    return 0;
+  }
+  if (flags.version) {
+    title(stdout);
+    printBuildNote(stdout);
+    return 0;
+  }
   if (flags.dir)
-    if (chdir (flags.dir) < 0)
-      fatalExit ("cannot chdir '%s': %m", flags.dir);
+    if (chdir(flags.dir) < 0)
+      fatalExit("cannot chdir '%s': %m", flags.dir);
 
-  if (!flags.prefixes.size ())
-    flags.prefixes.push_back ("CHECK");
+  if (!flags.prefixes.size())
+    flags.prefixes.push_back("CHECK");
 
   Symbols syms;
 
   // Register defines
-  syms.value ("EOF", "${}EOF");
+  syms.value("EOF", "${}EOF");
   for (auto d : flags.defines)
-    syms.define (std::string_view (d));
+    syms.define(std::string_view(d));
   if (flags.include)
-    syms.readFile (flags.include);
-  if (auto *vars = getenv ("JOUST"))
+    syms.readFile(flags.include);
+  if (auto *vars = getenv("JOUST"))
     if (*vars)
-      syms.readFile (vars);
+      syms.readFile(vars);
 
   std::ofstream sum, log;
   if (!flags.out[flags.out[0] == '-'])
     flags.out = nullptr;
-  else
-    {
-      std::string out (flags.out);
-      size_t len = out.size ();
-      out.append (".sum");
-      sum.open (out);
-      if (!sum.is_open ())
-	fatalExit ("cannot write '%s': %m", out.c_str ());
-      out.erase (len).append (".log");
-      log.open (out);
-      if (!log.is_open ())
-	fatalExit ("cannot write '%s': %m", out.c_str ());
-    }
+  else {
+    std::string out(flags.out);
+    size_t len = out.size();
+    out.append(".sum");
+    sum.open(out);
+    if (!sum.is_open())
+      fatalExit("cannot write '%s': %m", out.c_str());
+    out.erase(len).append(".log");
+    log.open(out);
+    if (!log.is_open())
+      fatalExit("cannot write '%s': %m", out.c_str());
+  }
 
-  Engine engine (syms, flags.out ? sum : std::cout, flags.out ? log : std::cerr);
+  Engine engine(syms, flags.out ? sum : std::cout,
+                flags.out ? log : std::cerr);
 
-  while (argno != argc)
-    {
-      char const *patternFile = argv[argno++];
-      std::string pathname = syms.setOriginValues (patternFile);
-      Parser parser (patternFile, engine);
+  while (argno != argc) {
+    char const *patternFile = argv[argno++];
+    std::string pathname = syms.setOriginValues(patternFile);
+    Parser parser(patternFile, engine);
 
-      // Scan the pattern file
-      parser.scanFile (pathname, flags.prefixes);
-      if (Error::hasErrored ())
-	fatalExit ("failed to construct patterns '%s'", patternFile);
-    }
+    // Scan the pattern file
+    parser.scanFile(pathname, flags.prefixes);
+    if (Error::hasErrored())
+      fatalExit("failed to construct patterns '%s'", patternFile);
+  }
 
-  engine.initialize ();
+  engine.initialize();
 
   if (flags.verbose)
-    engine.log () << engine << '\n';
+    engine.log() << engine << '\n';
 
-  engine.process (flags.in);
+  engine.process(flags.in);
 
-  engine.finalize ();
+  engine.finalize();
 
-  sum.close ();
-  log.close ();
+  sum.close();
+  log.close();
 
-  return Error::hasErrored ();
+  return Error::hasErrored();
 }

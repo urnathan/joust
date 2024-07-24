@@ -9,9 +9,7 @@
 
 namespace gaige {
 
-class ReadBuffer
-  : public std::vector<char>
-{
+class ReadBuffer : public std::vector<char> {
   using Parent = std::vector<char>;
 
 private:
@@ -25,18 +23,14 @@ public:
   int read ();
 
 public:
-  bool isOpen () const
-  { return FD >= 0; }
+  bool isOpen () const { return FD >= 0; }
 
 public:
-  int fd () const
-  { return FD; }
+  int fd () const { return FD; }
 
-  void open (int f)
-  { FD = f; }
+  void open (int f) { FD = f; }
 
-  int close ()
-  {
+  int close () {
     int f = FD;
     FD = -1;
     return f;
