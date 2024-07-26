@@ -21,6 +21,7 @@ class Token {
       (INTEGER, "integer"), (FORMAT, "format"), (STRING, "string"),           \
       (IDENTIFIER, "identifier"), (WHITESPACE, "whitespace"),                 \
       (REGEX_CAPTURE, "regex-capture")
+
 public:
   enum Kinds : unsigned char {
     NMS_LIST(NMS_1ST, TOKEN_KINDS),

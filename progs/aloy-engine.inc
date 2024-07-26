@@ -388,14 +388,12 @@ void Engine::wantMake() {
       if (MakeWant)
         while (epoll_ctl(PollFD, EPOLL_CTL_DEL, MakeIn, nullptr) < 0)
           assert(errno == EINTR || errno == EAGAIN);
-    } else {
-      if (!MakeWant) {
-        epoll_event ev;
-        ev.events = EPOLLIN;
-        ev.data.u64 = unsigned(FDs::MAKE_IN);
-        while (epoll_ctl(PollFD, EPOLL_CTL_ADD, MakeIn, &ev) < 0)
-          assert(errno == EINTR || errno == EAGAIN);
-      }
+    } else if (!MakeWant) {
+      epoll_event ev;
+      ev.events = EPOLLIN;
+      ev.data.u64 = unsigned(FDs::MAKE_IN);
+      while (epoll_ctl(PollFD, EPOLL_CTL_ADD, MakeIn, &ev) < 0)
+        assert(errno == EINTR || errno == EAGAIN);
     }
 #endif
     MakeWant = want;

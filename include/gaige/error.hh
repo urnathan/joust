@@ -28,7 +28,7 @@ public:
   ~Error() {
     if (Stream)
       *Stream << '\n';
-  };
+  }
 
 private:
   Error &operator= (Error &&) = delete;

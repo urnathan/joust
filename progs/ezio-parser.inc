@@ -124,14 +124,13 @@ bool Parser::processLine(std::string_view const &variant,
 
     auto pat = pattern;
     // Strip leading and trailing whitespace
-    while (!pat.empty()) {
+    while (!pat.empty())
       if (pat.front() == ' ' || pat.front() == '\t')
         pat.remove_prefix(1);
       else if (pat.back() == ' ' || pat.back() == '\t')
         pat.remove_suffix(1);
       else
         break;
-    }
     if (auto *p = Pattern::Parse(this, Pattern::Kinds(code), pat))
       E.add(p);
 
