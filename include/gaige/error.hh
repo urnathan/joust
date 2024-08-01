@@ -20,12 +20,12 @@ private:
   static bool HasErrored;
 
 public:
-  Error(nms::SrcLoc);
-  Error(Error &&src)
+  Error (nms::SrcLoc);
+  Error (Error &&src)
     : Stream(src.Stream) {
     src.Stream = nullptr;
   }
-  ~Error() {
+  ~Error () {
     if (Stream)
       *Stream << '\n';
   }

@@ -12,10 +12,10 @@ private:
     std::vector<Pattern *> Body;
 
   public:
-    Frame(Pattern *head = nullptr) { Body.emplace_back(head); }
-    Frame(Frame &&from)
+    Frame (Pattern *head = nullptr) { Body.emplace_back(head); }
+    Frame (Frame &&from)
       : None(std::move(from.None)), Body(std::move(from.Body)) {}
-    ~Frame();
+    ~Frame ();
 
   private:
     Frame &operator= (Frame &&) = delete;
@@ -31,12 +31,12 @@ private:
   BodyIter CurrentBody;   // Current element
 
 public:
-  Engine(Symbols &syms, std::ostream &sum, std::ostream &log)
+  Engine (Symbols &syms, std::ostream &sum, std::ostream &log)
     : Parent(sum, log), Syms(syms) {}
-  ~Engine();
+  ~Engine ();
 
 private:
-  Engine(Engine &&) = delete;
+  Engine (Engine &&) = delete;
   Engine &operator= (Engine &&) = delete;
 
 public:
@@ -64,14 +64,14 @@ public:
                                    std::vector<Frame> const &);
 };
 
-Engine::Frame::~Frame() {
+Engine::Frame::~Frame () {
   for (auto *n : None)
     delete n;
   for (auto *b : Body)
     delete b;
 }
 
-Engine::~Engine() {
+Engine::~Engine () {
   for (auto *n : Nevers)
     delete n;
 }
@@ -104,7 +104,7 @@ std::ostream &operator<< (std::ostream &s, Engine const &e) {
   return s;
 }
 
-void Engine::add(Pattern *p) {
+void Engine::add (Pattern *p) {
   if (!p->hasError())
     p->Canonicalize();
 
@@ -137,12 +137,12 @@ void Engine::add(Pattern *p) {
   }
 }
 
-void Engine::advanceBody(BodyIter bodyIx) {
+void Engine::advanceBody (BodyIter bodyIx) {
   for (; CurrentBody != bodyIx; ++CurrentBody)
     (*CurrentBody)->result(*this);
 }
 
-void Engine::advanceFrame(FrameIter frameIx) {
+void Engine::advanceFrame (FrameIter frameIx) {
   while (CurrentFrame != frameIx) {
     advanceBody(CurrentFrame->Body.end());
     for (auto &None : CurrentFrame->None)
@@ -153,7 +153,7 @@ void Engine::advanceFrame(FrameIter frameIx) {
   }
 }
 
-void Engine::initialize() {
+void Engine::initialize () {
   if (Frames.empty()) {
     if (Nevers.empty())
       fatalExit("nothing to check");
@@ -165,7 +165,7 @@ void Engine::initialize() {
     ++CurrentBody;
 }
 
-void Engine::process(std::string_view const &text, bool eof) {
+void Engine::process (std::string_view const &text, bool eof) {
   bool maybe_captures = false;
 
   if (CurrentBody != CurrentFrame->Body.begin()) {
@@ -274,7 +274,7 @@ void Engine::process(std::string_view const &text, bool eof) {
       never->match(*this);
 }
 
-void Engine::process(char const *file) {
+void Engine::process (char const *file) {
   int fd = 0;
   if (file[file[0] == '-']) {
     fd = open(file, O_RDONLY | O_CLOEXEC);
@@ -368,7 +368,7 @@ void Engine::process(char const *file) {
   munmap(buffer, alloc);
 }
 
-void Engine::finalize() {
+void Engine::finalize () {
   process("", true);
   advanceFrame(Frames.end());
   for (auto const &never : Nevers)

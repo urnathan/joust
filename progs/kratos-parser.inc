@@ -22,7 +22,7 @@ private:
   bool IsHereDoc = false;
 
 public:
-  Parser(char const *file, std::vector<Pipeline> &p, Symbols &s)
+  Parser (char const *file, std::vector<Pipeline> &p, Symbols &s)
     : Parent(file), Pipes(p), Syms(s) {}
 
 public:
@@ -42,14 +42,14 @@ private:
                           std::vector<std::string const *> &stack);
 };
 
-void Parser::lexError(Lexer const &lexer, char const *ctx) {
+void Parser::lexError (Lexer const &lexer, char const *ctx) {
   error() << "failed to lex " << ctx << " after '" << lexer.before()
           << "' at '" << lexer.after() << "'";
 }
 
 // [<from] [>to] cmd [| cmd [| cmd] ]]
-bool Parser::processLine(std::string_view const &variant,
-                         std::string_view const &pattern) {
+bool Parser::processLine (std::string_view const &variant,
+                          std::string_view const &pattern) {
   unsigned kind = 0;
   if (variant.size()) {
     if (State >= ACTIVE_LWM) {
@@ -331,9 +331,9 @@ bool Parser::processLine(std::string_view const &variant,
   return false;
 }
 
-bool Parser::recursivelyExpand(std::vector<std::string> *words, Lexer &lexer,
-                               bool quoted, std::string &word,
-                               std::vector<std::string const *> &stack) {
+bool Parser::recursivelyExpand (std::vector<std::string> *words, Lexer &lexer,
+                                bool quoted, std::string &word,
+                                std::vector<std::string const *> &stack) {
   bool ok = true;
   bool braced = lexer.peekChar(1) == '{';
   lexer.advanceChar(1 + braced);
@@ -383,10 +383,10 @@ bool Parser::recursivelyExpand(std::vector<std::string> *words, Lexer &lexer,
   return ok;
 }
 
-bool Parser::recursivelyExpand(std::vector<std::string> *words,
-                               std::string_view const &val, bool quoted,
-                               std::string &word,
-                               std::vector<std::string const *> &stack) {
+bool Parser::recursivelyExpand (std::vector<std::string> *words,
+                                std::string_view const &val, bool quoted,
+                                std::string &word,
+                                std::vector<std::string const *> &stack) {
   Lexer lex(val);
   bool escape = false;
   bool ok = true;

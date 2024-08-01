@@ -48,7 +48,7 @@ private:
   unsigned char User = 0;
 
 public:
-  Token(Kinds kind = EMPTY)
+  Token (Kinds kind = EMPTY)
     : Kind(kind) {
     if (Kind >= INTEGER_LWM && Kind < INTEGER_HWM)
       new (&Integer) decltype(Integer)();
@@ -57,27 +57,27 @@ public:
     else if (Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM)
       new (&Capture) decltype(Capture)();
   }
-  Token(Kinds kind, unsigned long integer)
+  Token (Kinds kind, unsigned long integer)
     : Kind(kind) {
     assert(Kind >= INTEGER_LWM && Kind < INTEGER_HWM);
     new (&Integer) decltype(Integer)(std::move(integer));
   }
-  Token(Kinds kind, std::string &&string)
+  Token (Kinds kind, std::string &&string)
     : Kind(kind) {
     assert(Kind >= STRING_LWM && Kind < STRING_HWM);
     new (&String) decltype(String)(std::move(string));
   }
-  Token(Kinds kind, std::string_view const &string)
+  Token (Kinds kind, std::string_view const &string)
     : Token(kind, std::string(string)) {}
-  Token(Kinds kind, std::vector<Token> &&capture)
+  Token (Kinds kind, std::vector<Token> &&capture)
     : Kind(kind) {
     assert(Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM);
     new (&Capture) decltype(Capture)(std::move(capture));
   }
 
 public:
-  Token(Token &&from);
-  ~Token();
+  Token (Token &&from);
+  ~Token ();
 
   Token &operator= (Token &&from) {
     if (this != &from) {

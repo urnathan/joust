@@ -14,7 +14,7 @@
 
 using namespace gaige;
 
-int ReadBuffer::read() {
+int ReadBuffer::read () {
   assert(FD >= 0);
 
   // Read

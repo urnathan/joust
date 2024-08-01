@@ -24,8 +24,8 @@ using namespace gaige;
 // everything after the prefix, up to \n is the pattern.
 // Lines must match the regexp [^:alnum:]prefix(-opt)?: to be recognized
 
-bool Scanner::scanFile(std::string const &fname,
-                       std::vector<char const *> const &prefixes) {
+bool Scanner::scanFile (std::string const &fname,
+                        std::vector<char const *> const &prefixes) {
   int fd = open(fname.c_str(), O_RDONLY | O_CLOEXEC);
   if (fd < 0) {
   fatal:
@@ -151,8 +151,8 @@ bool Scanner::scanFile(std::string const &fname,
   return ended;
 }
 
-bool Scanner::processLine(std::string_view const &variant,
-                          std::string_view const &) {
+bool Scanner::processLine (std::string_view const &variant,
+                           std::string_view const &) {
   error() << "unrecognized command variant '" << variant << '\'';
   return true;
 }

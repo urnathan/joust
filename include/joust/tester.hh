@@ -19,13 +19,13 @@ private:
     Tester *Logger;
 
   public:
-    Streamer(Tester *l) noexcept
+    Streamer (Tester *l) noexcept
       : Logger(l) {}
-    Streamer(Streamer &&s) noexcept
+    Streamer (Streamer &&s) noexcept
       : Logger(s.Logger) {
       s.Logger = nullptr;
     }
-    ~Streamer() noexcept {
+    ~Streamer () noexcept {
       if (Logger)
         *Logger << '\n';
     }
@@ -58,16 +58,16 @@ private:
   std::ostream &Log;
 
 public:
-  Tester(std::ostream &s, std::ostream &l) noexcept
+  Tester (std::ostream &s, std::ostream &l) noexcept
     : Sum(&s), Log(l) {}
 
-  Tester(std::ostream &l) noexcept
+  Tester (std::ostream &l) noexcept
     : Sum(nullptr), Log(l) {}
 
-  Tester() noexcept;
+  Tester () noexcept;
 
 private:
-  Tester(Tester const &) = delete;
+  Tester (Tester const &) = delete;
   Tester &operator= (Tester const &) = delete;
 
 public:

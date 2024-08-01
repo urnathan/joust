@@ -17,11 +17,11 @@ private:
   std::unordered_map<std::string, std::string> Table;
 
 public:
-  Symbols() = default;
-  ~Symbols() = default;
+  Symbols () = default;
+  ~Symbols () = default;
 
 private:
-  Symbols(Symbols const &) = delete;
+  Symbols (Symbols const &) = delete;
   Symbols &operator= (Symbols const &) = delete;
 
 public:

@@ -18,18 +18,18 @@
 using namespace nms;
 using namespace gaige;
 
-std::string const *Symbols::value(std::string const &var) const {
+std::string const *Symbols::value (std::string const &var) const {
   auto iter = Table.find(var);
 
   return iter == Table.end() ? nullptr : &iter->second;
 }
 
-bool Symbols::value(std::string_view const &var, std::string_view const &v) {
+bool Symbols::value (std::string_view const &var, std::string_view const &v) {
   auto [iter, inserted] = Table.emplace(var, v);
   return inserted;
 }
 
-bool Symbols::define(std::string_view const &define) {
+bool Symbols::define (std::string_view const &define) {
   auto eq = std::find(define.begin(), define.end(), '=');
   auto val = eq + (eq != define.end());
 
@@ -41,7 +41,7 @@ bool Symbols::define(std::string_view const &define) {
 // stem=$(basename -s .* $testFile)
 // subdir=$(dir $testFile)
 // tmp=${test:/=-}.TMPNAM
-std::string Symbols::setOriginValues(char const *s) {
+std::string Symbols::setOriginValues (char const *s) {
   std::string_view testFile(s);
 
   value("test", testFile);
@@ -82,7 +82,7 @@ std::string Symbols::setOriginValues(char const *s) {
   return path;
 }
 
-void Symbols::readFile(char const *file) {
+void Symbols::readFile (char const *file) {
   int fd = open(file, O_RDONLY | O_CLOEXEC);
   if (fd < 0) {
   fatal:

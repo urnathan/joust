@@ -17,7 +17,7 @@ private:
   nms::SrcLoc Loc;
 
 public:
-  Scanner(char const *file_)
+  Scanner (char const *file_)
     : Loc(file_) {}
 
 public:

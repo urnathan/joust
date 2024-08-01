@@ -15,7 +15,7 @@ using namespace joust;
 constinit std::string_view const Tester::StatusNames[]
     = {NMS_LIST(NMS_STRING, JOUST_STATUSES)};
 
-Tester::Tester() noexcept
+Tester::Tester () noexcept
   : Tester(std::cerr) {
   /* If one of the std streams is not a tty, then enable sum stream
      too.  This is pretty much the best we can do.   */
@@ -23,7 +23,7 @@ Tester::Tester() noexcept
     Sum = &std::cout;
 }
 
-Tester::Statuses Tester::decodeStatus(std::string_view const &line) noexcept {
+Tester::Statuses Tester::decodeStatus (std::string_view const &line) noexcept {
   for (unsigned ix = STATUS_HWM; ix--;)
     if (line.size() > StatusNames[ix].size()
         && line.starts_with(StatusNames[ix])
@@ -33,7 +33,7 @@ Tester::Statuses Tester::decodeStatus(std::string_view const &line) noexcept {
   return STATUS_HWM;
 }
 
-Tester::Streamer Tester::result(Statuses status, nms::SrcLoc loc) noexcept {
+Tester::Streamer Tester::result (Statuses status, nms::SrcLoc loc) noexcept {
   Streamer result(this);
 
   result << StatusNames[status] << ": ";

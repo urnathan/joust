@@ -52,8 +52,8 @@ private:
   unsigned Counts[STATUS_HWM];
 
 public:
-  Engine(unsigned limit, std::ostream &sum, std::ostream &log);
-  ~Engine();
+  Engine (unsigned limit, std::ostream &sum, std::ostream &log);
+  ~Engine ();
 
 public:
   bool isLive () const {
@@ -95,7 +95,7 @@ private:
 static constexpr unsigned char sigs[]
     = {SIGHUP, SIGQUIT, SIGPIPE, SIGCHLD, SIGTERM};
 
-Engine::Engine(unsigned limit, std::ostream &sum, std::ostream &log)
+Engine::Engine (unsigned limit, std::ostream &sum, std::ostream &log)
   : Parent(sum, log), JobLimit(limit) {
   for (unsigned ix = STATUS_HWM; ix--;)
     Counts[ix] = 0;
@@ -156,7 +156,7 @@ Engine::Engine(unsigned limit, std::ostream &sum, std::ostream &log)
     JobLimit = 1;
 }
 
-Engine::~Engine() {}
+Engine::~Engine () {}
 
 std::ostream &operator<< (std::ostream &s, Engine const &self) {
   for (unsigned ix = 0; ix != Tester::STATUS_HWM; ix++)
@@ -179,8 +179,8 @@ static void noteSignal (int signal) {
 }
 #endif
 
-void Engine::init(char const *tester, std::vector<std::string> *genner,
-                  int argc, char const *const argv[]) {
+void Engine::init (char const *tester, std::vector<std::string> *genner,
+                   int argc, char const *const argv[]) {
   auto now = time(nullptr);
   *this << "Test run: " << ctime(&now) << "\n";
 
@@ -249,7 +249,7 @@ void Engine::init(char const *tester, std::vector<std::string> *genner,
   }
 }
 
-void Engine::fini(std::ostream *summary) {
+void Engine::fini (std::ostream *summary) {
   fini(Generator, summary, true);
 
   if (summary)
@@ -274,7 +274,7 @@ void Engine::fini(std::ostream *summary) {
 #endif
 }
 
-void Engine::readGenerator() {
+void Engine::readGenerator () {
   // Lex
   auto &buffer = Generator.buffer(0);
   auto first = buffer.begin();
@@ -312,7 +312,7 @@ void Engine::readGenerator() {
   wantMake();
 }
 
-void Engine::handleSignal(int sig) {
+void Engine::handleSignal (int sig) {
   switch (sig) {
   case SIGCHLD:
     // Get child status.  There could be multiple children to deal with.
@@ -363,7 +363,7 @@ void Engine::handleSignal(int sig) {
   }
 }
 
-void Engine::stop(int sig) {
+void Engine::stop (int sig) {
   Stopping = true;
   Generator.stop(sig);
   if (Pending)
@@ -374,7 +374,7 @@ void Engine::stop(int sig) {
     job.stop(sig);
 }
 
-void Engine::wantMake() {
+void Engine::wantMake () {
   if (MakeIn >= 0) {
     unsigned want = Pending;
     unsigned ready = ReadyTokens.size() + (JobLimit - FixedJobs);
@@ -400,7 +400,7 @@ void Engine::wantMake() {
   }
 }
 
-void Engine::stopMake(int err) {
+void Engine::stopMake (int err) {
   assert(MakeOut >= 0 && MakeIn >= 0);
 #ifdef USE_EPOLL
   epoll_ctl(PollFD, EPOLL_CTL_DEL, MakeOut, nullptr);
@@ -411,7 +411,7 @@ void Engine::stopMake(int err) {
   result(Tester::ERROR) << " terminating jobserver:" << strerror(err);
 }
 
-void Engine::readMake() {
+void Engine::readMake () {
   unsigned const block_size = 16;
   char buffer[block_size];
 
@@ -428,7 +428,7 @@ void Engine::readMake() {
 
 // Write the token back to jobcontrol to
 // allow other processes a chance.
-void Engine::queueMake(int token) {
+void Engine::queueMake (int token) {
 #ifdef USE_EPOLL
   if (UsedTokens.empty()) {
     epoll_event ev;
@@ -443,7 +443,7 @@ void Engine::queueMake(int token) {
 
 // Able to write something to the make pipe.  Do it.
 
-void Engine::writeMake() {
+void Engine::writeMake () {
   ssize_t wrote = write(MakeOut, UsedTokens.data(), UsedTokens.size());
   if (wrote < 0) {
     if (errno != EINTR && errno != EAGAIN)
@@ -461,7 +461,7 @@ void Engine::writeMake() {
     UsedTokens.erase(0, wrote);
 }
 
-void Engine::process() {
+void Engine::process () {
 #ifdef USE_EPOLL
   constexpr int max_events = 20;
   epoll_event events[max_events];
@@ -567,7 +567,7 @@ void Engine::process() {
 #endif
 }
 
-void Engine::fini(Job const &job, std::ostream *out, bool is_generator) {
+void Engine::fini (Job const &job, std::ostream *out, bool is_generator) {
   if (is_generator)
     log() << "# Test generator: " << job << '\n';
   else {
@@ -615,7 +615,7 @@ void Engine::fini(Job const &job, std::ostream *out, bool is_generator) {
   log() << '\n';
 }
 
-void Engine::retire(std::ostream *out) {
+void Engine::retire (std::ostream *out) {
   while (Completed && Jobs.front().isReady()) {
     fini(Jobs.front(), out, false);
     Jobs.pop_front();
@@ -625,7 +625,7 @@ void Engine::retire(std::ostream *out) {
   }
 }
 
-void Engine::spawn() {
+void Engine::spawn () {
   for (auto iter = Jobs.begin() + (Completed + Running); Pending; ++iter) {
     int token = -1;
     if (JobLimit > FixedJobs)
@@ -656,7 +656,7 @@ void Engine::spawn() {
   wantMake();
 }
 
-std::string Engine::getProgress() {
+std::string Engine::getProgress () {
   unsigned done = Retired + Completed;
   unsigned total = done + Running + Pending;
   std::ostringstream progress;

@@ -16,10 +16,10 @@
 using namespace nms;
 using namespace gaige;
 
-std::tuple<pid_t, int> gaige::spawn(int fd_in, int fd_out, int fd_err,
-                                    std::vector<std::string> const &command,
-                                    std::vector<std::string> const *wrapper,
-                                    unsigned const *limits) {
+std::tuple<pid_t, int> gaige::spawn (int fd_in, int fd_out, int fd_err,
+                                     std::vector<std::string> const &command,
+                                     std::vector<std::string> const *wrapper,
+                                     unsigned const *limits) {
   std::tuple<pid_t, int> res{0, 0};
   auto &[pid, err] = res;
   int pipe_fds[2];
@@ -107,7 +107,7 @@ std::tuple<pid_t, int> gaige::spawn(int fd_in, int fd_out, int fd_err,
 }
 
 #ifndef HAVE_PIPE2
-int gaige::makePipe(int pipes[2]) {
+int gaige::makePipe (int pipes[2]) {
   if (pipe(pipes) < 0)
     // Failed to make the pipes
     return -1;

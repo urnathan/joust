@@ -16,7 +16,7 @@ private:
   Engine &E;
 
 public:
-  Parser(char const *file, Engine &e)
+  Parser (char const *file, Engine &e)
     : Parent(file), E(e) {}
 
 public:
@@ -39,16 +39,16 @@ private:
 
 #else
 
-void Parser::lexError(Lexer const &lexer, char const *ctx) {
+void Parser::lexError (Lexer const &lexer, char const *ctx) {
   error() << "failed to lex " << ctx << " after '" << lexer.before()
           << "' at '" << lexer.after() << "'";
 }
 
-void Parser::parseError(char const *ctx, Token const *token) {
+void Parser::parseError (char const *ctx, Token const *token) {
   error() << "unexpected '" << token << "' parsing " << ctx;
 }
 
-void Parser::options(std::string_view const &text) {
+void Parser::options (std::string_view const &text) {
   Lexer lexer(text);
 
   while (char c = lexer.peekChar())
@@ -106,8 +106,8 @@ void Parser::options(std::string_view const &text) {
     }
 }
 
-bool Parser::processLine(std::string_view const &variant,
-                         std::string_view const &pattern) {
+bool Parser::processLine (std::string_view const &variant,
+                          std::string_view const &pattern) {
   if (variant == "OPTION")
     options(std::move(pattern));
   else if (variant == "END")

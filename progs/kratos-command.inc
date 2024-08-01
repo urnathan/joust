@@ -53,7 +53,7 @@ private:
 
 #else
 
-void Command::shellify(Symbols const &syms) {
+void Command::shellify (Symbols const &syms) {
   bool active = false;
   size_t len = 0;
   for (auto const &word : Words) {
@@ -93,7 +93,7 @@ void Command::shellify(Symbols const &syms) {
   }
 }
 
-bool Command::execute(int fd_out, int fd_err, unsigned const *limits) {
+bool Command::execute (int fd_out, int fd_err, unsigned const *limits) {
   auto [p, err] = spawn(Stdin, fd_out, fd_err, Words, nullptr, limits);
 
   Pid = p;

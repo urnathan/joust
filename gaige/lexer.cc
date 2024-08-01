@@ -8,21 +8,21 @@
 
 using namespace gaige;
 
-std::string_view Lexer::before() const { return String.substr(0, LexChar); }
+std::string_view Lexer::before () const { return String.substr(0, LexChar); }
 
-std::string_view Lexer::after() const {
+std::string_view Lexer::after () const {
   return String.substr(LexChar, String.size() - LexChar);
 }
 
-void Lexer::append(Token &&tok) { Tokens.push_back(std::move(tok)); }
+void Lexer::append (Token &&tok) { Tokens.push_back(std::move(tok)); }
 
-void Lexer::append(Token::Kinds kind, char c) {
+void Lexer::append (Token::Kinds kind, char c) {
   if (!(Tokens.size() && Tokens.back().kind() == kind))
     append(Token(kind));
   Tokens.back().string().push_back(c);
 }
 
-char Lexer::skipWS() {
+char Lexer::skipWS () {
   char c;
   unsigned a = 0;
   while ((c = peekChar(a))) {
@@ -34,7 +34,7 @@ char Lexer::skipWS() {
   return c;
 }
 
-bool Lexer::isIdentifier() {
+bool Lexer::isIdentifier () {
   char c = peekChar();
   if (!(std::isalpha(c) || c == '_'))
     return false;
@@ -52,7 +52,7 @@ bool Lexer::isIdentifier() {
 }
 
 // Base 10 integer
-bool Lexer::isInteger() {
+bool Lexer::isInteger () {
   unsigned long val = 0;
   char c = peekChar();
   if (!std::isdigit(c))

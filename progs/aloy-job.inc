@@ -13,13 +13,13 @@ class Job {
   int State = 0;
 
 public:
-  Job(std::string_view const &cmd) { Command.emplace_back(cmd); }
-  Job(std::string &&cmd) { Command.emplace_back(std::move(cmd)); }
-  Job() {}
+  Job (std::string_view const &cmd) { Command.emplace_back(cmd); }
+  Job (std::string &&cmd) { Command.emplace_back(std::move(cmd)); }
+  Job () {}
 
 private:
   // We rely on object reference invariance, so ban copies
-  Job(Job const &) = delete;
+  Job (Job const &) = delete;
   Job &operator= (Job const &) = delete;
 
 public:
@@ -48,7 +48,7 @@ public:
 
 #else
 
-void Job::read(Engine &log, unsigned subcode, int poll_fd [[maybe_unused]]) {
+void Job::read (Engine &log, unsigned subcode, int poll_fd [[maybe_unused]]) {
   assert(subcode < 2 && State > 0);
 
   if (int done = Buffers[subcode].read()) {
@@ -69,8 +69,8 @@ void Job::read(Engine &log, unsigned subcode, int poll_fd [[maybe_unused]]) {
 
 // Spawn a job, return true if we managed to spawn it.
 
-bool Job::spawn(Engine &log, std::vector<std::string> const &preamble,
-                int poll_fd [[maybe_unused]], int token) {
+bool Job::spawn (Engine &log, std::vector<std::string> const &preamble,
+                 int poll_fd [[maybe_unused]], int token) {
   assert(!State && Buffers[0].empty() && Buffers[1].empty());
 
   if (!preamble.size())
@@ -136,7 +136,7 @@ fail:
 }
 
 // Reap a completed job, returns the make token (or -1)
-int Job::reap(int status) {
+int Job::reap (int status) {
   assert(Pid >= 0 && State);
   ExitStatus = status;
 
@@ -148,7 +148,7 @@ int Job::reap(int status) {
   return r;
 }
 
-void Job::reportExit(Engine &log) const {
+void Job::reportExit (Engine &log) const {
   if (WIFSIGNALED(ExitStatus)) {
     int sig = WTERMSIG(ExitStatus);
     log.result(Tester::ERROR) << *this << " terminated with signal " << sig;

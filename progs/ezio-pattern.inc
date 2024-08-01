@@ -54,7 +54,7 @@ private:
   std::vector<Token> Atoms;
 
 protected:
-  Pattern(Kinds kind, Parser const *parser, std::string_view const &text)
+  Pattern (Kinds kind, Parser const *parser, std::string_view const &text)
     : Loc(parser->loc()), Kind(kind), Original(text) {
     if (parser->isMatchSol())
       IsMatchSol = true;
@@ -67,7 +67,7 @@ protected:
   }
 
 public:
-  ~Pattern() = default;
+  ~Pattern () = default;
 
 public:
   Kinds kind () const { return Kind; }
@@ -121,7 +121,7 @@ constinit char const *const Pattern::KindNames[PATTERN_HWM]
 //   string: $$
 //   string: .+
 // Final TOKEN_CLOSE has capture count
-bool Pattern::Lexer::patternRegexp() {
+bool Pattern::Lexer::patternRegexp () {
   bool escape = false;
   unsigned square = 0;
   bool brace = false;
@@ -213,7 +213,7 @@ bool Pattern::Lexer::patternRegexp() {
   return false;
 }
 
-bool Pattern::Lexer::pattern() {
+bool Pattern::Lexer::pattern () {
   while (char c = peekChar())
     switch (c) {
     case ' ':
@@ -278,7 +278,7 @@ bool Pattern::Lexer::pattern() {
   return true;
 }
 
-Error Pattern::error() {
+Error Pattern::error () {
   HasError = true;
   return Error(Loc);
 }
@@ -292,7 +292,7 @@ std::ostream &operator<< (std::ostream &s, Pattern const &p) {
 // regexp-expand: regexp-expand-opt STRING
 //              | regexp-expand-opt IDENTIFIER
 
-bool Pattern::ParseEscape(Parser *parser, Lexer &lexer) {
+bool Pattern::ParseEscape (Parser *parser, Lexer &lexer) {
   Token escape(Token::REGEX_CAPTURE);
   Token *next = lexer.getToken();
 
@@ -337,8 +337,8 @@ bool Pattern::ParseEscape(Parser *parser, Lexer &lexer) {
 // match: match-opt match-word
 // match-word: STRING | IDENTIFIER | OPEN match-escape
 
-Pattern *Pattern::Parse(Parser *parser, Kinds kind,
-                        std::string_view const &line) {
+Pattern *Pattern::Parse (Parser *parser, Kinds kind,
+                         std::string_view const &line) {
   auto p = new Pattern(kind, parser, line);
   if (kind == UNKNOWN) {
   failed:
@@ -380,7 +380,7 @@ Pattern *Pattern::Parse(Parser *parser, Kinds kind,
 // Promote fixed regexes to strings
 // Concatenate adjacent strings & whitespace
 // Prepend ^ and postpend $, if needed
-bool Pattern::Canonicalize() {
+bool Pattern::Canonicalize () {
   std::vector<Token> canon;
   canon.reserve(Atoms.size());
   int eof = 0;
@@ -484,7 +484,7 @@ bool Pattern::Canonicalize() {
   return true;
 }
 
-regex::Results Pattern::DoExpand(Symbols const &symbols) {
+regex::Results Pattern::DoExpand (Symbols const &symbols) {
   for (auto &token : Atoms)
     switch (token.kind()) {
     case Token::STRING:
@@ -532,7 +532,7 @@ regex::Results Pattern::DoExpand(Symbols const &symbols) {
 }
 
 // Expand tokens to expansion
-regex::Results Pattern::Expand(Symbols const &symbols) {
+regex::Results Pattern::Expand (Symbols const &symbols) {
   if (hasError())
     return regex::FAILED;
 
@@ -561,8 +561,8 @@ regex::Results Pattern::Expand(Symbols const &symbols) {
   return exit;
 }
 
-regex::Results Pattern::Compare(Symbols &symbols, std::string_view const &text,
-                                bool eof) {
+regex::Results Pattern::Compare (Symbols &symbols,
+                                 std::string_view const &text, bool eof) {
   if (IsEOF != eof)
     return regex::NOTFOUND;
   else if (eof) {
@@ -605,19 +605,19 @@ regex::Results Pattern::Compare(Symbols &symbols, std::string_view const &text,
 }
 
 // Write to stdout
-void Pattern::result(Tester &logger, Tester::Statuses s) const {
+void Pattern::result (Tester &logger, Tester::Statuses s) const {
   logger.result(s, Loc) << KindNames[kind()] << ' ' << Original;
 }
 
 /* Emit result for a skipped-over pattern.  */
-void Pattern::result(Tester &log) const {
+void Pattern::result (Tester &log) const {
   if (hasError())
     result(log, Tester::ERROR);
   else if (!hasMatch())
     result(log, Tester::passFail(kind() >= CAPTURE_HWM, IsXFail));
 }
 
-void Pattern::match(Tester &log) const {
+void Pattern::match (Tester &log) const {
   assert(!hasError() && hasMatch());
 
   result(log, Tester::passFail(kind() < CAPTURE_HWM, IsXFail));

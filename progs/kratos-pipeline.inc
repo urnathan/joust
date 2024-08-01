@@ -25,7 +25,7 @@ private:
   bool IsHereDoc      : 1 = false;
 
 public:
-  Pipeline(Kinds kind, bool inverted, unsigned exit = 0)
+  Pipeline (Kinds kind, bool inverted, unsigned exit = 0)
     : Kind(kind), ExitCode(exit), IsExitInverted(inverted) {
     Commands.emplace_back();
   }
@@ -110,7 +110,7 @@ void NoteSignal (int signal) {
 
 // This mucks about with signals, so expects to be single threaded
 
-int Pipeline::execute(Tester &logger, unsigned const *limits) {
+int Pipeline::execute (Tester &logger, unsigned const *limits) {
   assert(Commands.size() == 1 || Commands.size() == 3);
 
   std::cerr << *this;
@@ -549,7 +549,7 @@ int Pipeline::execute(Tester &logger, unsigned const *limits) {
   return pass ? 0 : EINVAL;
 }
 
-void Pipeline::result(Tester &logger, Tester::Statuses status) {
+void Pipeline::result (Tester &logger, Tester::Statuses status) {
   auto const &cmd = Commands.front();
   auto l = logger.result(status, cmd.loc());
 

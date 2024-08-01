@@ -11,7 +11,7 @@ using namespace gaige;
 constinit char const *const Token::KindNames[TOKEN_HWM]
     = {NMS_LIST(NMS_2ND, TOKEN_KINDS)};
 
-Token::Token(Token &&from)
+Token::Token (Token &&from)
   : Kind(from.Kind), User(from.User) {
   if (Kind >= INTEGER_LWM && Kind < INTEGER_HWM)
     new (&Integer) decltype(Integer)(std::move(from.Integer));
@@ -21,7 +21,7 @@ Token::Token(Token &&from)
     new (&Capture) decltype(Capture)(std::move(from.Capture));
 }
 
-Token::~Token() {
+Token::~Token () {
   if (Kind >= INTEGER_LWM && Kind < INTEGER_HWM) {
     using type = decltype(Integer);
     Integer.type::~type();

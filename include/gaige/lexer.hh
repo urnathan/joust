@@ -23,15 +23,15 @@ protected:
   unsigned LexToken = 0;         // Next token to return
 
 public:
-  Lexer(std::string_view const &s)
+  Lexer (std::string_view const &s)
     : String(s) {}
 
-  Lexer() = delete;
-  ~Lexer() = default;
+  Lexer () = delete;
+  ~Lexer () = default;
 
 private:
   Lexer &operator= (Lexer const &) = delete;
-  Lexer(Lexer const &) = delete;
+  Lexer (Lexer const &) = delete;
 
 public:
   Token *getToken () {
