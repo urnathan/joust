@@ -1,4 +1,4 @@
-// Joust/ALOY: Apply List, Observe Yield		-*- mode:c++ -*-
+// Joust/ALOY: Apply List, Observe Yield
 // Copyright (C) 2020-2024 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 

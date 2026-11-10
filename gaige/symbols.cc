@@ -1,4 +1,4 @@
-// Joust Test Suite			-*- mode:c++ -*-
+// Joust Test Suite
 // Copyright (C) 2020-2024 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 

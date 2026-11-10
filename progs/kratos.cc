@@ -1,4 +1,4 @@
-// Joust/KRATOS: Kapture Run And Test Output Safely	-*- mode:c++ -*-
+// Joust/KRATOS: Kapture Run And Test Output Safely
 // Copyright (C) 2020-2024 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 

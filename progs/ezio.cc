@@ -1,4 +1,4 @@
-// Joust/EZIO: Expect Zero Irregularities Observed	-*- mode:c++ -*-
+// Joust/EZIO: Expect Zero Irregularities Observed
 // Copyright (C) 2020-2024 Nathan Sidwell, nathan@acm.org
 // License: Affero GPL v3.0
 

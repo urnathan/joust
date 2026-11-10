@@ -7,11 +7,13 @@
 // HELP-NEXT: Nested
 // HELP-NEXT: Optimized
 // HELP-NEXT: Backtraced
+// HELP-NEXT: BFD
 // HELP-NEXT: $EOF
 // HELP-END:
 
 // RUN-REQUIRE:! $subdir$stem --optimized
 // RUN-REQUIRE: $subdir$stem --backtraced
+// RUN-REQUIRE: $subdir$stem --bfd
 // RUN-SIGNAL:ABRT $subdir$stem --inline |& ezio -p INLINE1 -p FATAL $test
 // INLINE1-OPTION: matchSol
 // INLINE1: $stem: burn it all down
@@ -21,6 +23,7 @@
 
 // RUN-REQUIRE:! $subdir$stem --optimized
 // RUN-REQUIRE: $subdir$stem --backtraced
+// RUN-REQUIRE: $subdir$stem --bfd
 // RUN-SIGNAL:ABRT $subdir$stem --nested |& ezio -p NESTED1 -p FATAL $test
 // NESTED1-OPTION: matchSol
 // NESTED1: $stem: go boom
@@ -33,6 +36,13 @@
 // NESTED1-NEXT: 06-0x{:$ret1} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:.}anon}::TrampHCF (int)
 // NESTED1-NEXT: 07-0x{:$ret2} {:(extern/joust/)?}tests/$test:{:[0-9]+} {:.}anon}::NestedHCF (int)
 // NESTED1-NEXT: 08-0x{:[0-9a-f]+} {:(extern/joust/)?}tests/$test:{:[0-9]+} main
+
+// RUN-REQUIRE:! $subdir$stem --optimized
+// RUN-REQUIRE: $subdir$stem --backtraced
+// RUN-REQUIRE:! $subdir$stem --bfd
+// RUN-SIGNAL:ABRT $subdir$stem --nested |& ezio -p NESTED2 -p FATAL $test
+// NESTED2-OPTION: matchSol
+// NESTED2: $stem: go boom
 
 // FATAL-LABEL: joust-1: Joust
 // FATAL-NEXT: {:  }Src:
@@ -90,12 +100,14 @@ int main (int argc, char *argv[]) {
     bool do_nested = false;
     bool is_backtraced = false;
     bool is_optimized = false;
+    bool has_bfd = false;
   } flags;
   static constexpr Option const options[]
       = {{"inline", 0, OPTION_FLDFN(Flags, do_inline), "Inline"},
          {"nested", 0, OPTION_FLDFN(Flags, do_nested), "Nested"},
          {"optimized", 0, OPTION_FLDFN(Flags, is_optimized), "Optimized"},
          {"backtraced", 0, OPTION_FLDFN(Flags, is_backtraced), "Backtraced"},
+         {"bfd", 0, OPTION_FLDFN(Flags, has_bfd), "BFD"},
          {}};
   options->parseArgs(argc, argv, &flags);
 
@@ -108,6 +120,8 @@ int main (int argc, char *argv[]) {
 
   if (flags.is_backtraced)
     return NMS_BACKTRACE == 0;
+  if (flags.has_bfd)
+    return HAVE_BFD == 0;
 
   if (flags.do_inline)
     InvokeHCF();
