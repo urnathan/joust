@@ -27,7 +27,7 @@ int makePipe (int pipes[2]);
 
 // We always want cloexec pipes, and pipe2 is linux-specific
 #ifdef HAVE_PIPE2
-inline int makePipe (int pipes[2]) { return pipe2(pipes, O_CLOEXEC); }
+inline int makePipe (int pipes[2]) { return pipe2 (pipes, O_CLOEXEC); }
 #endif
 
 } // namespace gaige

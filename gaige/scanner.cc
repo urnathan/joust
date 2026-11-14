@@ -26,66 +26,66 @@ using namespace gaige;
 
 bool Scanner::scanFile (std::string const &fname,
                         std::vector<char const *> const &prefixes) {
-  int fd = open(fname.c_str(), O_RDONLY | O_CLOEXEC);
+  int fd = open (fname.c_str (), O_RDONLY | O_CLOEXEC);
   if (fd < 0) {
   fatal:
     int err = errno;
-    error() << "cannot read file '" << fname << "': " << strerror(err);
+    error () << "cannot read file '" << fname << "': " << strerror (err);
     return false;
   }
   size_t len = [] (int fd_) {
     struct stat stat;
-    return fstat(fd_, &stat) ? ~size_t(0) : stat.st_size;
+    return fstat (fd_, &stat) ? ~size_t (0) : stat.st_size;
   }(fd);
-  if (len == ~size_t(0))
+  if (len == ~size_t (0))
     goto fatal;
 
-  size_t page_size = sysconf(_SC_PAGE_SIZE);
+  size_t page_size = sysconf (_SC_PAGE_SIZE);
   size_t alloc = (len + page_size) & ~(page_size - 1);
   void *buffer
-      = mmap(nullptr, alloc, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+      = mmap (nullptr, alloc, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
   if (buffer == MAP_FAILED)
     goto fatal;
   // It is safe to close a mapped file
-  close(fd);
+  close (fd);
 
   // Don't really care about error code
-  madvise(buffer, alloc, MADV_SEQUENTIAL);
+  madvise (buffer, alloc, MADV_SEQUENTIAL);
 
-  auto *begin = reinterpret_cast<char const *>(buffer);
+  auto *begin = reinterpret_cast<char const *> (buffer);
   auto *end = begin + len;
 
   // Ensure the template ends in a newline
   if (end[-1] != '\n')
-    *const_cast<char *>(end++) = '\n';
+    *const_cast<char *> (end++) = '\n';
 
-  assert(prefixes.size());
+  assert (prefixes.size ());
 
   std::vector<unsigned> lengths;
-  lengths.reserve(prefixes.size());
+  lengths.reserve (prefixes.size ());
 
   std::string initial_chars;
   std::vector<char const *> initial_points;
 
   // Build up the set of unique initial characters
   for (auto p : prefixes) {
-    lengths.push_back(std::strlen(p));
+    lengths.push_back (std::strlen (p));
     auto c = p[0];
-    if (initial_chars.find(c) == initial_chars.npos) {
-      initial_chars.push_back(c);
-      initial_points.push_back(begin);
+    if (initial_chars.find (c) == initial_chars.npos) {
+      initial_chars.push_back (c);
+      initial_points.push_back (begin);
     }
   }
 
-  Loc.advanceLine();
+  Loc.advanceLine ();
   bool ended = false;
   for (char const *base = begin;;) {
     // Advance any initial points that are before BEGIN, and
     // determine the earliest potential start
     char const *pattern = nullptr;
-    for (unsigned ix = initial_points.size(); ix--;) {
+    for (unsigned ix = initial_points.size (); ix--;) {
       if (initial_points[ix] <= base)
-        initial_points[ix] = std::find(base, end, initial_chars[ix]);
+        initial_points[ix] = std::find (base, end, initial_chars[ix]);
       if (!pattern || pattern > initial_points[ix])
         pattern = initial_points[ix];
     }
@@ -97,18 +97,19 @@ bool Scanner::scanFile (std::string const &fname,
     char const *variant = nullptr;
 
     // Potential start must be preceded by non-alpha
-    if (pattern == base || !(isalnum(pattern[-1]) || pattern[-1] == '_')) {
+    if (pattern == base || !(isalnum (pattern[-1]) || pattern[-1] == '_')) {
       // Test each prefix, yes even the ones that can't possibly match
-      for (unsigned ix = prefixes.size(); ix--;)
-        if (size_t(end - pattern) > lengths[ix]
-            && std::equal(prefixes[ix], prefixes[ix] + lengths[ix], pattern)) {
+      for (unsigned ix = prefixes.size (); ix--;)
+        if (size_t (end - pattern) > lengths[ix]
+            && std::equal (prefixes[ix], prefixes[ix] + lengths[ix],
+                           pattern)) {
           variant = colon = pattern + lengths[ix];
           if (*colon == ':')
             goto found;
           if (*colon == '-') {
             variant = colon + 1;
-            colon = std::find_if_not(variant, end,
-                                     [] (char c) { return isalpha(c); });
+            colon = std::find_if_not (variant, end,
+                                      [] (char c) { return isalpha (c); });
             if (*colon == ':')
               goto found;
           }
@@ -124,35 +125,35 @@ bool Scanner::scanFile (std::string const &fname,
     char const *eol;
 
     for (;;) {
-      eol = std::find(begin, end, '\n');
-      assert(eol != end);
+      eol = std::find (begin, end, '\n');
+      assert (eol != end);
 
       if (eol > colon)
         break;
       begin = eol + 1;
-      Loc.advanceLine();
+      Loc.advanceLine ();
     }
 
     // Process the pattern
-    std::string_view pattern_text(colon + 1, eol);
-    std::string_view variant_text(variant, colon);
+    std::string_view pattern_text (colon + 1, eol);
+    std::string_view variant_text (variant, colon);
 
-    if (processLine(std::move(variant_text), std::move(pattern_text))) {
+    if (processLine (std::move (variant_text), std::move (pattern_text))) {
       ended = true;
       break;
     }
 
     base = begin = eol + 1;
-    Loc.advanceLine();
+    Loc.advanceLine ();
   }
 
-  munmap(buffer, alloc);
+  munmap (buffer, alloc);
 
   return ended;
 }
 
 bool Scanner::processLine (std::string_view const &variant,
                            std::string_view const &) {
-  error() << "unrecognized command variant '" << variant << '\'';
+  error () << "unrecognized command variant '" << variant << '\'';
   return true;
 }

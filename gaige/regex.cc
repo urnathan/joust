@@ -16,26 +16,26 @@ using namespace gaige::regex;
 
 void gaige::regex::protect (std::string &dst, std::string_view const &src) {
   // ) needs escaping, } must not be escaped, ] seems either way
-  constexpr std::string_view meta(R"([{()*+?.\^$|)");
+  constexpr std::string_view meta (R"([{()*+?.\^$|)");
 
-  dst.reserve(dst.size() + src.size());
+  dst.reserve (dst.size () + src.size ());
 
   for (auto c : src) {
-    if (meta.find(c) != meta.npos)
-      dst.push_back('\\');
-    dst.push_back(c);
+    if (meta.find (c) != meta.npos)
+      dst.push_back ('\\');
+    dst.push_back (c);
   }
 }
 
 Results gaige::regex::create (std::regex &regex, std::string_view const &text,
                               int &error) noexcept {
   try {
-    std::regex r(text.begin(), text.end(),
-                 std::regex::extended | std::regex::optimize);
-    regex = std::move(r);
+    std::regex r (text.begin (), text.end (),
+                  std::regex::extended | std::regex::optimize);
+    regex = std::move (r);
     return FOUND;
   } catch (std::regex_error const &e) {
-    error = e.code();
+    error = e.code ();
     return FAILED;
   }
 }
@@ -45,11 +45,11 @@ Results gaige::regex::search (std::regex const &regex,
                               int &error) noexcept {
   try {
     std::cmatch m;
-    bool found = std::regex_search(text.begin(), text.end(), m, regex);
-    match = std::move(m);
+    bool found = std::regex_search (text.begin (), text.end (), m, regex);
+    match = std::move (m);
     return found ? FOUND : NOTFOUND;
   } catch (std::regex_error const &e) {
-    error = e.code();
+    error = e.code ();
     return FAILED;
   }
 }
@@ -84,6 +84,6 @@ char const *gaige::regex::error (int error) noexcept {
   case error_stack:
     return "insufficient memory";
   default:
-    unreachable();
+    unreachable ();
   }
 }

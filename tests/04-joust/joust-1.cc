@@ -67,7 +67,7 @@ namespace {
 #pragma GCC diagnostic ignored "-Wattributes"
 [[gnu::always_inline]]
 void InvokeHCF () {
-  haltAndCatchFire("burn it all down");
+  haltAndCatchFire ("burn it all down");
 }
 #pragma GCC diagnostic pop
 
@@ -77,23 +77,23 @@ void NestedHCF (int ix);
 // the point)
 [[gnu::noinline]]
 void TrampHCF (int ix) {
-  NestedHCF(ix);
+  NestedHCF (ix);
 }
 
 [[gnu::noinline]]
 void NestedHCF (int ix = 4) {
-  asm volatile("");
+  asm volatile ("");
   if (--ix)
-    TrampHCF(ix);
-  haltAndCatchFire("go boom!");
+    TrampHCF (ix);
+  haltAndCatchFire ("go boom!");
 }
 
 } // namespace
 
 int main (int argc, char *argv[]) {
 #include "joust/project-ident.inc"
-  setBuildInfo(JOUST_PROJECT_IDENTS);
-  installSignalHandlers();
+  setBuildInfo (JOUST_PROJECT_IDENTS);
+  installSignalHandlers ();
 
   struct Flags {
     bool do_inline = false;
@@ -103,13 +103,13 @@ int main (int argc, char *argv[]) {
     bool has_bfd = false;
   } flags;
   static constexpr Option const options[]
-      = {{"inline", 0, OPTION_FLDFN(Flags, do_inline), "Inline"},
-         {"nested", 0, OPTION_FLDFN(Flags, do_nested), "Nested"},
-         {"optimized", 0, OPTION_FLDFN(Flags, is_optimized), "Optimized"},
-         {"backtraced", 0, OPTION_FLDFN(Flags, is_backtraced), "Backtraced"},
-         {"bfd", 0, OPTION_FLDFN(Flags, has_bfd), "BFD"},
+      = {{"inline", 0, OPTION_FLDFN (Flags, do_inline), "Inline"},
+         {"nested", 0, OPTION_FLDFN (Flags, do_nested), "Nested"},
+         {"optimized", 0, OPTION_FLDFN (Flags, is_optimized), "Optimized"},
+         {"backtraced", 0, OPTION_FLDFN (Flags, is_backtraced), "Backtraced"},
+         {"bfd", 0, OPTION_FLDFN (Flags, has_bfd), "BFD"},
          {}};
-  options->parseArgs(argc, argv, &flags);
+  options->parseArgs (argc, argv, &flags);
 
   if (flags.is_optimized) {
 #if __OPTIMIZE__
@@ -124,9 +124,9 @@ int main (int argc, char *argv[]) {
     return HAVE_BFD == 0;
 
   if (flags.do_inline)
-    InvokeHCF();
+    InvokeHCF ();
   if (flags.do_nested)
-    NestedHCF();
-  options->printUsage(stdout, "");
+    NestedHCF ();
+  options->printUsage (stdout, "");
   return 0;
 }

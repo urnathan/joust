@@ -20,9 +20,9 @@ private:
 
   public:
     Streamer (Tester *l) noexcept
-      : Logger(l) {}
+      : Logger (l) {}
     Streamer (Streamer &&s) noexcept
-      : Logger(s.Logger) {
+      : Logger (s.Logger) {
       s.Logger = nullptr;
     }
     ~Streamer () noexcept {
@@ -36,7 +36,7 @@ private:
   public:
     template <typename T>
     Streamer &operator<< (T &&obj) noexcept {
-      *Logger << std::forward<T>(obj);
+      *Logger << std::forward<T> (obj);
 
       return *this;
     }
@@ -45,7 +45,7 @@ private:
 public:
 #define JOUST_STATUSES PASS, FAIL, XPASS, XFAIL, ERROR, UNSUPPORTED, MSG
   enum Statuses {
-    NMS_LIST(NMS_IDENT, JOUST_STATUSES),
+    NMS_LIST (NMS_IDENT, JOUST_STATUSES),
     STATUS_HWM,
     STATUS_REPORT = MSG
   };
@@ -59,10 +59,10 @@ private:
 
 public:
   Tester (std::ostream &s, std::ostream &l) noexcept
-    : Sum(&s), Log(l) {}
+    : Sum (&s), Log (l) {}
 
   Tester (std::ostream &l) noexcept
-    : Sum(nullptr), Log(l) {}
+    : Sum (nullptr), Log (l) {}
 
   Tester () noexcept;
 
@@ -78,13 +78,13 @@ public:
 public:
   void flush () noexcept {
     if (Sum)
-      Sum->flush();
-    Log.flush();
+      Sum->flush ();
+    Log.flush ();
   }
 
 public:
   static Statuses passFail (bool pass, bool xfail = false) noexcept {
-    return Statuses((pass ? PASS : FAIL) + (xfail ? XPASS - PASS : 0));
+    return Statuses ((pass ? PASS : FAIL) + (xfail ? XPASS - PASS : 0));
   }
 
 protected:
@@ -92,16 +92,16 @@ protected:
 
 public:
   Streamer result (Statuses status, char const *filename) noexcept {
-    return result(status, nms::SrcLoc(filename));
+    return result (status, nms::SrcLoc (filename));
   }
   Streamer result (Statuses status,
-                   nms::SrcLoc = nms::SrcLoc::here()) noexcept;
+                   nms::SrcLoc = nms::SrcLoc::here ()) noexcept;
   Streamer result (bool pass, bool xfail = false,
-                   nms::SrcLoc loc = nms::SrcLoc::here()) noexcept {
-    return result(passFail(pass, xfail), loc);
+                   nms::SrcLoc loc = nms::SrcLoc::here ()) noexcept {
+    return result (passFail (pass, xfail), loc);
   }
-  Streamer message (nms::SrcLoc loc = nms::SrcLoc::here()) noexcept {
-    return result(MSG, loc);
+  Streamer message (nms::SrcLoc loc = nms::SrcLoc::here ()) noexcept {
+    return result (MSG, loc);
   }
 
 public:

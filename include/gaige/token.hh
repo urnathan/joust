@@ -24,7 +24,7 @@ class Token {
 
 public:
   enum Kinds : unsigned char {
-    NMS_LIST(NMS_1ST, TOKEN_KINDS),
+    NMS_LIST (NMS_1ST, TOKEN_KINDS),
     TOKEN_HWM,
     KEYWORD_HWM = INTEGER,
     INTEGER_LWM = INTEGER,
@@ -49,30 +49,30 @@ private:
 
 public:
   Token (Kinds kind = EMPTY)
-    : Kind(kind) {
+    : Kind (kind) {
     if (Kind >= INTEGER_LWM && Kind < INTEGER_HWM)
-      new (&Integer) decltype(Integer)();
+      new (&Integer) decltype (Integer) ();
     else if (Kind >= STRING_LWM && Kind < STRING_HWM)
-      new (&String) decltype(String)();
+      new (&String) decltype (String) ();
     else if (Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM)
-      new (&Capture) decltype(Capture)();
+      new (&Capture) decltype (Capture) ();
   }
   Token (Kinds kind, unsigned long integer)
-    : Kind(kind) {
-    assert(Kind >= INTEGER_LWM && Kind < INTEGER_HWM);
-    new (&Integer) decltype(Integer)(std::move(integer));
+    : Kind (kind) {
+    assert (Kind >= INTEGER_LWM && Kind < INTEGER_HWM);
+    new (&Integer) decltype (Integer) (std::move (integer));
   }
   Token (Kinds kind, std::string &&string)
-    : Kind(kind) {
-    assert(Kind >= STRING_LWM && Kind < STRING_HWM);
-    new (&String) decltype(String)(std::move(string));
+    : Kind (kind) {
+    assert (Kind >= STRING_LWM && Kind < STRING_HWM);
+    new (&String) decltype (String) (std::move (string));
   }
   Token (Kinds kind, std::string_view const &string)
-    : Token(kind, std::string(string)) {}
+    : Token (kind, std::string (string)) {}
   Token (Kinds kind, std::vector<Token> &&capture)
-    : Kind(kind) {
-    assert(Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM);
-    new (&Capture) decltype(Capture)(std::move(capture));
+    : Kind (kind) {
+    assert (Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM);
+    new (&Capture) decltype (Capture) (std::move (capture));
   }
 
 public:
@@ -81,8 +81,8 @@ public:
 
   Token &operator= (Token &&from) {
     if (this != &from) {
-      Token::~Token();
-      new (this) Token(std::move(from));
+      Token::~Token ();
+      new (this) Token (std::move (from));
     }
     return *this;
   }
@@ -96,23 +96,23 @@ public:
 
 public:
   unsigned long integer () const {
-    assert(Kind >= INTEGER_LWM && Kind < INTEGER_HWM);
+    assert (Kind >= INTEGER_LWM && Kind < INTEGER_HWM);
     return Integer;
   }
   std::string const &string () const {
-    assert(Kind >= STRING_LWM && Kind < STRING_HWM);
+    assert (Kind >= STRING_LWM && Kind < STRING_HWM);
     return String;
   }
   std::string &string () {
-    assert(Kind >= STRING_LWM && Kind < STRING_HWM);
+    assert (Kind >= STRING_LWM && Kind < STRING_HWM);
     return String;
   }
   std::vector<Token> const &capture () const {
-    assert(Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM);
+    assert (Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM);
     return Capture;
   }
   std::vector<Token> &capture () {
-    assert(Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM);
+    assert (Kind >= CAPTURE_LWM && Kind < CAPTURE_HWM);
     return Capture;
   }
 

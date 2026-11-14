@@ -6,15 +6,15 @@
 #define ALOY_JOB
 class Job {
   std::vector<std::string> Command;
-  ReadBuffer Buffers[2]; // Job's stdout, stderr
-  pid_t Pid = pid_t(-1); // Job's PID
-  int ExitStatus = 0;    // Exit status of job
-  short MakeToken = -1;  // Make job-server token
+  ReadBuffer Buffers[2];  // Job's stdout, stderr
+  pid_t Pid = pid_t (-1); // Job's PID
+  int ExitStatus = 0;     // Exit status of job
+  short MakeToken = -1;   // Make job-server token
   int State = 0;
 
 public:
-  Job (std::string_view const &cmd) { Command.emplace_back(cmd); }
-  Job (std::string &&cmd) { Command.emplace_back(std::move(cmd)); }
+  Job (std::string_view const &cmd) { Command.emplace_back (cmd); }
+  Job (std::string &&cmd) { Command.emplace_back (std::move (cmd)); }
   Job () {}
 
 private:
@@ -38,7 +38,7 @@ public:
   bool isPid (pid_t p) const { return Pid == p; }
   void stop (int signal) {
     if (Pid > 0)
-      kill(Pid, signal);
+      kill (Pid, signal);
   }
   bool isReady () const { return !State; }
   void reportExit (Engine &) const;
@@ -49,20 +49,20 @@ public:
 #else
 
 void Job::read (Engine &log, unsigned subcode, int poll_fd [[maybe_unused]]) {
-  assert(subcode < 2 && State > 0);
+  assert (subcode < 2 && State > 0);
 
-  if (int done = Buffers[subcode].read()) {
+  if (int done = Buffers[subcode].read ()) {
     if (done >= 0) {
       static char const *const io[] = {" stdout:", " stderr:"};
-      log.result(Tester::ERROR)
-          << "failed reading " << *this << io[subcode] << strerror(done);
+      log.result (Tester::ERROR)
+          << "failed reading " << *this << io[subcode] << strerror (done);
     }
 
-    int fd = Buffers[subcode].close();
+    int fd = Buffers[subcode].close ();
 #ifdef USE_EPOLL
-    epoll_ctl(poll_fd, EPOLL_CTL_DEL, fd, nullptr);
+    epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
 #endif
-    close(fd);
+    close (fd);
     State--;
   }
 }
@@ -71,48 +71,48 @@ void Job::read (Engine &log, unsigned subcode, int poll_fd [[maybe_unused]]) {
 
 bool Job::spawn (Engine &log, std::vector<std::string> const &preamble,
                  int poll_fd [[maybe_unused]], int token) {
-  assert(!State && Buffers[0].empty() && Buffers[1].empty());
+  assert (!State && Buffers[0].empty () && Buffers[1].empty ());
 
-  if (!preamble.size())
+  if (!preamble.size ())
     // No execute mode, we're done
     return false;
 
-  int job_fds[2]{-1, -1};
+  int job_fds[2] {-1, -1};
   int null_fd = -1;
 
   int err;
   for (unsigned ix = 0; ix != 2; ix++) {
     int pipe[2];
-    if (makePipe(pipe) < 0) {
+    if (makePipe (pipe) < 0) {
       err = errno;
       goto fail;
     }
     job_fds[ix] = pipe[1];
-    Buffers[ix].open(pipe[0]);
+    Buffers[ix].open (pipe[0]);
 
 #ifdef USE_EPOLL
     epoll_event ev;
     ev.events = EPOLLIN;
-    ev.data.u64 = reinterpret_cast<uint64_t>(this) | ix;
-    while (epoll_ctl(poll_fd, EPOLL_CTL_ADD, pipe[0], &ev) < 0)
-      assert(errno == EINTR);
+    ev.data.u64 = reinterpret_cast<uint64_t> (this) | ix;
+    while (epoll_ctl (poll_fd, EPOLL_CTL_ADD, pipe[0], &ev) < 0)
+      assert (errno == EINTR);
 #endif
   }
 
-  null_fd = open("/dev/null", O_RDONLY | O_CLOEXEC);
+  null_fd = open ("/dev/null", O_RDONLY | O_CLOEXEC);
   if (null_fd < 0)
     err = errno;
   else {
     auto [p, e]
-        = gaige::spawn(null_fd, job_fds[0], job_fds[1], Command, &preamble);
+        = gaige::spawn (null_fd, job_fds[0], job_fds[1], Command, &preamble);
     Pid = p;
     err = e;
   }
 
 fail:
   if (err)
-    log.result(Tester::ERROR)
-        << "failed spawning " << preamble[0] << ":" << strerror(err);
+    log.result (Tester::ERROR)
+        << "failed spawning " << preamble[0] << ":" << strerror (err);
 
   if (Pid) {
     State = 3;
@@ -121,14 +121,14 @@ fail:
     MakeToken = token;
   } else {
     if (null_fd > 0)
-      close(null_fd);
+      close (null_fd);
     for (unsigned ix = 0; ix != 2; ix++) {
-      close(job_fds[ix]);
-      int fd = Buffers[ix].close();
+      close (job_fds[ix]);
+      int fd = Buffers[ix].close ();
 #ifdef EPOLL_CTL
-      epoll_ctl(poll_fd, EPOLL_CTL_DEL, fd, nullptr);
+      epoll_ctl (poll_fd, EPOLL_CTL_DEL, fd, nullptr);
 #endif
-      close(fd);
+      close (fd);
     }
   }
 
@@ -137,10 +137,10 @@ fail:
 
 // Reap a completed job, returns the make token (or -1)
 int Job::reap (int status) {
-  assert(Pid >= 0 && State);
+  assert (Pid >= 0 && State);
   ExitStatus = status;
 
-  Pid = pid_t(-1);
+  Pid = pid_t (-1);
   State--;
 
   int r = MakeToken;
@@ -149,18 +149,18 @@ int Job::reap (int status) {
 }
 
 void Job::reportExit (Engine &log) const {
-  if (WIFSIGNALED(ExitStatus)) {
-    int sig = WTERMSIG(ExitStatus);
-    log.result(Tester::ERROR) << *this << " terminated with signal " << sig;
-  } else if (WIFEXITED(ExitStatus)) {
-    if (int code = WEXITSTATUS(ExitStatus))
-      log.result(Tester::ERROR) << *this << " exited with status " << code;
+  if (WIFSIGNALED (ExitStatus)) {
+    int sig = WTERMSIG (ExitStatus);
+    log.result (Tester::ERROR) << *this << " terminated with signal " << sig;
+  } else if (WIFEXITED (ExitStatus)) {
+    if (int code = WEXITSTATUS (ExitStatus))
+      log.result (Tester::ERROR) << *this << " exited with status " << code;
   } else
-    unreachable();
+    unreachable ();
 }
 
 std::ostream &operator<< (std::ostream &s, Job const &job) {
-  if (!job.Command.empty())
+  if (!job.Command.empty ())
     s << job.Command[0];
 
   return s;

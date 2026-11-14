@@ -17,7 +17,7 @@ private:
 
 public:
   Parser (char const *file, Engine &e)
-    : Parent(file), E(e) {}
+    : Parent (file), E (e) {}
 
 public:
   bool isMatchSpace () const { return MatchSpace; }
@@ -40,33 +40,33 @@ private:
 #else
 
 void Parser::lexError (Lexer const &lexer, char const *ctx) {
-  error() << "failed to lex " << ctx << " after '" << lexer.before()
-          << "' at '" << lexer.after() << "'";
+  error () << "failed to lex " << ctx << " after '" << lexer.before ()
+           << "' at '" << lexer.after () << "'";
 }
 
 void Parser::parseError (char const *ctx, Token const *token) {
-  error() << "unexpected '" << token << "' parsing " << ctx;
+  error () << "unexpected '" << token << "' parsing " << ctx;
 }
 
 void Parser::options (std::string_view const &text) {
-  Lexer lexer(text);
+  Lexer lexer (text);
 
-  while (char c = lexer.peekChar())
+  while (char c = lexer.peekChar ())
     switch (c) {
     case ' ':
     case '\t':
     case ',':
-      lexer.advanceChar();
+      lexer.advanceChar ();
       break;
 
     case '!':
-      lexer.advanceChar();
-      lexer.append(Token(Token::STRING, std::string("!")));
+      lexer.advanceChar ();
+      lexer.append (Token (Token::STRING, std::string ("!")));
       break;
 
     default:
-      if (!lexer.isIdentifier()) {
-        lexError(lexer, "options");
+      if (!lexer.isIdentifier ()) {
+        lexError (lexer, "options");
         return;
       }
       break;
@@ -74,25 +74,25 @@ void Parser::options (std::string_view const &text) {
 
   bool on = true;
 
-  while (Token const *token = lexer.getToken())
-    switch (token->kind()) {
+  while (Token const *token = lexer.getToken ())
+    switch (token->kind ()) {
     case Token::STRING:
-      assert(token->string() == "!");
+      assert (token->string () == "!");
       if (!on)
         goto unexpected;
       on = false;
       break;
 
     case Token::IDENTIFIER:
-      if (token->string() == "matchSpace")
+      if (token->string () == "matchSpace")
         MatchSpace = on;
-      else if (token->string() == "matchLine")
+      else if (token->string () == "matchLine")
         MatchSol = MatchEol = on;
-      else if (token->string() == "matchSol")
+      else if (token->string () == "matchSol")
         MatchSol = on;
-      else if (token->string() == "matchEol")
+      else if (token->string () == "matchEol")
         MatchEol = on;
-      else if (token->string() == "xfail")
+      else if (token->string () == "xfail")
         XFail = on;
       else
         goto unexpected;
@@ -101,7 +101,7 @@ void Parser::options (std::string_view const &text) {
 
     default: {
     unexpected:
-      parseError("options", token);
+      parseError ("options", token);
     }
     }
 }
@@ -109,30 +109,30 @@ void Parser::options (std::string_view const &text) {
 bool Parser::processLine (std::string_view const &variant,
                           std::string_view const &pattern) {
   if (variant == "OPTION")
-    options(std::move(pattern));
+    options (std::move (pattern));
   else if (variant == "END")
     return true;
   else {
     unsigned code = 0;
-    if (variant.size()) {
+    if (variant.size ()) {
       for (; code != Pattern::UNKNOWN; ++code)
         if (variant == Pattern::KindNames[code])
           goto found;
-      return Parent::processLine(variant, pattern);
+      return Parent::processLine (variant, pattern);
     found:;
     }
 
     auto pat = pattern;
     // Strip leading and trailing whitespace
-    while (!pat.empty())
-      if (pat.front() == ' ' || pat.front() == '\t')
-        pat.remove_prefix(1);
-      else if (pat.back() == ' ' || pat.back() == '\t')
-        pat.remove_suffix(1);
+    while (!pat.empty ())
+      if (pat.front () == ' ' || pat.front () == '\t')
+        pat.remove_prefix (1);
+      else if (pat.back () == ' ' || pat.back () == '\t')
+        pat.remove_suffix (1);
       else
         break;
-    if (auto *p = Pattern::Parse(this, Pattern::Kinds(code), pat))
-      E.add(p);
+    if (auto *p = Pattern::Parse (this, Pattern::Kinds (code), pat))
+      E.add (p);
 
     XFail = false;
   }

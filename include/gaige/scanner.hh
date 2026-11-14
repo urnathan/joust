@@ -18,13 +18,13 @@ private:
 
 public:
   Scanner (char const *file_)
-    : Loc(file_) {}
+    : Loc (file_) {}
 
 public:
   auto const &loc () const { return Loc; }
 
 public:
-  auto error () { return Error(Loc); }
+  auto error () { return Error (Loc); }
 
 public:
   bool scanFile (std::string const &,

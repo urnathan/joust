@@ -25,7 +25,7 @@ char const *error (int) noexcept;
 void protect (std::string &, std::string_view const &);
 inline std::string protect (std::string_view const &src) {
   std::string dst;
-  protect(dst, src);
+  protect (dst, src);
   return dst;
 }
 

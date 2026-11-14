@@ -24,7 +24,7 @@ protected:
 
 public:
   Lexer (std::string_view const &s)
-    : String(s) {}
+    : String (s) {}
 
   Lexer () = delete;
   ~Lexer () = default;
@@ -35,14 +35,14 @@ private:
 
 public:
   Token *getToken () {
-    if (Token *peeked = peekToken()) {
+    if (Token *peeked = peekToken ()) {
       LexToken++;
       return peeked;
     }
     return nullptr;
   }
   Token *peekToken (unsigned advance = 0) {
-    if (LexToken + advance >= Tokens.size())
+    if (LexToken + advance >= Tokens.size ())
       return nullptr;
     return &Tokens[LexToken + advance];
   }
@@ -53,12 +53,12 @@ public:
 
 public:
   char peekChar (unsigned a = 0) const {
-    if (LexChar + a >= String.size())
+    if (LexChar + a >= String.size ())
       return 0;
     return String[LexChar + a];
   }
   void advanceChar (unsigned a = 1) {
-    assert(LexChar + a <= String.size());
+    assert (LexChar + a <= String.size ());
     LexChar += a;
   }
   char skipWS ();
@@ -66,14 +66,14 @@ public:
 public:
   // Advance and peek
   char advancePeekChar () {
-    advanceChar();
-    return peekChar();
+    advanceChar ();
+    return peekChar ();
   }
   // Peek and advance
   char peekAdvanceChar () {
-    char c = peekChar();
+    char c = peekChar ();
     if (c)
-      advanceChar();
+      advanceChar ();
     return c;
   }
 

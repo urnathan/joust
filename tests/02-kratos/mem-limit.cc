@@ -18,13 +18,13 @@
 int main (int argc, char *argv[]) {
   using namespace nms;
 #include "joust/project-ident.inc"
-  setBuildInfo(JOUST_PROJECT_IDENTS);
-  installSignalHandlers();
+  setBuildInfo (JOUST_PROJECT_IDENTS);
+  installSignalHandlers ();
 
   bool map = false;
   static constexpr Option const options[]
-      = {{"map", 'm', 0, OPTION_FN(Option::Parser<bool>::parse), "MMap"}, {}};
-  options->parseArgs(argc, argv, &map);
+      = {{"map", 'm', 0, OPTION_FN (Option::Parser<bool>::parse), "MMap"}, {}};
+  options->parseArgs (argc, argv, &map);
 
   size_t MB = 1024 * 1024;
 
@@ -33,11 +33,11 @@ int main (int argc, char *argv[]) {
     void *ptr = nullptr;
 
     if (map)
-      ptr = mmap(nullptr, MB, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0);
+      ptr = mmap (nullptr, MB, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0);
     else
       ptr = new char[MB];
-    assert(ptr);
-    memset(ptr, 1, MB);
+    assert (ptr);
+    memset (ptr, 1, MB);
   }
 
   return 0;

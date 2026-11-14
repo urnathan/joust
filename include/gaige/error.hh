@@ -22,7 +22,7 @@ private:
 public:
   Error (nms::SrcLoc);
   Error (Error &&src)
-    : Stream(src.Stream) {
+    : Stream (src.Stream) {
     src.Stream = nullptr;
   }
   ~Error () {
@@ -36,7 +36,7 @@ private:
 public:
   template <typename T>
   Error &operator<< (T &&obj) {
-    *Stream << std::forward<T>(obj);
+    *Stream << std::forward<T> (obj);
 
     return *this;
   }
